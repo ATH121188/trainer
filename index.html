@@ -475,8 +475,29 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.30';
+const VERSION='1.32';
 const CHANGELOG=[
+ {v:'1.32',name:'The examination now describes the patient',
+  top:['Pulse checks were fixed text in all sixty cases. The team could call out "I have lost his radial" while the examination still reported strong radials and the monitor showed a normal pressure. The examination now reads from the patient.',
+       'Intubating a hypotensive patient lost the tube. Amy said it was in, the simulator believed there was no airway, and nothing could be ventilated afterwards.',
+       'Every case checked against a written clinical specification — the diagnosis, the definitive treatment, the harmful one, the right consultant and the cardinal signs.'],
+  detail:['Pulse thresholds match the teaching: radial lost below a systolic of about 80, femoral below 60, carotid only under that. A localised deficit the case declares still survives once he is soft.',
+          'Thirteen cases reached the correct consultant and were then told it was the wrong one. Two definitive treatments were not scored at all — a twelve lead in blunt cardiac injury, steroids in life-threatening asthma.',
+          'Twelve harmful interventions had nothing objecting: crystalloid into active haemorrhage, into hyponatraemia, into blast lung; a tourniquet where nothing is proximal to put it on; insulin before a potassium is known.',
+          'Suxamethonium is now challenged in organophosphate poisoning, where the agent blocks the enzyme that clears it and the paralysis runs for hours. Checked against CHEMM.',
+          'Burn fluid titration corrected against the JTS Burn Care CPG — thirty to fifty millilitres an hour in an adult. The previous figure was the paediatric one.',
+          'Compressions changed nothing when performed. A quiet room in tetanus was a courtesy rather than a treatment.',
+          'Speech recognition now returns six candidates and the medical one is chosen over the everyday one — but only when it contains a clinical term the top guess is missing.',
+          'A hundred and twenty-four plain English drug names: clot buster, the inhaler, the salty stuff, bug drugs, pressor, blood thinner, gas antidote, the fit drug.']},
+ {v:'1.31',name:'From the rollover run',
+  top:['"We need a" was booking theatre. So "we need a chest tube" opened an operating room and "we need a gram of calcium" did too. That was my fault from two versions ago.',
+       '"Hold the patient down" now works, and so do "package him up", "how many patients do we have" and a question that starts with "okay".',
+       'Nobody talks about their boots while the surgeon is standing there waiting for a handover.'],
+  detail:['Booking an operation now needs the words for it — activate, book, open the OR, set up the table.',
+          '"What have we given" reads the drug chart rather than answering yes or no about one item.',
+          'A radio handover is no longer caveated as though somebody were wrestling the patient for it — agitation only affects examinations that need hands on him.',
+          'More mishearings mapped: moonan for Dr. Moon, "for the hour" for "for the OR", "apple history" for AMPLE, ivy for IV.',
+          '"Will you be our documentary" is understood as documentation.']},
  {v:'1.30',name:'Six fixes found by auditing every case',
   top:['Questions about the patient are answered by the team again. A radio channel no longer swallows everything you say — and "go away" closes it.',
        'Asking what medications have been given now works. It was wrong in all sixty cases.',
@@ -946,13 +967,24 @@ act({id:'listen',label:'Auscultate the chest',cat:'B',by:'dorian',dur:12,assess:
 act({id:'pulsecheck',label:'Assess pulses / perfusion',cat:'C',by:'dorian',dur:6,assess:true,
  al:['pulse','radial','femoral pulse','carotid','dorsalis pedis','posterior tibial','pedal pulses','pedal pulse','check a pulse','palpate a pulse','feel for a pulse','perfusion','cap refill','skin','check pulses','pulses','distal pulses','four extremities','all four','peripheral pulses','check circulation','perfusion check','feel his pulses','feel her pulses','pulses again','recheck the pulses','reassess the pulses','recheck perfusion'],
  run:S=>{S.known.circ=true;const b=S.sbp();
-  if(S.scn.pulses)return{find:S.scn.pulses(S,b)};
+  /* The case's own pulse text is written for a patient who is still perfusing.
+     Below that, the examination describes the patient in front of them — the
+     examination, the monitor and the callouts must not contradict each other. */
+  if(S.scn.pulses&&b>=90)return{find:S.scn.pulses(S,b)};
+  /* keep a localised deficit the case declares, even once he is soft */
+  let local='';
+  if(S.scn.pulses){
+   const extra=String(S.scn.pulses(S,b));
+   const m=extra.match(/[^.]*\b(?:(?:no|absent|weaker|weak)\s+(?:radial|femoral|dorsalis|posterior tibial|pedal|pulse)|(?:radial|femoral|dorsalis|pedal|pulse)[^.]*\b(?:absent|missing|gone)|nothing below|nothing distal|cold(?: and mottled)? (?:to|below)|mottled (?:to|below))[^.]*\./i);
+   if(m)local=' '+m[0].trim();
+  }
   let q;
-  if(b<40)q='No carotid, nothing anywhere.';
-  else if(b<70)q='No radial either side. Weak thready femoral. Nothing in either foot. Cold and mottled to the knees.';
-  else if(b<90)q='Radials present both sides but thready. Dorsalis pedis is faint bilaterally. Cool, cap refill four seconds.';
-  else q='Radials strong and equal both arms. Dorsalis pedis and posterior tibial present in both feet. Warm, cap refill under two.';
-  return{find:'All four extremities — '+q};}});
+  if(b<40)q='No carotid. Nothing anywhere.';
+  else if(b<60)q='No radial, no femoral. Carotid only, and it is thready. Cold and mottled to the knees.';
+  else if(b<80)q='No radial either side. Femoral is there but weak. Nothing in either foot. Cool and mottled to the knees.';
+  else if(b<90)q='Radials just palpable and thready, easier at the femoral. Feet are cool, refill four seconds.';
+  else q='Radials strong and equal both arms. Dorsalis pedis and posterior tibial present in both feet. Warm, refill under two.';
+  return{find:'All four extremities — '+q+local};}});
 act({id:'gcs',label:'GCS / neuro',cat:'D',by:'amy',dur:10,assess:true,
  al:['gcs','neuro','avpu','mental status','is he awake','is she awake','following commands','neuro exam','what is his gcs','what is her gcs','check his neuro','neuro status','level of consciousness','how awake','glasgow','conscious level','mentation','his mentation','her mentation','assess mentation','check mentation','orientation','is he oriented','is she oriented','alertness','how is his neuro','how is her neuro','neurological status','neuro check','neuro again','recheck the neuro','reassess the neuro','gcs again','recheck his gcs'],
  run:S=>({find:S.tubed()?('He is tubed and sedated — GCS is 3T and not meaningful. Pupils are '+(S.p.blownPupil?'six on the left, sluggish, three and reactive on the right':'three and equal, both reactive')+'. That is your neuro exam now.'):(S.scn.neuro?S.scn.neuro(S):('GCS '+S.gcs()+'.'))})});
@@ -979,7 +1011,7 @@ act({id:'blood_sweep',label:'Full blood sweep (axillae, groin, skull)',cat:'E',b
   return{find:'Blood sweep — Axillae: '+(S.scn.axilla?S.scn.axilla(S):'both clean, no wounds.')+
    ' Groin and perineum: '+S.scn.groin(S)+' Skull and scalp: '+S.scn.skull(S)};}});
 act({id:'document',label:'Start documentation / scribe',cat:'CMD',by:'mitch',dur:15,
- al:['document','documentation','scribe','trauma flow sheet','flow sheet','write it down','keep the times','record','take notes','who is documenting','start the record','chart it','start the flow sheet','who is writing','get this written down','somebody scribe','someone document','assign a scribe','start documenting','recorder','keep a record','log this','write this down','somebody write this down','can somebody write this down','write it all down','note the times'],
+ al:['document','documentation','scribe','trauma flow sheet','flow sheet','write it down','keep the times','record','take notes','who is documenting','start the record','chart it','start the flow sheet','who is writing','get this written down','somebody scribe','someone document','assign a scribe','start documenting','recorder','keep a record','log this','write this down','somebody write this down','can somebody write this down','write it all down','note the times','documentary','be our documentary','on documentation','take the documentation','be the scribe'],
  run:S=>{S.flags.scribe=true;return'I have the trauma flow sheet. Times, doses, vitals and procedures all going down as we do them. I will read it back on handover.';}});
 act({id:'hold',instant:true,label:'Stop / hold what you are doing',cat:'CMD',by:'dorian',dur:0,
  al:['belay that','as you were','hold everything','knock it off for a second','everybody stop','freeze what you are doing','hands off him','pause','stand fast'],
@@ -1068,7 +1100,7 @@ act({id:'readback_req',instant:true,label:'Ask for a read-back',cat:'CMD',by:'do
   if(!lines.length)return{say:'Nobody has a task, sir. We are all standing here waiting on you.',nocredit:true};
   return{say:lines.join('. ')+'. That is everything running.',nocredit:true};}});
 act({id:'restrain',label:'Physically hold the patient',cat:'CMD',by:'mitch',dur:20,
- al:['hold him down','hold her down','restrain','physical restraint','hold him still','hold her still','get hands on him','somebody hold him','four point','soft restraints','hold his arms'],
+ al:['hold him down','hold her down','restrain','physical restraint','hold him still','hold her still','get hands on him','somebody hold him','four point','soft restraints','hold his arms','hold the patient down','hold him down','hold her down','hold him still','hold her still','get hands on him','two people on him','somebody hold him','pin him down'],
  run:S=>{S.flags.restrained=true;
   return'Two of us on him, one either side, holding the shoulders and the hips. It will hold for a few minutes but this is not a treatment, sir — something is making him fight.';}});
 act({id:'sedate',label:'Sedate for agitation',cat:'RX',by:'lauren',dur:20,routeAsk:'Sedation which route — intravenous or intramuscular?',
@@ -1309,9 +1341,16 @@ act({id:'switch_pt',instant:true,label:'Turn to the other casualty',cat:'CMD',by
    (p.mon.ecg?('Rate '+v.hr+(p.lastBp?', pressure '+p.lastBp.sbp+' over '+p.lastBp.dbp:', no pressure')+'.'):'Nothing on the monitor here.'),nocredit:true};}});
 act({id:'quiet',instant:true,label:'Tell the team to focus',cat:'CMD',by:'dorian',dur:5,
  al:['shut up','focus','stay on task','knock it off','quiet','stow it','eyes on the patient','stop talking','save it','not now','stay with me','cut the chatter','focus up','tighten up','less talking','heads in the game','can it'],
- run:S=>{S.quiet=true;return'Roger, sir. Mouth shut, eyes on the patient.';}});
+ run:S=>{
+  S.quiet=true;
+  if(S.p.tetanus){
+   S.flags.quietRoom=true;S.p.spasmDamped=true;
+   S.lesson('In tetanus the spasms are set off by light, noise and touch. A dark quiet room, with care clustered into as few disturbances as possible, is a treatment rather than a courtesy.');
+   return'Roger. Lights down, voices down, and I will cluster anything that means touching him. That is half his treatment, sir.';
+  }
+  return'Roger, sir. Mouth shut, eyes on the patient.';}});
 act({id:'rsi_meds',label:'Induction and paralysis',cat:'RX',by:'lauren',dur:20,
- al:['induction','induction drugs','paralytic','rocuronium','roc','succinylcholine','sux','etomidate','push the drugs','rsi drugs','induction and paralysis','paralyze him','paralyse him','intubation meds','intubation drugs','intubation medications','airway meds','airway drugs','meds for intubation','drugs for intubation','drugs for the tube','meds for the tube','induction meds','induction drugs','induction and paralytic','standard induction','standard rsi','usual induction','draw the intubation meds','draw intubation meds','draw up the induction','tube drugs'],
+ al:['induction','induction drugs','paralytic','rocuronium','roc','succinylcholine','sux','etomidate','push the drugs','rsi drugs','induction and paralysis','paralyze him','paralyse him','intubation meds','intubation drugs','intubation medications','airway meds','airway drugs','meds for intubation','drugs for intubation','drugs for the tube','meds for the tube','induction meds','induction drugs','induction and paralytic','standard induction','standard rsi','usual induction','draw the intubation meds','draw intubation meds','draw up the induction','tube drugs','knock him out drug','knock him down','induction drugs','the induction drugs','tube drugs','the tube drugs','put him under','put her under'],
  std:(S)=>{const kg=S.p.kg||80;return{base:kg,kind:'mass',display:Math.round(kg)+' mg ketamine and '+Math.round(1.2*kg)+' mg rocuronium (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
   if(/etomidate/i.test(raw)){if(d.base<.15*kg||d.base>.6*kg)return{bad:'That is '+d.text+' of etomidate. For '+kg+' kilos I would expect around '+Math.round(.3*kg)+' milligrams. Confirm?'};return{label:d.display+' etomidate'};}
@@ -1321,9 +1360,10 @@ act({id:'rsi_meds',label:'Induction and paralysis',cat:'RX',by:'lauren',dur:20,
   return{label:d.display+' ketamine'};},
  precheck:(S,raw)=>(!S.access&&!/\bim\b|intramuscular/i.test(raw||''))?'No line, sir. Intramuscular, or do you want access first?':null,
  danger:(S,raw)=>{
-  if(!/sux|succinyl/i.test(raw||''))return null;
-  if(S.p.hyperK||S.p.kSev>.1)return'Sir, his potassium is already up. Succinylcholine will push it higher and arrest him. Rocuronium does the same job without that.';
-  if(S.p.tbsa||S.p.cord)return'Sir, with that injury the receptors are upregulated. Succinylcholine will dump potassium out of the muscle. I would use rocuronium.';
+  if(!/sux|succinyl|celocurine/i.test(expand(String(raw||''))))return null;
+  if(S.p.nerve)return'Sir — not suxamethonium in an organophosphate. The agent blocks the enzyme that clears it, and the paralysis runs for hours rather than minutes. Rocuronium.';
+  if(S.p.hyperK||S.p.kSev>.1||S.p.rhabdo)return'Sir, his potassium is already up. Succinylcholine will push it higher and arrest him. Rocuronium does the same job without that.';
+  if(S.p.tbsa||S.p.cord||S.p.crush||S.p.neurogenic)return'Sir, with that injury the receptors are upregulated. Succinylcholine will dump potassium out of the muscle. I would use rocuronium.';
   return null;},
  run:(S,t,raw,g)=>{
   if(/sux|succinyl/i.test(raw||'')&&(S.p.hyperK||S.p.tbsa||S.p.cord)){
@@ -1332,7 +1372,7 @@ act({id:'rsi_meds',label:'Induction and paralysis',cat:'RX',by:'lauren',dur:20,
   S.flags.rsiDrugs=true;S.flags.analgesia=true;S.p.pain=Math.max(0,S.p.pain-6);
   return g.d.display+' drawn up and pushed on your count. Paralytic is behind it.';}});
 act({id:'cyanokit',label:'Hydroxocobalamin (Cyanokit)',cat:'RX',by:'lauren',dur:30,
- al:['cyanokit','hydroxocobalamin','cyanide','b12','sodium thiosulfate','thiosulfate','treat the cyanide','b12a','cobalamin','cyanide antidote','give the cyanokit','hydroxocobalamin','hydroxo cobalamin','hydroxy cobalamin','cyanide antidote','cyano kit','the cyanide drug'],
+ al:['cyanokit','hydroxocobalamin','cyanide','b12','sodium thiosulfate','thiosulfate','treat the cyanide','b12a','cobalamin','cyanide antidote','give the cyanokit','hydroxocobalamin','hydroxo cobalamin','hydroxy cobalamin','cyanide antidote','cyano kit','the cyanide drug','gas antidote','the gas antidote','smoke antidote','cyanide antidote','the b twelve'],
  std:(S)=>{const kg=S.p.kg||80;return kg<30?{base:kg*70,kind:'mass',display:Math.round(kg*70)+' mg, 70 mg/kg (standard)'}:{base:5000,kind:'mass',display:'5 grams (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80,peds=kg<30;
   if(d.kind!=='mass')return{bad:'Hydroxocobalamin is in grams, sir. How much?'};
@@ -1407,7 +1447,16 @@ act({id:'rsi',label:'Intubate (RSI)',cat:'A',by:'amy',lockTo:'amy',dur:50,al:['i
   if(/ketamine|etomidate|roc|sux|succinyl|paralytic|induction/i.test(raw||''))S.flags.rsiDrugs=true;
   S.flags.intubated=true;
   if(S.p.tension>.45&&!S.flags.decompressed){S.p.tension=Math.min(1,S.p.tension+.3);S.lesson('Positive pressure ventilation on an undecompressed tension pneumothorax converts a sick patient into an arrest. Decompress first.');return'Tube is through the cords. I am losing his pressure and he is getting hard to bag.';}
-  if(S.sbp()<80&&!S.flags.bloodGiven){S.p.periArrest=(S.p.periArrest||0)+.35;S.lesson('Intubating uncorrected haemorrhagic shock is a well described cause of peri-intubation arrest. Resuscitate before you induce.');return'Tube is in, end-tidal confirms. His pressure dropped on induction.';}
+  if(S.sbp()<80&&!S.flags.bloodGiven){
+   /* the tube still goes in — record it before returning, or the room believes
+      there is no airway while the lead has been told there is one */
+   const kgS=S.p.kg||80;
+   S.airwayDevice='ett';S.p.airway=0;S.o2=1;
+   S.airwayRec={device:'ett',size:kgS<30?'5.0 uncuffed':'7.5',depth:kgS<30?'15':'22',grade:'1',attempts:1,t:S.t};
+   S.p.periArrest=(S.p.periArrest||0)+.35;
+   S.awaiting={id:'amy',t:S.t};
+   S.lesson('Intubating uncorrected haemorrhagic shock is a well described cause of peri-intubation arrest. Resuscitate before you induce.');
+   return'TUBE IS IN, end-tidal confirms it. But his pressure has dropped on induction, sir — that is the positive pressure and the drugs on a tank that was already empty. I need ventilator settings and a sedation plan, and he needs product.';}
   const hard=S.p.midface||S.p.tbsa||S.p.airway>.4;
   S.airwayDevice='ett';S.p.airway=0;S.o2=1;
   const kg=S.p.kg||80,att=hard?2:1,grade=hard?'2b':'1',size=kg<30?'5.0 uncuffed':'7.5',depth=kg<30?'15':'22';
@@ -1490,6 +1539,8 @@ act({id:'thoracotomy',label:'Resuscitative thoracotomy',cat:'C',by:'surgeon',dur
 act({id:'cpr',label:'Chest compressions',cat:'C',by:'mitch',dur:30,
  al:['compressions','cpr','start cpr','chest compressions','acls','epi every 3','code him'],
  run:S=>{
+  S.flags.cpr=true;S.flags.cprAt=S.t;
+  if(S.p.arrestCase){S.p.squeeze=Math.min(1.2,(S.p.squeeze||1)+.12);}
   if(S.p.arrestCase)S.lesson('Compressions on a traumatic arrest achieve very little against an empty heart. The order is the reversible causes — hypovolaemia, oxygenation, tension, tamponade — and compressions come after, not first.');
   return S.p.arrestCase?'Compressions going, sir. But I am pressing on an empty heart — you need to fix the reason.':'He has a pulse. You do not want compressions.';}});
 act({id:'chesttube',label:'Chest tube',cat:'B',by:'dorian',dur:90,lat:true,precheck:sideCheck,al:['chest tube','tube thoracostomy','28 french','drain the chest','put in a tube','chest tube kit','chest tube tray','thoracostomy kit','formal chest tube','drain it','tube that side','put a drain in','bilateral chest tubes','chest tubes','both chest tubes','tubes both sides'],
@@ -1498,7 +1549,14 @@ act({id:'chesttube',label:'Chest tube',cat:'B',by:'dorian',dur:90,lat:true,prech
   return'Tube in on the '+side+', fogging, sutured and connected.';}});
 
 /* --- circulation --- */
-act({id:'tq',label:'Tourniquet',cat:'C',by:'dorian',dur:25,lat:true,al:['tourniquet','tq','cat','windlass','high and tight','tighten the tourniquet','second tourniquet','another tourniquet','get a tourniquet on','tourniquet that leg','tourniquet that arm','tighten it down','crank it down','put a cat on','stop that bleeding','stop the bleeding','control the bleeding','control that bleeding','cat tourniquet','sofft','soft-t','combat tourniquet','apply tourniquet','tq it','windlass it'],
+act({id:'tq',label:'Tourniquet',cat:'C',by:'dorian',dur:25,lat:true,
+ danger:(S,raw)=>{
+  if(S.p.junctionalBleed&&!S.p.extremityBleed)
+   return'Sir, there is nothing proximal to put it on — a tourniquet does not reach this one. It wants packing and direct pressure.';
+  if(!S.p.extremityBleed&&!S.p.junctionalBleed)
+   return'Nothing on the limbs is bleeding, sir. A tourniquet on a limb that is not bleeding buys an ischaemic limb and nothing else.';
+  return null;},
+ al:['tourniquet','tq','cat','windlass','high and tight','tighten the tourniquet','second tourniquet','another tourniquet','get a tourniquet on','tourniquet that leg','tourniquet that arm','tighten it down','crank it down','put a cat on','stop that bleeding','stop the bleeding','control the bleeding','control that bleeding','cat tourniquet','sofft','soft-t','combat tourniquet','apply tourniquet','tq it','windlass it'],
  run:S=>{if(!S.p.extremityBleed)return'Nothing on the limbs that takes one.';
   S.flags.tq=(S.flags.tq||0)+1;const cut=S.p.extremityBleedRate*(S.flags.tq>=2?1:.72);
   S.p.bleedRate=Math.max(0,S.p.bleedRate-cut);S.p.extremityBleedRate=Math.max(0,S.p.extremityBleedRate-cut);
@@ -1534,7 +1592,7 @@ act({id:'ej',label:'External jugular IV',cat:'C',by:'lauren',dur:35,
   return'Sixteen in the external jugular, head down, held off — it filled nicely. Flushing well, taped and looped.';}});
 act({id:'binder',label:'Pelvic binder',cat:'C',by:'dorian',dur:25,al:['pelvic binder','binder','sam sling','sheet the pelvis','get a binder on','pelvic sheet','sling the pelvis','wrap it','bind the pelvis','sheet around the pelvis','wrap the pelvis','stabilize the pelvis'],
  run:S=>{S.flags.binder=true;if(S.p.pelvis){S.p.bleedRate=Math.max(0,S.p.bleedRate-S.p.pelvisRate*.5);S.p.pelvisRate*=.5;return'Binder on at the trochanters. That pelvis was moving.';}return'Binder on at the trochanters.';}});
-act({id:'iv',label:'Large-bore IV, one side',cat:'C',by:'lauren',dur:60,al:['iv','two large bore','large bore','18 gauge','16 gauge','access','get a line','ivs','peripheral','another line','second line','iv kit','iv kits','get some access','put a line in','stick him','stick her','cannulate','two points of access','get me access','iv access','peripheral access','start a line','get me a line','venous access','two ivs','another iv','establish access','iv please','line please','peripheral line','20 gauge','16g','18g','two lines','access','get access'],
+act({id:'iv',label:'Large-bore IV, one side',cat:'C',by:'lauren',dur:60,al:['iv','two large bore','large bore','18 gauge','16 gauge','access','get a line','ivs','peripheral','another line','second line','iv kit','iv kits','get some access','put a line in','stick him','stick her','cannulate','two points of access','get me access','iv access','peripheral access','start a line','get me a line','venous access','two ivs','another iv','establish access','iv please','line please','peripheral line','20 gauge','16g','18g','two lines','access','get access','ivy','another ivy','try an ivy','get an ivy'],
  run:S=>{
   S.ivTries=(S.ivTries||0)+1;
   const shock=clamp((S.p.lost-S.p.replaced)/5000,0,1);
@@ -1581,7 +1639,21 @@ act({id:'blood',label:'Blood products',cat:'C',by:'lauren',dur:30,al:['blood','w
    (peds?'Running it at 10 mL per kilo. ':'First one is running now. ')+
    S.bank+' unit'+(S.bank===1?'':'s')+' left on the shelf.'+
    (S.bank<=6&&!S.wbbAt?' Sir, that is getting thin — do you want the walking blood bank called?':'');}});
-act({id:'crystalloid',label:'Crystalloid',cat:'C',by:'lauren',dur:12,al:['saline','normal saline','lr','lactated ringers','crystalloid','fluid bolus','litre of fluid','liter of fluid','plasmalyte','bolus','liters of fluid','litres of fluid','run some fluid','fluid please','give a bolus','open up some fluid','hang a litre','ns','n/s','normal saline','0.9%','0.9 percent','sodium chloride','ringers','hartmanns','d5','d5w','dextrose 5','isotonic','a litre','a liter','one litre','one liter','1l','2l','500 cc','250 cc','fluids','some fluids','give fluids','start fluids','run fluids','maintenance fluids','iv fluids'],
+act({id:'crystalloid',label:'Crystalloid',cat:'C',by:'lauren',dur:12,
+ danger:(S,raw)=>{
+  if(S.p.bleedRate>40&&S.bank>0)
+   return'Sir — he is bleeding. Crystalloid dilutes what clotting he has left and it carries no oxygen. There is blood in the fridge.';
+  if(S.p.hypoNa!==undefined&&S.p.hypoNa<125)
+   return'Careful, sir. His sodium is already low and plain fluid drives it lower. Hypertonic is what shifts this.';
+  if((S.p.blastLung||0)>.2||(S.p.shunt||0)>.3)
+   return'Sir, a blast lung floods with volume. Enough to perfuse him and not a drop more.';
+  const litres=(S.infusions||[]).filter(f=>f.kind==='fluid').reduce((a,f)=>a+(f.given||0),0);
+  if(S.p.neurogenic)
+   return litres>=1
+    ?'He has had '+litres+' litres already, sir. This is a pipe problem rather than a tank problem — it wants a vasopressor, not more fluid.'
+    :'One litre to see if he responds, sir — but a cord injury does not bleed, and if he stays soft it is vasomotor tone and it wants a pressor.';
+  return null;},
+ al:['saline','normal saline','lr','lactated ringers','crystalloid','fluid bolus','litre of fluid','liter of fluid','plasmalyte','bolus','liters of fluid','litres of fluid','run some fluid','fluid please','give a bolus','open up some fluid','hang a litre','ns','n/s','normal saline','0.9%','0.9 percent','sodium chloride','ringers','hartmanns','d5','d5w','dextrose 5','isotonic','a litre','a liter','one litre','one liter','1l','2l','500 cc','250 cc','fluids','some fluids','give fluids','start fluids','run fluids','maintenance fluids','iv fluids'],
  precheck:S=>S.access?null:'No access yet, sir.',
  run:(S,t,raw)=>{
   const m=(raw||'').match(/(\d+(?:\.\d+)?)\s*(?:l\b|litres?|liters?)/i);
@@ -1592,7 +1664,7 @@ act({id:'crystalloid',label:'Crystalloid',cat:'C',by:'lauren',dur:12,al:['saline
   S.meds.push({name:'Crystalloid',dose:n+' L',t:S.t,by:'Lauren',inf:S.infusions[S.infusions.length-1]});
   if(S.scn.kind==='trauma'&&S.crystalloid>=1)S.lesson('Crystalloid in a bleeding patient dilutes clotting factors, drops core temperature and pops soft clot. Product, not clear fluid.');
   return n+' litre'+(n>1?'s':'')+' of LR wide open through the warmer.';}});
-act({id:'txa',label:'TXA',cat:'C',by:'lauren',dur:15,al:['txa','tranexamic','tranexamic acid','get txa in','txa please','give the antifibrinolytic','antifibrinolytic','1g txa','2g txa','tranexamic acid please','cyklokapron','txa 1 gram','txa 2 grams','give tranexamic','lysine analogue'],
+act({id:'txa',label:'TXA',cat:'C',by:'lauren',dur:15,al:['txa','tranexamic','tranexamic acid','get txa in','txa please','give the antifibrinolytic','antifibrinolytic','1g txa','2g txa','tranexamic acid please','cyklokapron','txa 1 gram','txa 2 grams','give tranexamic','lysine analogue','clot stopper','the clot stopper','stop the bleeding drug','anti bleeding drug','the bleeding drug'],
  std:(S)=>{const kg=S.p.kg||80;return kg<30?{base:kg*15,kind:'mass',display:'15 mg/kg — '+Math.round(kg*15)+' mg (standard)'}:{base:2000,kind:'mass',display:'2 grams (standard)'};},
  dose:(S,raw,d)=>{
   const lo=S.p.kg&&S.p.kg<30?150:900, hi=S.p.kg&&S.p.kg<30?600:2200;
@@ -1601,7 +1673,7 @@ act({id:'txa',label:'TXA',cat:'C',by:'lauren',dur:15,al:['txa','tranexamic','tra
   return{label:d.display+' TXA'};},
  run:(S,t,raw,g)=>{S.medlog('TXA',g);if(S.flags.txa)return'Already in.';S.flags.txa=true;S.p.bleedRate*=.85;
   return g.d.display+' of TXA '+(S.flags.io?'through the IO':'through the IV')+', slow over ten minutes.';}});
-act({id:'calcium',label:'Calcium',cat:'C',by:'lauren',dur:12,al:['calcium','calcium chloride','cacl','calcium gluconate','push calcium','get calcium in','calcium please','calcium 1g','one amp of calcium','cacl2','calcium gluconate 3g','replace the calcium','ionised calcium'],
+act({id:'calcium',label:'Calcium',cat:'C',by:'lauren',dur:12,al:['calcium','calcium chloride','cacl','calcium gluconate','push calcium','get calcium in','calcium please','calcium 1g','one amp of calcium','cacl2','calcium gluconate 3g','replace the calcium','ionised calcium','the calcium','calcium for the blood','protect the heart with calcium'],
  std:(S)=>({base:1000,kind:'mass',display:'1 gram of calcium chloride (standard)'}),
  dose:(S,raw,d)=>{
   const gluc=/gluconate/i.test(raw);
@@ -1622,7 +1694,7 @@ act({id:'im_meds',label:'IM induction / sedation',cat:'RX',by:'lauren',dur:15,
   return{label:d.display+' ketamine IM'};},
  run:(S,t,raw,g)=>{S.flags.imMeds=true;S.p.pain=Math.max(0,S.p.pain-6);S.flags.analgesia=true;
   return g.d.display+' of ketamine intramuscular in the deltoid. Three to four minutes to work.';}});
-act({id:'analgesia',label:'Analgesia / sedation',cat:'RX',by:'lauren',dur:15,routeAsk:'Which route, sir — intravenous or intramuscular? The dose is different for each.',al:['ketamine','fentanyl','pain','analgesia','morphine','pain control','sedation','versed','midazolam','something for pain','he needs pain control','she needs pain control','give him something','give her something','treat his pain','knock the edge off','make him comfortable','make her comfortable','give something for pain','treat the pain','pain meds','analgesic','pain relief','something for the pain','analgesia please','opiate','opioid','ketalar','fentanil','sublimaze','dilaudid','hydromorphone','toradol','ketorolac','paracetamol iv','give an opiate','narcotic','pain medication','something strong'],
+act({id:'analgesia',label:'Analgesia / sedation',cat:'RX',by:'lauren',dur:15,routeAsk:'Which route, sir — intravenous or intramuscular? The dose is different for each.',al:['ketamine','fentanyl','pain','analgesia','morphine','pain control','sedation','versed','midazolam','something for pain','he needs pain control','she needs pain control','give him something','give her something','treat his pain','knock the edge off','make him comfortable','make her comfortable','give something for pain','treat the pain','pain meds','analgesic','pain relief','something for the pain','analgesia please','opiate','opioid','ketalar','fentanil','sublimaze','dilaudid','hydromorphone','toradol','ketorolac','paracetamol iv','give an opiate','narcotic','pain medication','something strong','the numbing stuff','something for pain','pain drug','pain medicine','take the edge off','something strong for pain'],
  std:(S)=>{const kg=S.p.kg||80;return{base:kg*.5,kind:'mass',display:Math.round(kg*.5)+' mg ketamine, 0.5 mg/kg (standard)'};},
  dose:(S,raw,d)=>{
   const kg=S.p.kg||80;
@@ -1710,13 +1782,13 @@ act({id:'epi_im',label:'Epinephrine',cat:'RX',by:'lauren',dur:12,routeAsk:'Epi w
    if(S.flags.epi>=1)S.p.airwayClosing=false;
   }
   return g.d.display+' of epinephrine in the lateral thigh, intramuscular.';}});
-act({id:'epi_drip',label:'Vasopressor infusion',cat:'RX',by:'majorb',dur:35,al:['epi drip','push dose','pressor','norepinephrine','levophed','vasopressor','pressor infusion','start a pressor drip','norepi','noradrenaline','levo','phenylephrine','vasopressin','dopamine','start a pressor','pressor support','titrate a pressor','push dose pressor'],
+act({id:'epi_drip',label:'Vasopressor infusion',cat:'RX',by:'majorb',dur:35,al:['epi drip','push dose','pressor','norepinephrine','levophed','vasopressor','pressor infusion','start a pressor drip','norepi','noradrenaline','levo','phenylephrine','vasopressin','dopamine','start a pressor','pressor support','titrate a pressor','push dose pressor','pressor','a pressor','the pressor','vasopressor','squeeze drug','the squeeze drug','pressure drug'],
  run:S=>{S.flags.pressor=true;S.p.squeeze=Math.min(1.2,(S.p.squeeze||1)+.18);
   if(!S.flags.bloodGiven&&S.p.bleedRate>0)S.lesson('Pressors on an unreplaced haemorrhage squeeze an empty tank. Product first.');
   return'Drip is up and titrating.';}});
 act({id:'antihistamine',label:'Antihistamine (anaphylaxis adjunct)',cat:'RX',by:'lauren',dur:15,al:['benadryl','diphenhydramine','antihistamine','famotidine','pepcid','h1 blocker','h2 blocker','antihistamines please','give a steroid'],
  run:S=>{S.medlog('Antihistamine (anaphylaxis adjunct)',g);if(S.p.anaphylaxis!==undefined&&!S.flags.epi)S.lesson('Antihistamines and steroids do not treat anaphylactic shock or the airway. Only epinephrine does.');return'Diphenhydramine and famotidine in. Adjuncts only — they do nothing for the airway or the pressure.';}});
-act({id:'albuterol',label:'Nebulised bronchodilator',cat:'RX',by:'amy',dur:18,al:['albuterol','neb','duoneb','bronchodilator','salbutamol','nebulizer','salbutamol neb','ventolin','ipratropium','atrovent','back to back nebs','nebulise him','both nebs','give both nebs','neb him','nebs'],
+act({id:'albuterol',label:'Nebulised bronchodilator',cat:'RX',by:'amy',dur:18,al:['albuterol','neb','duoneb','bronchodilator','salbutamol','nebulizer','salbutamol neb','ventolin','ipratropium','atrovent','back to back nebs','nebulise him','both nebs','give both nebs','neb him','nebs','the inhaler','puffer','the puffer','breathing medicine','breathing drug','open his airways','open her airways','the nebuliser','nebuliser','nebulizer','the neb'],
  run:S=>{S.medlog('Nebulised bronchodilator',g);S.p.bronchospasm=Math.max(0,(S.p.bronchospasm||0)-.2);return'Continuous neb running.';}});
 act({id:'cooling',label:'Active cooling',cat:'RX',by:'dorian',dur:30,al:['cool him','cool her','cooling','ice','cold water','immersion','ice sheets','cold fluids','ice packs','misting','fan'],
  run:S=>{S.flags.cooling=true;S.p.coolRate=.055;return'Ice sheets neck, axillae, groin, cold water over him, fan going.';}});
@@ -1726,7 +1798,7 @@ act({id:'weight',label:'Estimate weight / Broselow',cat:'D',by:'lauren',dur:10,a
  al:['weight','how much does he weigh','how much does she weigh','broselow','how many kilos','weigh','estimate the weight','length tape','what does he weigh','what does she weigh','get me a weight','how heavy is he'],
  run:S=>{S.flags.weight=true;return{find:S.p.kg?('About '+S.p.kg+' kilos. Broselow puts '+(S.p.kg<25?'him in the yellow zone':'that in the adult range')+'.'):'Adult, call it eighty kilos.'};}});
 act({id:'dextrose',label:'Dextrose for hypoglycaemia',cat:'RX',by:'lauren',dur:15,routeAsk:'Dextrose which way — intravenous, or glucagon intramuscular if we have no line?',
- al:['d50','d-50','dextrose','d10','d 10','d25','amp of dextrose','amp of d50','give sugar','give him sugar','give her sugar','some sugar','sugar please now','glucose iv','iv glucose','treat the hypoglycemia','treat the hypoglycaemia','glucagon','correct the sugar','fix his sugar','fix her sugar','oral glucose','glucose gel','dextrose 50'],
+ al:['d50','d-50','dextrose','d10','d 10','d25','amp of dextrose','amp of d50','give sugar','give him sugar','give her sugar','some sugar','sugar please now','glucose iv','iv glucose','treat the hypoglycemia','treat the hypoglycaemia','glucagon','correct the sugar','fix his sugar','fix her sugar','oral glucose','glucose gel','dextrose 50','sugar water','give him sugar','give her sugar','glucose drip','sweet stuff','amp of dextrose'],
  std:(S)=>{const kg=S.p.kg||80;return kg<30?{base:kg*2,kind:'mass',display:Math.round(kg*2)+' mL of D10, 2 mL/kg (standard)'}:{base:25000,kind:'mass',display:'one amp of D50, 25 grams (standard)'};},
  dose:(S,raw,d)=>{
   if(d.kind==='amp')return{label:d.val+' amp of dextrose'};
@@ -1742,19 +1814,19 @@ act({id:'thiamine',label:'Thiamine',cat:'RX',by:'lauren',dur:12,
  dose:(S,raw,d)=>({label:d.display+' thiamine'}),
  run:(S,t,raw,g)=>{S.medlog('Thiamine',g);S.flags.thiamine=true;return g.d.display+' in, before the glucose.';}});
 act({id:'antiemetic',label:'Antiemetic',cat:'RX',by:'lauren',dur:12,
- al:['ondansetron','zofran','antiemetic','anti-emetic','something for the nausea','stop him vomiting','metoclopramide','maxolon','promethazine'],
+ al:['ondansetron','zofran','antiemetic','anti-emetic','something for the nausea','stop him vomiting','metoclopramide','maxolon','promethazine','something for nausea','something for sickness','sickness medicine','anti sickness','anti nausea','stop him being sick','stop her being sick','the sickness drug'],
  std:(S)=>({base:4,kind:'mass',display:'4 mg ondansetron (standard)'}),
  dose:(S,raw,d)=>({label:d.display+' ondansetron'}),
  run:(S,t,raw,g)=>{S.medlog('Antiemetic',g);S.flags.antiemetic=true;return g.d.display+', slow. Should settle in a few minutes.';}});
 act({id:'magnesium',label:'Magnesium',cat:'RX',by:'lauren',dur:20,
- al:['magnesium','mag','mgso4','magnesium sulphate','magnesium sulfate','give some mag','2 grams of mag'],
+ al:['magnesium','mag','mgso4','magnesium sulphate','magnesium sulfate','give some mag','2 grams of mag','the mag','mag','magnesium for the wheeze'],
  std:(S)=>({base:2000,kind:'mass',display:'2 grams magnesium over 20 minutes (standard)'}),
  dose:(S,raw,d)=>{if(d.base>6000)return{bad:'That is '+d.text+' of magnesium. Two grams over twenty minutes is standard. Confirm?'};
   return{label:d.display+' magnesium'};},
  run:(S,t,raw,g)=>{S.medlog('Magnesium',g);S.flags.magnesium=true;if(S.p.bronchospasm)S.p.bronchospasm=Math.max(0,S.p.bronchospasm-.18);
   return g.d.display+', running over twenty minutes.';}});
 act({id:'amiodarone',label:'Antiarrhythmic',cat:'RX',by:'lauren',dur:20,
- al:['amiodarone','amio','antiarrhythmic','lidocaine','procainamide','adenosine','antiarrhythmic drug','give amiodarone'],
+ al:['amiodarone','amio','antiarrhythmic','lidocaine','procainamide','adenosine','antiarrhythmic drug','give amiodarone','the anti arrhythmic','antiarrhythmic drug','rhythm drug','the rhythm drug','settle the rhythm'],
  std:(S)=>({base:300,kind:'mass',display:'300 mg amiodarone (standard)'}),
  dose:(S,raw,d)=>({label:d.display+' antiarrhythmic'}),
  danger:(S,raw)=>{
@@ -1763,7 +1835,7 @@ act({id:'amiodarone',label:'Antiarrhythmic',cat:'RX',by:'lauren',dur:20,
   return null;},
  run:(S,t,raw,g)=>{S.medlog('Antiarrhythmic',g);S.flags.antiarrhythmic=true;return g.d.display+' in, running slowly, watching the pressure.';}});
 act({id:'k_treatment',label:'Shift the potassium',cat:'RX',by:'lauren',dur:25,
- al:['insulin','shift the potassium','bicarb','sodium bicarbonate','treat the potassium','insulin and dextrose','kayexalate','lokelma','shift it','drive the potassium in','insulin dextrose'],
+ al:['insulin','shift the potassium','bicarb','sodium bicarbonate','treat the potassium','insulin and dextrose','kayexalate','lokelma','shift it','drive the potassium in','insulin dextrose','the potassium drugs','shift the potassium','potassium treatment','drive the potassium in'],
  std:(S)=>({base:10,kind:'units',display:'10 units insulin with an amp of D50 (standard)'}),
  dose:(S,raw,d)=>{
   if(/insulin/i.test(raw)&&d.kind==='units'&&(d.base<4||d.base>12))return{bad:'That is '+d.text+' of insulin. Standard is ten units with an amp of D50. Confirm?'};
@@ -1772,7 +1844,7 @@ act({id:'k_treatment',label:'Shift the potassium',cat:'RX',by:'lauren',dur:25,
   if(!S.flags.calcium)S.lesson('Insulin and bicarbonate shift potassium but they do not protect the myocardium. Calcium goes first, within seconds, then you shift.');
   return g.d.display+' as ordered, with dextrose to cover it.';}});
 act({id:'atropine',label:'Atropine',cat:'RX',by:'lauren',dur:15,routeAsk:'Atropine which route — intravenous or the autoinjector intramuscular?',
- al:['atropine','atropen','dry him up','antidote','atropine 2mg','more atropine','double the atropine','atropine sulphate'],
+ al:['atropine','atropen','dry him up','antidote','atropine 2mg','more atropine','double the atropine','atropine sulphate','heart rate drug','speed his heart up','speed her heart up','the slow heart drug'],
  std:(S)=>{const kg=S.p.kg||80;return kg<30?{base:kg*.02,kind:'mass',display:(kg*.02).toFixed(1)+' mg (standard)'}:{base:2,kind:'mass',display:'2 mg, doubling until the secretions dry (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80,peds=kg<30;
   if(d.kind!=='mass')return{bad:'Atropine in milligrams, sir. How much?'};
@@ -1782,7 +1854,7 @@ act({id:'atropine',label:'Atropine',cat:'RX',by:'lauren',dur:15,routeAsk:'Atropi
  run:(S,t,raw,g)=>{S.medlog('Atropine',g);S.flags.atropine=(S.flags.atropine||0)+1;
   return g.d.display+' of atropine. Titrating to the secretions, not to the heart rate — tell me when to give the next one.';}});
 act({id:'pralidoxime',label:'Pralidoxime (2-PAM)',cat:'RX',by:'lauren',dur:20,
- al:['pralidoxime','2-pam','2 pam','pam','oxime','duodote','reactivate'],
+ al:['pralidoxime','2-pam','2 pam','pam','oxime','duodote','reactivate','nerve agent antidote','the second nerve drug','nerve antidote'],
  std:(S)=>({base:1500,kind:'mass',display:'1.5 grams over fifteen minutes (standard)'}),
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
   if(d.base<600||d.base>2200)return{bad:'That is '+d.text+'. Adult pralidoxime is 1 to 2 grams over fifteen minutes. Confirm?'};
@@ -1790,7 +1862,7 @@ act({id:'pralidoxime',label:'Pralidoxime (2-PAM)',cat:'RX',by:'lauren',dur:20,
  run:(S,t,raw,g)=>{S.medlog('Pralidoxime (2-PAM)',g);S.flags.pralidoxime=true;S.p.nerve=Math.max(0,(S.p.nerve||0)-.45);
   return g.d.display+' of pralidoxime over fifteen minutes. This is the one that actually pulls the agent off the enzyme.';}});
 act({id:'seizure_med',label:'Benzodiazepine for seizures',cat:'RX',by:'lauren',dur:15,
- al:['diazepam','valium','seizure','anticonvulsant','stop the seizure','lorazepam','ativan','midaz for the seizure','cana','stop him fitting','treat the seizure','benzo please','give a benzo','keppra','levetiracetam','phenytoin','fosphenytoin','valproate','second line anticonvulsant','load him with keppra'],
+ al:['diazepam','valium','seizure','anticonvulsant','stop the seizure','lorazepam','ativan','midaz for the seizure','cana','stop him fitting','treat the seizure','benzo please','give a benzo','keppra','levetiracetam','phenytoin','fosphenytoin','valproate','second line anticonvulsant','load him with keppra','anti seizure drug','the seizure drug','stop the fitting','fit drug','the fit drug'],
  std:(S)=>({base:10,kind:'mass',display:'10 mg diazepam (standard)'}),
  dose:(S,raw,d)=>{if(d.base<2||d.base>20)return{bad:'That is '+d.text+'. Diazepam 10 milligrams, or midazolam 10 intramuscular. Confirm?'};
   return{label:d.display+' benzodiazepine'};},
@@ -1973,7 +2045,7 @@ act({id:'fetal',label:'Assess the pregnancy',cat:'D',by:'dorian',dur:35,assess:t
  precheck:S=>S.p.pregnant?null:'This patient is not pregnant, sir — nothing obstetric to assess.',
  run:S=>({find:'Fundus is up at the costal margin — call it thirty-six weeks or so. Fetal heart on the probe is about 170 and I can see decelerations. The uterus is firm and tender between contractions. There is dark blood at the introitus.'})});
 act({id:'naloxone',label:'Naloxone',cat:'RX',by:'lauren',dur:12,routeAsk:'Naloxone which way — intravenous, intramuscular or intranasal?',
- al:['naloxone','narcan','reverse the opioid','opioid reversal','reversal agent','reverse him','give narcan','reverse the opiate','narcan please','naloxone please','naloxone 0.4','narcan 2mg','intranasal narcan','reverse the fentanyl'],
+ al:['naloxone','narcan','reverse the opioid','opioid reversal','reversal agent','reverse him','give narcan','reverse the opiate','narcan please','naloxone please','naloxone 0.4','narcan 2mg','intranasal narcan','reverse the fentanyl','the antidote for opioids','opioid antidote','wake him up drug','reversal for the opiate'],
  std:(S)=>({base:.4,kind:'mass',display:'0.4 mg, titrated (standard)'}),
  dose:(S,raw,d)=>{if(d.kind!=='mass')return{bad:'Naloxone in milligrams, sir. How much?'};
   if(d.base>2.5)return{bad:'That is '+d.text+'. That much will strip him and he will wake up fighting and in withdrawal — I would start at 0.4 and titrate to breathing. Confirm?'};
@@ -1987,6 +2059,15 @@ act({id:'naloxone',label:'Naloxone',cat:'RX',by:'lauren',dur:12,routeAsk:'Naloxo
   if(S.p.opioid>.1)return g.d.display+' in. Better, but he is still under it — give me another dose.';
   return g.d.display+' in. He is breathing on his own, twelve a minute. Titrate to respirations, not to consciousness.';}});
 act({id:'insulin_inf',label:'Insulin infusion',cat:'RX',by:'majorb',dur:30,
+ danger:(S,raw)=>{
+  if(!S.flags.labs)
+   return'Sir, I have no potassium yet. Insulin drives it into the cells, and if he is already low that will stop his heart. Labs first.';
+  const litres=(S.infusions||[]).filter(f=>f.kind==='fluid').reduce((a,f)=>a+(f.given||0),0);
+  if(litres<1)
+   return'Fluid before insulin, sir. He is profoundly dry and insulin without volume will drop his pressure.';
+  if(S.p.hhs)
+   return'This is hyperosmolar rather than ketoacidosis — fluid does most of the work here, and insulin goes in late and slow or his osmolality falls too fast.';
+  return null;},
  al:['insulin infusion','insulin drip','start insulin','insulin for the dka','0.1 units','begin insulin','actrapid','novorapid','regular insulin','insulin at 0.1'],
  std:(S)=>{const kg=S.p.kg||80;return{base:kg*.1,kind:'units',display:(kg*.1).toFixed(1)+' units an hour, 0.1 per kilo (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
@@ -2007,7 +2088,7 @@ act({id:'artesunate',label:'Artesunate',cat:'RX',by:'lauren',dur:25,
   return g.d.display+' of intravenous artesunate. Repeat at twelve and twenty-four hours.';}});
 act({id:'anticoag',label:'Anticoagulation',cat:'RX',by:'lauren',dur:15,
  al:['heparin','anticoagulate','anticoagulation','unfractionated heparin','heparin drip','heparin infusion',
-  'enoxaparin','lovenox','low molecular weight heparin','lmwh','bolus of heparin','start heparin'],
+  'enoxaparin','lovenox','low molecular weight heparin','lmwh','bolus of heparin','start heparin','the blood thinner','blood thinner','thin his blood','thin her blood'],
  doseAsk:'Which anticoagulant and what dose, sir? Unfractionated heparin is 60 units per kilo as a bolus, maximum four thousand, then twelve per kilo an hour. Enoxaparin is 1 milligram per kilo.',
  dose:(S,raw,d)=>{
   const kg=S.p.kg||80; raw=expand(String(raw||''));
@@ -2042,7 +2123,7 @@ act({id:'aspirin',label:'Aspirin / antiplatelet',cat:'RX',by:'lauren',dur:12,
   return{label:d.display+' '+(/aspirin|asa/i.test(raw)?'aspirin':'antiplatelet')};},
  run:(S,t,raw,g)=>{S.medlog('Aspirin / antiplatelet',g);S.flags.aspirin=true;return g.d.display+', chewed not swallowed.';}});
 act({id:'reperfusion',label:'Reperfusion — lyse or transfer for PCI',cat:'CMD',by:'lauren',dur:45,
- al:['thrombolysis','lyse him','tenecteplase','tnk','alteplase','fibrinolysis','pci','cath lab','reperfusion','thrombolytic','lytics'],
+ al:['thrombolysis','lyse him','tenecteplase','tnk','alteplase','fibrinolysis','pci','cath lab','reperfusion','thrombolytic','lytics','clot buster','the clot buster','clot drug','the clot drug','lyse him','lyse her','the lytic','lytic drug','thrombolytic','bust the clot'],
  precheck:S=>S.flags.ecg12?null:'I have not seen a 12-lead yet, sir. I am not lysing anybody on a three-lead.',
  danger:(S,raw)=>{
   if(!/lyse|tenecteplase|tnk|alteplase|thrombolys|lytic|fibrinolysis/i.test(raw||''))return null;
@@ -2121,7 +2202,7 @@ act({id:'nitro',label:'Nitroglycerin',cat:'RX',by:'lauren',dur:15,
    return'Given. His pressure just fell off the monitor, sir.';}
   return g.d.display+' sublingual. Pain is easing.';}});
 act({id:'beta_blocker',label:'Beta blocker',cat:'RX',by:'lauren',dur:15,
- al:['metoprolol','beta blocker','esmolol','labetalol','slow his heart','rate control','lopressor'],
+ al:['metoprolol','beta blocker','esmolol','labetalol','slow his heart','rate control','lopressor','slow his heart','slow her heart','slow the heart down','the beta blocker','block the heart rate'],
  std:(S)=>({base:5,kind:'mass',display:'5 mg metoprolol (standard)'}),
  danger:(S,raw)=>{
   if(S.sbp()<110||S.p.bleedRate>40||S.p.septic||S.p.anaphylaxis)return'Sir, that tachycardia is the only thing holding his pressure up. If I block it he loses his cardiac output and I cannot give it back.';
@@ -2140,7 +2221,7 @@ act({id:'beta_blocker',label:'Beta blocker',cat:'RX',by:'lauren',dur:15,
    return'In. Rate is down. So is everything else.';}
   return g.d.display+', rate is settling.';}});
 act({id:'hypertonic',label:'Hypertonic saline',cat:'RX',by:'lauren',dur:20,
- al:['hypertonic','3% saline','three percent saline','hypertonic saline','mannitol','5% saline','23.4','3 percent','23.4 percent','osmotherapy','lower the icp','treat the icp'],
+ al:['hypertonic','3% saline','three percent saline','hypertonic saline','mannitol','5% saline','23.4','3 percent','23.4 percent','osmotherapy','lower the icp','treat the icp','the salty stuff','salty saline','thick salt','strong salt','the brain salt','concentrated salt'],
  std:(S)=>({base:250,kind:'vol',display:'250 mL of 3% (standard)'}),
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
   if(/mannitol/i.test(raw)){if(d.base<.25*kg*1000||d.base>1.2*kg*1000)return{bad:'That is '+d.text+' of mannitol. Usual is half a gram to a gram per kilo, so '+Math.round(.5*kg)+' to '+Math.round(kg)+' grams. Confirm?'};return{label:d.display+' mannitol'};}
@@ -2160,7 +2241,7 @@ act({id:'traction',label:'Traction splint',cat:'C',by:'mitch',dur:70,
 act({id:'steroid',label:'Corticosteroid',cat:'RX',by:'lauren',dur:20,
  al:['hydrocortisone','steroid','steroids','solu cortef','dexamethasone','methylprednisolone','solu medrol',
   'solumedrol','solu-medrol','medrol','prednisolone','prednisone','stress dose steroid','stress dose steroids',
-  'give steroid','corticosteroid','steroid for the asthma'],
+  'give steroid','corticosteroid','steroid for the asthma','the steroid','steroid drug','stress dose','give him steroid','give her steroid'],
  dose:(S,raw,d)=>{
   const kg=S.p.kg||80;
   raw=expand(String(raw||''));
@@ -2204,7 +2285,7 @@ act({id:'abx',label:'Antibiotics',cat:'RX',by:'lauren',dur:15,
  doseAsk:'Which antibiotic, sir, and what dose? For a penetrating wound here I would reach for cefazolin or ertapenem.',
  al:['antibiotics','abx','ertapenem','cefazolin','ancef','ceftriaxone','rocephin','zosyn','pip tazo',
   'meropenem','vancomycin','clindamycin','metronidazole','flagyl','gentamicin','moxifloxacin','broad spectrum',
-  'cover him with antibiotics','give abx','antibiotic please','prophylactic antibiotics','antibiotic prophylaxis'],
+  'cover him with antibiotics','give abx','antibiotic please','prophylactic antibiotics','antibiotic prophylaxis','the antibiotic','bug drugs','the bug drugs','infection drug','infection medicine','cover him for infection','cover her for infection'],
  dose:(S,raw,d)=>{
   const kg=S.p.kg||80, peds=kg<40;
   raw=expand(String(raw||''));
@@ -2348,8 +2429,9 @@ act({id:'surgery_here',label:'Damage control at the bedside',cat:'C',by:'surgeon
   return'Working. '+(S.p.junctionalBleed?'I have proximal control and I am packing hard — that is as good as it gets outside a theatre. ':'Bleeding is slowed as much as I can manage here. ')+
    'This is a holding measure, not a repair. He still needs a table, but he can survive the trip now. Somebody keep product going while I work.';}});
 act({id:'book_or',label:'Book a specific operation',cat:'CMD',by:'surgeon',dur:10,
- al:['activate the or for','book the or for','open the or for','table for a','set up for a','we need a',
-  'prepare for a laparotomy','set up for a thoracotomy','get the table ready for','activate theatre for'],
+ al:['activate the or for','book the or for','open the or for','table for a','activate theatre for',
+  'prepare for a laparotomy','set up for a thoracotomy','set up the table for','get the table ready for',
+  'book a theatre for','open a room for','set up theatre for'],
  run:(S,t,raw)=>{
   const k=namedSurgery(raw);
   if(!k)return{say:'Which operation, sir? I can give you a damage control laparotomy, a thoracotomy, vascular control and shunting, a completion amputation, external fixation, a fasciotomy, a washout and debridement, or a neck exploration. That is what this detachment can do — anything else is a flight.',nocredit:true};
@@ -2398,16 +2480,27 @@ act({id:'teleconsult',label:'Teleconsult a specialty',cat:'CMD',by:'mitch',dur:7
    /ophthal|eye|optha/.test(r)?'eye':/respir|pulmon|chest physician/.test(r)?'resp':
    /neuro/.test(r)?'neuro':'icu';
   S.flags.teleconsult=(S.flags.teleconsult||[]).concat(pick);
-  const fit={neuro:S.p.tbi||S.p.herniation,neurol:S.p.seizing||S.p.stroke||S.p.tetanus,
-   burn:S.p.tbsa,ortho:S.p.femur||S.p.pelvis||S.p.pelvisRate,ob:S.p.pregnant,
-   tox:S.p.nerve||S.p.cyanide||S.p.opioid||S.p.toxAlcohol,
-   ct:S.p.tamponade||S.p.tension,cards:S.p.stemi!==undefined||S.p.dysrhythmia,
-   vasc:S.p.junctionalBleed,id:S.p.septic||S.p.malaria,renal:S.p.hyperK||S.p.rhabdo,
-   endo:S.p.adrenal||S.p.thyroid||S.p.dka||S.p.hhs,haem:S.p.sickle,eye:S.p.openGlobe,
-   resp:S.p.bronchospasm||S.p.shunt>.25,icu:true}[pick];
+  const p=S.p, ctx=((S.scn.mist||'')+' '+(S.scn.arrival||'')+' '+(S.scn.title||'')).toLowerCase();
+  const fit={
+   neuro:p.tbi||p.herniation||p.cordInjury||p.neurogenic||/spine|cord|head injury|pupil/.test(ctx),
+   neurol:p.seizing||p.stroke||p.tetanus||/seizure|stroke|tetanus|weakness/.test(ctx),
+   burn:p.tbsa||/burn|phosph|fire/.test(ctx),
+   ortho:p.femur||p.pelvis||p.pelvisRate||p.compartment||/pelvi|femur|fracture|fall|spine|compartment|rollover|hard landing|crush|limb|arm|leg|minor injur/.test(ctx),
+   ob:p.pregnant,
+   tox:p.nerve||p.cyanide||p.opioid||p.toxAlcohol||p.coMask||/overdose|poison|carbon monoxide|methanol|nerve agent/.test(ctx),
+   ct:p.tamponade||p.tension||p.flail||/chest|thoracic|sternum|cardiac injury|haemothorax|hemothorax|jaw|face|airway/.test(ctx),
+   cards:p.stemi!==undefined||p.dysrhythmia||/chest pain|infarct|stemi|ecg/.test(ctx),
+   vasc:p.junctionalBleed||p.extremityBleed||p.pelvisRate||/vascular|axilla|groin|junctional|pelvi|buttock|impal|amputat|thigh/.test(ctx),
+   id:p.septic||p.malaria||/sepsis|infect|fever|malaria|necrot|meningo/.test(ctx),
+   renal:p.hyperK||p.rhabdo||/potassium|dialysis|crush|rhabdo|electric/.test(ctx),
+   endo:p.adrenal||p.thyroid||p.dka!==undefined||p.hhs||/diabet|thyroid|adrenal|ketoacid|osmolar/.test(ctx),
+   haem:p.sickle||/sickle|transfusion/.test(ctx),
+   eye:p.openGlobe||/eye|globe|vision/.test(ctx),
+   resp:p.bronchospasm||p.shunt>.25||/asthma|wheeze|breath|pulmonary|blast lung/.test(ctx),
+   icu:true}[pick];
   const REC={
    neuro:'Neurosurgery on the line. With a blown pupil and that GCS they want systolic over 110, normocapnia — end-tidal 35 to 40, no lower — head of bed up thirty if his pressure tolerates it, hypertonic rather than mannitol if he is at all dry, and they want him moving to a scanner now. They will take him. Ask them to open the OR before he lands.',
-   burn:'Burn centre. They want the Rule of Tens with titration to half a mil per kilo of urine output, not a fixed formula. They are asking about circumferential burns and whether you have done escharotomies, and they want carboxyhaemoglobin and a lactate before he flies. They will accept — flight surgeon wants him tubed for the flight regardless.',
+   burn:'Burn centre. Rule of Tens to start — percentage burn times ten is your millilitres an hour for an adult between forty and eighty kilos — then titrate to urine output: thirty to fifty millilitres an hour in an adult, half to one per kilo in a child, adjusting the rate by twenty to twenty-five percent an hour. Not a fixed formula. They are asking about circumferential burns and whether you have done escharotomies, and they want carboxyhaemoglobin and a lactate before he flies. They will accept — flight surgeon wants him tubed for the flight regardless.',
    ortho:'Orthopaedics. They want the pelvis bound at the trochanters not the crests, traction on the femur, and photographs of the open wounds before anything gets dressed. Antibiotics within an hour and they want to know the exact time of the tourniquet.',
    ob:'Obstetrics. Left uterine displacement continuously, resuscitate the mother and the baby follows, and they want fibrinogen — in pregnancy under two is already critical. They are asking whether you have fetal heart tones and warning you that if the mother arrests, the uterus comes out within four minutes, in the bay, not in an OR.',
    tox:'Toxicology. No ceiling on atropine — double every five minutes until the chest is dry, ignore the heart rate. Pralidoxime as early as you can before the enzyme ages. They want to know how many other casualties and whether your team is decontaminated, and they are notifying the medical threat cell.',
@@ -2441,7 +2534,7 @@ act({id:'blood_bank',label:'Walking blood bank / MTP',cat:'CMD',by:'lauren',dur:
   S.flags.wbb=true;S.wbbAt=S.t;
   return'Walking blood bank activated. Panel called, screening and typing starting now. Realistically that is thirty minutes before the first fresh unit hangs, then twenty more units. Fridge has '+S.bank+' unit'+(S.bank===1?'':'s')+' to get us there.';}});
 act({id:'handoff',label:'Hand over to the surgeon or evac team',cat:'CMD',by:'surgeon',dur:45,
- al:['handoff','hand off','sign out','hand over','give report','sbar','summarize for','my report is','mist report','hand her over','brief the evac','report to evac','turnover','hand him over','give them my report','my handover is','report to the receiving team','sign him over','give the surgeon a report','report to the surgeon','tell the surgeon','brief the surgeon','my mist is','mist to the surgeon','pass the report'],
+ al:['handoff','hand off','sign out','hand over','give report','sbar','summarize for','my report is','mist report','hand her over','brief the evac','report to evac','turnover','hand him over','give them my report','my handover is','report to the receiving team','sign him over','give the surgeon a report','report to the surgeon','tell the surgeon','brief the surgeon','my mist is','mist to the surgeon','pass the report','package him up','packaged up','get him packaged','package the patient','packaged for transfer','ready him for transfer'],
  run:(S,t,raw)=>{
   S.flags.handoff=true;
   const toFlight=/evac|flight|bird|dustoff|aircrew|receiving|transport/i.test(raw||'')||(S.flags.medevac&&!S.flags.surgeon);
@@ -2684,7 +2777,7 @@ const SCN=[
  knownAtArrival:['front'],
  pulses:(S,b)=>b<80?'Right radial is weaker than the left. Both feet cool, faint pedal pulses.':'Radials equal both sides, pedal pulses present both feet.',
  airwayFind:S=>'Patent, he is talking, but only in bursts.',
- breath:S=>S.p.tension>.5?'Nothing on the right at all. The trachea feels pushed left and his neck veins are standing out.':S.p.tension>.15?'Much quieter on the right, good on the left.':'Air entry back on the right, wet at the base.',
+ breath:S=>S.p.tension>.5?'Nothing on the right at all. The trachea feels pushed left and his neck veins are standing out.':S.p.tension>.15?'Air entry much quieter on the right and hyperresonant to percussion on that side. Trachea midline for now. Breath sounds good on the left.':'Air entry back on the right, wet at the base.',
  front:S=>'One entry, right chest, fifth space mid-clavicular'+(S.flags.seal?', vented seal over it':', bubbling with each breath')+'.'+(S.flags.chestTube?' Tube in on the right.':'')+' Abdomen soft.',
  groin:S=>'Groin and perineum clean.',axilla:S=>'Both axillae clean, no exit under the arm.',
  skull:S=>'Scalp intact.',back:S=>'No exit posteriorly. Back is clean.',
@@ -3541,6 +3634,7 @@ const SCN=[
  labs:S=>'Hgb 12.8, lactate 3.2, pH 7.34. Nothing dramatic.',
  critical:[{id:'pulsecheck',by:110,label:'All four extremities — the differential is the finding'},
   {id:'monitor_all',by:110,label:'Full monitoring'},
+  {id:'ecg12',by:180,label:'Twelve lead — blunt cardiac injury is diagnosed on the rhythm, not the bruise'},
   {id:'nibp',by:160,label:'A pressure in both arms, not one'},
   {id:'analgesia',by:230,label:'Analgesia — pain drives the shear forces up'},
   {id:'iv',by:200,label:'Access',alt:['io']},
@@ -3622,6 +3716,7 @@ const SCN=[
  neuro:S=>'GCS '+S.gcs()+'. Frightened and exhausted. If she gets drowsy that is not improvement.',
  labs:S=>'pH 7.31 with a CO2 of 46 — a normal or rising CO2 in an asthmatic breathing that hard means she is tiring, not improving. Lactate 3.4.',
  critical:[{id:'albuterol',by:90,label:'Continuous nebulised bronchodilator'},
+  {id:'steroid',by:300,label:'Steroids early — they do nothing for an hour, which is why they go in now'},
   {id:'o2',by:90,label:'Oxygen'},{id:'antihistamine',by:200,label:'Steroids early — they take hours to work'},
   {id:'iv',by:180,label:'Access',alt:['io']},
   {id:'epi_im',by:260,label:'IM epinephrine for a patient who is not moving enough air to inhale a neb'},
@@ -4630,6 +4725,10 @@ function majorb(S){
  say('team',rnd(MAJORB_LINES),person('majorb').nm);
 }
 function chatter(S){
+ /* idle talk belongs to the quiet moments, not to a resuscitation in trouble */
+ if(S.flags&&S.flags.awaitUpdate)return;
+ if(S.flags&&S.flags.surgeonHere&&!S.flags.sgUpdated)return;
+ if(vitals(S).sbp<95||S.p.bleedRate>40||(S.p.periArrest||0)>.2)return;
  if(!CFG.chatter||S.quiet||S.over||S.phase!=='run')return;
  if(S.t<50||S.t-S.lastChatter<100)return;
  if(Math.random()>.03)return;
@@ -4885,6 +4984,9 @@ function lev(a,b,max){
 const KEEP=new Set(('percussion rales rhonchi mentation crepitus priapism peritonism posturing obtunded lucid the and for with from that this they them then than there their have has had not but you your his her him she are was were will would could should about into over under back front left right side both all any each every some more most less least much many other another same such just only also very still even well good bad worse better best deep shallow clean dirty clear cloudy open closed close cold warm hot cool wet dry hard soft tight loose fast slow high low big small large long short thick thin full empty new old young last next first second third leg legs arm arms hand hands foot feet head neck face chest belly abdomen back skin bone vein veins wound wounds blood bleeding pain injury injuries patient guy man woman kid child boy girl people team room bay floor door bed litter time minute minutes hour hours second seconds now soon later before after while during until since again once twice please thanks thank okay yeah yes no nope sure fine need needs needed want wants get gets got give gives gave take takes took put puts make makes made keep keeps kept find finds found look looks looked see sees saw tell tells told say says said ask asks asked think thinks thought know knows knew come comes came going go goes went done doing did been being can cannot cant do does don dont what when where which who whom whose why how many much bag bags box boxes kit kits tray trays glove gloves mask masks tube tubes line lines').split(' '));
 /* people type contractions; the alias list does not contain any */
 const MEDSWAP={
+ 'moonan':'moon','dr moonan':'dr moon','moon an':'moon','mun':'moon','doctor moonan':'dr moon',
+ 'for the hour':'for the or','to the hour':'to the or','in the hour':'in the or','apple history':'ample history',
+
  'overseed':'versed','over seed':'versed','oversee':'versed','versaid':'versed','verset':'versed','bersed':'versed',
  'rocky romeo':'rocuronium','rocky rhodium':'rocuronium','rocky ronium':'rocuronium','rocky uranium':'rocuronium',
  'rock your own ium':'rocuronium','roc uronium':'rocuronium',
@@ -5080,6 +5182,10 @@ function matchAll(rawIn){
  if(res.length>1&&res.some(a=>a.id==='ack'))return res.filter(a=>a.id!=='ack');
  if(res.length>1&&res.some(a=>a.id==='reassess'))return res.filter(a=>a.id!=='reassess');
  if(res.some(a=>a.id==='book_or'))return [A.book_or];
+ if(res.some(a=>a.id==='glucose')&&A.dextrose
+    &&!/\b(check|what is|whats|get me a|recheck|measure|point of care|poc|read|test)\b/i.test(raw)
+    &&(/\b\d+\s*(g|gram|grams|ml|mls|amp|amps|percent|%)\b/i.test(raw)||/\b(give|push|run|hang|administer)\b/i.test(raw)))
+  return [A.dextrose];
  if(/\b(baby|infant|newborn|neonate)\b/i.test(raw)&&res.some(a=>a.id==='neonate'))return [A.neonate];
 
  /* ---- asking how much of something you have must never spend any of it ---- */
@@ -5164,7 +5270,9 @@ function localAnswer(raw){
  if(!S||S.over)return null;
  let q=expand(String(raw)).toLowerCase().trim();
  /* strip a leading name so "Lauren, how many lines" is still a question */
+ q=q.replace(/^(ok|okay|right|alright|all right|so|now|and|well|hey|um|uh)\b[\s,]*/,'');
  q=q.replace(/^(amy|dorian|lauren|mitch|major b|majorb|everyone|team|somebody|someone)\s*[,:]?\s*/,'');
+ q=q.replace(/^(ok|okay|right|alright|all right|so|now|and|well)\b[\s,]*/,'');
  if(!/\?\s*$|^(are|is|do|does|did|has|have|how|what|which|who|where|when|any|am i|tell me how|remind me how)\b/.test(q)
      &&!/^(allerg|medication|meds\b|past medical|past histor|pmh\b|last meal|last ate|events\b)/.test(q))return null;
  const v=vitals(S),P=S.p;
@@ -5190,7 +5298,9 @@ function localAnswer(raw){
   return say2('amy','Not on the monitor yet, sir — I have no rhythm to give you.');
  }
  /* has this or that been done yet */
- if(/\b(did we|have we|has anybody|has anyone|did anyone|did anybody|was that done|do we know|what did the|what was the|show|showed|result|find)\b/.test(q)){
+ if(/\b(did we|have we|has anybody|has anyone|did anyone|did anybody|was that done|do we know|what did the|what was the|show|showed|result|find)\b/.test(q)
+     &&!/^(what|which) (have|did|has) we (given|give|done|had)\b/.test(q)
+     &&!/\bwhat have we (given|done)\b/.test(q)){
   const MAP=[
    [/\b(log ?roll|rolled|roll him|roll her|turn him|turn her)\b/,'logroll','log roll'],
    [/\bsecondary\b/,'secondary','secondary survey'],
@@ -5240,6 +5350,11 @@ function localAnswer(raw){
   const a=patientAccount(S);
   S.flags.askedPatient=true;
   return{who:person('dorian').nm,txt:(a.quote?a.quote+' ':'')+a.note};
+ }
+ /* how many casualties are we running */
+ if(/\b(how many patients|how many casualties|how many are we|number of patients|how many beds|patient count)\b/.test(q)){
+  if(S.multi)return say2('mitch','Two, sir. Bed 1 and bed 2, one team across both. You are on bed '+(S.bed||1)+' right now.');
+  return say2('mitch','One, sir. Just him.');
  }
  /* the parts of an AMPLE history, asked one at a time */
  if(!/\b(we|us|you|given|gave|administer|administered|on board|so far|in him|in her)\b/.test(q)){
@@ -5767,7 +5882,9 @@ function finishInner(j,a,raw,doer,isPrep){
  if(S.forced&&S.forced.includes(a.id)){
   S.forced=S.forced.filter(x=>x!==a.id);
   if(MISUSE[a.id]){
-   if(typeof out==='string')out={say:out};
+   try{if(a.effect)a.effect(S);}catch(e){}
+  try{if(a.effect)a.effect(S);}catch(e){}
+ if(typeof out==='string')out={say:out};
    out={say:({
     pericardio:'Needle is in under the xiphoid... nothing coming back. Sir, I think I am in the heart.',
     thoracotomy:'Chest is open. There was nothing in here that needed opening.',
@@ -5787,7 +5904,8 @@ function finishInner(j,a,raw,doer,isPrep){
   }
  }
  if(typeof out==='string')out={say:out};
- if(ag>.45&&out.find&&a.id!=='look'&&a.id!=='recap'&&a.id!=='readback_req'){
+ const NOT_PHYSICAL=new Set(['look','recap','readback_req','report','history','ask_patient','handoff','teleconsult','document','roles','brief','labs','ecg12']);
+ if(ag>.45&&out.find&&!NOT_PHYSICAL.has(a.id)){
   S.agitBlocks=S.agitBlocks||0;
   /* the first two refusals teach the lesson; after that they get on with it */
   if(ag>.72&&S.agitBlocks<2&&Math.random()<.5){
@@ -6834,6 +6952,12 @@ const REFS=[
    {t:'2025 AHA Guidelines for CPR and Emergency Cardiovascular Care — Executive Summary',
     d:'The current cycle. Overview of what changed across BLS, ALS and paediatrics.',
     u:'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001372'},
+   {t:'JTS CPG: Burn Care',
+    d:'Rule of Tens to start the fluid — percentage burn times ten is millilitres an hour for an adult of 40 to 80 kilos — then titrate to urine output of 30 to 50 mL/hour in an adult, half to one per kilo in a child, adjusting by 20 to 25 percent an hour. Escharotomy for circumferential full-thickness burns that impair breathing or perfusion.',
+    u:'https://jts.health.mil/assets/docs/cpgs/Burn_Management_PFC_13_Jan_2017_ID57.pdf'},
+   {t:'CHEMM — Chemical Hazards Emergency Medical Management (NIH/HHS)',
+    d:'Nerve agent management: atropine has no ceiling and is titrated to drying the secretions rather than to the heart rate or the pupils; pralidoxime 600 mg by autoinjector or 1 to 2 g intravenously, repeated at an hour; diazepam for seizures or fasciculations. Suxamethonium is avoided — the agent blocks the enzyme that clears it.',
+    u:'https://chemm.hhs.gov/countermeasure_obidoxime.htm'},
    {t:'JTS CPG: REBOA for Hemorrhagic Shock (v1.4, 4 Apr 2026)',
     d:'Zone 1 for abdominal haemorrhage or traumatic arrest, zone 3 for pelvic and junctional. Indications mirror resuscitative thoracotomy except that penetrating chest arrest is a contraindication. Full occlusion demands definitive control inside sixty minutes of inflation; partial occlusion extends that, targeting a proximal systolic of 90 to 110 with pulsatile distal flow.',
     u:'https://jts.health.mil/assets/docs/cpgs/REBOA_for_Hemorrhagic_Shock_4.3.2026_ID38_v1.4.pdf'},
@@ -7040,19 +7164,82 @@ function setMic(on){
  if(bar)bar.classList.toggle('listening',on);
  if(lbl)lbl.textContent=on?(ptt?'LISTENING — RELEASE ALT TO SEND':'LISTENING — TAP TO STOP'):micIdleLabel();
 }
+/* ---------------- CHOOSING BETWEEN WHAT THE RECOGNISER HEARD ----------------
+   A general-purpose recogniser ranks by everyday probability, so "rocuronium"
+   loses to "rocky romeo" every time. It usually has the right word further down
+   its list. Score every alternative against what this room can actually do and
+   take the best one, not the first one. */
+function speechScore(text){
+ const t=expand(String(text||'')).toLowerCase();
+ if(!t.trim())return -99;
+ let score=0;
+ /* does it resolve to something the team can do? */
+ let acts=[];
+ try{acts=matchAll(t);}catch(e){}
+ score+=acts.length?14:0;
+ /* is it a question we can answer? */
+ try{if(!acts.length&&localAnswer(t))score+=11;}catch(e){}
+ /* does it name somebody in the room? */
+ try{if(detectPersons(t).length)score+=4;}catch(e){}
+ /* does it contain a dose, a route or a drug we know? */
+ if(/\b\d+(\.\d+)?\s*(mg|mcg|g|gram|grams|ml|units?|mls|litres?|liters?|j|joules)\b/.test(t))score+=5;
+ if(/\b(iv|intravenous|im|intramuscular|io|intraosseous|per os|sublingual|nebulised|nebulized)\b/.test(t))score+=3;
+ if(DRUG_WORDS.test(t))score+=6;
+ /* a correction we had to make is a sign the raw text was wrong */
+ if(expand(String(text||'')).toLowerCase()!==String(text||'').toLowerCase())score+=2;
+ /* mild preference for the recogniser's own ordering, all else equal */
+ return score;
+}
+const DRUG_WORDS=/\b(ketamine|rocuronium|succinylcholine|midazolam|versed|lorazepam|diazepam|propofol|fentanyl|morphine|hydromorphone|ondansetron|zofran|tranexamic|txa|calcium|chloride|gluconate|cefazolin|ertapenem|metronidazole|clindamycin|moxifloxacin|vancomycin|epinephrine|adrenaline|norepinephrine|levophed|vasopressin|atropine|pralidoxime|naloxone|amiodarone|lidocaine|adenosine|magnesium|insulin|dextrose|thiamine|hydrocortisone|methylprednisolone|dexamethasone|albuterol|salbutamol|ipratropium|heparin|enoxaparin|aspirin|ticagrelor|clopidogrel|tenecteplase|artesunate|hydroxocobalamin|cyanokit|mannitol|hypertonic|levetiracetam|keppra|phenytoin|tetanus|ceftriaxone)\b/;
+function pickBestAlternative(result){
+ const n=Math.min(result.length||1,6);
+ const top=result[0].transcript;
+ if(n<2)return top;
+ const topScore=speechScore(top);
+ /* If what he actually said already means something in this room, that is what he
+    said. Only go looking down the list when the top guess lands on nothing. */
+ if(topScore>=11)return top;
+ /* Only override where we genuinely know something the recogniser does not:
+    the alternative contains a clinical term the top guess is missing. Anywhere
+    else the recogniser is the better judge of what he said, and a wrong
+    substitution is worse than a "say again". */
+ const clinical=t=>{
+  const x=expand(String(t||'')).toLowerCase();
+  const hits=[];
+  const m=x.match(new RegExp(DRUG_WORDS.source,'g'));
+  if(m)hits.push.apply(hits,m);
+  const proc=x.match(/\b(thoracostomy|thoracotomy|cricothyroidotomy|pericardiocentesis|laparotomy|fasciotomy|escharotomy|hysterotomy|intraosseous|efast|tourniquet|reboa|medevac|teleconsult|tranexamic)\b/g);
+  if(proc)hits.push.apply(hits,proc);
+  return hits;
+ };
+ const topTerms=new Set(clinical(top));
+ let best=top,bestScore=topScore;
+ for(let i=1;i<n;i++){
+  const t=result[i].transcript;
+  const newTerms=clinical(t).filter(w=>!topTerms.has(w));
+  if(!newTerms.length)continue;                 /* no clinical word we are missing — leave it alone */
+  const sc=speechScore(t);
+  if(sc>bestScore+6){best=t;bestScore=sc;}
+ }
+ if(best!==top){
+  diag('speech_alt',top+'  →  '+best);
+  say('sys','Heard that as "'+esc(best.trim())+'".');
+ }
+ return best;
+}
 function startMic(){
  if(!SR)return;
  if(listening){try{rec.stop();}catch(e){}return;}
  try{
   rec=new SR();
-  rec.lang='en-US';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
+  rec.lang='en-US';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=6;
   let finalText='';
   rec.onstart=()=>setMic(true);
   rec.onresult=(e)=>{
    let interim='';
    for(let i=e.resultIndex;i<e.results.length;i++){
     const r=e.results[i];
-    if(r.isFinal)finalText+=r[0].transcript; else interim+=r[0].transcript;
+    if(r.isFinal)finalText+=pickBestAlternative(r); else interim+=r[0].transcript;
    }
    $('#orderInput').value=normalizeSpeech(finalText+interim);
   };
