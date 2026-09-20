@@ -70,6 +70,12 @@ body.paused .trace,body.paused .num{opacity:.55}
 .scn.done:hover{opacity:1;border-color:var(--edge-hot)}
 .scn .tick{margin-left:5px;color:var(--ecg)}
 .scn .sc{font-size:12.5px;color:var(--sand-faint);margin-top:4px}
+.scn-filter{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap}
+.fbtn{background:var(--panel-2);border:1px solid var(--edge);border-radius:var(--radius);color:var(--sand-dim);
+ font-family:"Avenir Next Condensed","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:14.5px;letter-spacing:.05em;padding:8px 14px}
+.fbtn span{color:var(--sand-faint);font-size:12.5px;margin-left:3px}
+.fbtn.on{background:var(--edge-hot);border-color:var(--tan);color:var(--sand)}
+.fbtn.on span{color:var(--tan)}
 .scn.mci{border-left-color:var(--alarm)}
 .scn.mci .meta{color:var(--alarm)}
 .scn.mci p{color:var(--sand-faint)}
@@ -239,6 +245,19 @@ body.pre .trace,body.pre .num{opacity:.5}
 .orow b{font-weight:500}
 .orow i{display:block;font-style:normal;font-size:12.5px;color:var(--sand-faint);margin-top:2px}
 .onone{color:var(--sand-faint);font-style:italic;padding:14px 0}
+.refitem{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--edge)}
+.refitem:last-child{border-bottom:none;margin-bottom:2px;padding-bottom:0}
+.refitem a{color:var(--ecg);text-decoration:none;font-size:14.5px;line-height:1.4;font-weight:500}
+.refitem a:hover{text-decoration:underline}
+.refitem .reft{color:var(--sand);font-size:14.5px;line-height:1.4}
+.refd{color:var(--sand-dim);font-size:13.5px;line-height:1.45;margin-top:4px}
+.refu{color:var(--sand-faint);font-size:11.5px;margin-top:5px;word-break:break-all;font-family:ui-monospace,monospace}
+.clog-top{margin-bottom:2px}
+.clog-line{display:flex;gap:8px;align-items:flex-start;margin-bottom:7px;font-size:14.5px;line-height:1.45;color:var(--sand)}
+.clog-line .mk{color:var(--ecg);font-size:12px;line-height:1.7;flex:none}
+.clog-line.sub{color:var(--sand-dim);font-size:13.5px;margin-bottom:5px}
+.clog-line.sub .mk{color:var(--sand-faint)}
+.clog-det{border-top:1px solid var(--edge);padding-top:8px;margin-top:9px}
 .osent{display:none;margin-top:7px;padding:7px 9px;background:var(--panel-2);border-left:2px solid var(--ecg);
  border-radius:2px;font-size:12.5px;color:var(--sand-dim);line-height:1.4}
 .osent b{font-family:"Avenir Next Condensed","Roboto Condensed",system-ui,sans-serif;color:var(--ecg);font-weight:600;letter-spacing:.04em}
@@ -338,6 +357,7 @@ body.running{height:calc(var(--vvh,100dvh) - env(safe-area-inset-top,0px))}
       <h1>Nothing is told to you. Ask, or it stays unknown.</h1>
       <p>The cases are blind. The crew will not hand you a report unless you ask for one, the team will not volunteer a finding, and the monitor stays dark until someone puts it on the patient. Name the person you are talking to.</p>
     </div>
+    <div class="scn-filter" id="scnFilter"></div>
     <div class="scn-grid" id="scnGrid"></div>
     <noscript>
       <div style="border:1px solid #e8b33c;border-left:3px solid #e8b33c;background:#1b241d;padding:14px;border-radius:3px;margin-top:10px">
@@ -453,6 +473,110 @@ function diag(kind,text,extra){
  if(S.diag.length>300)return;
  S.diag.push({t:Math.round(S.t),kind,text:String(text).slice(0,200),extra:extra||''});
 }
+/* ---------------- VERSION HISTORY ----------------
+   Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
+const VERSION='1.15';
+const CHANGELOG=[
+ {v:'1.15',name:'A blood bank that can run out',
+  top:['The fridge holds twenty units of low titre O negative. When they are gone, they are gone.',
+       'The walking blood bank takes thirty minutes from the call to the first fresh unit, then gives you twenty more. Call it before you need it.',
+       'Setup now has a References sheet listing every guideline the clinical content was written against.'],
+  detail:['The remaining count shows in the status strip once you start transfusing, and turns red at four units.',
+          'Ask for more units than remain and you get what is left, with the count.',
+          'Lauren prompts at six units and again at four if nobody has called the donor panel.',
+          'Transfusing eight or more units without ever activating the walking blood bank is scored in the debrief.',
+          'References cover the JTS CPG library, the 2025 AHA guidelines, and the trauma surgery literature, with links.']},
+ {v:'1.14',name:'Twenty new cases, and antibiotic dosing',
+  top:['Sixty cases now — thirty-six trauma, twenty-four medical.',
+       'The case menu sorts into Everything, Trauma and Medical, each with its own random button.',
+       'Antibiotics now need a drug and a dose like every other medication. "Give antibiotics" gets you asked which one.'],
+  detail:['New trauma: bilateral amputations with failing tourniquets, transpelvic gunshot, open globe, blunt cardiac injury, paediatric abdominal gunshot, high-voltage electrical injury, thoracoabdominal stab, delayed liver bleed, neurogenic shock, herniating head injury, perimortem caesarean decision, white phosphorus.',
+          'New medical: meningococcal sepsis, hyperkalaemia from missed dialysis, thyroid storm, adrenal crisis, toxic alcohol, acute chest syndrome, hyperosmolar state, tetanus.',
+          'Antibiotic doses follow the JTS Infection Prevention CPG: cefazolin by weight, 2 g for most adults, 1 g under 80 kg, 3 g over 160; ertapenem 1 g; metronidazole 500 mg for hollow viscus; paediatric dosing at 20 to 30 mg per kilo.',
+          'TXA is 2 g as a single bolus per the current JTS Damage Control Resuscitation CPG, and calcium goes in with the first unit rather than after the fourth.',
+          'Steroids are now a separate order from the anaphylaxis antihistamine, with hydrocortisone dosing.',
+          'Cases were written against JTS clinical practice guidelines, ATLS and the 2025 AHA resuscitation guidelines.']},
+ {v:'1.13',name:'The surgeon comes to you',
+  top:['Call Dr. Moon and she now walks round to the bay. Once she is in the room she has two hands — give her a chest tube, a line, an airway, the same as anybody else.',
+       'Talking to her no longer blocks the room. Orders to your team work while you are mid-conversation with her.',
+       '"Aust" is recognised by speech at last, along with the other names the recogniser mangles.'],
+  detail:['She arrives about 45 seconds after being called, and what she offers depends on the patient in front of her.',
+          'She answers what you actually said: theatre, a chest tube, access, an airway, product, a pelvis each get their own reply.',
+          'Ask her a question and she lists what she wants done before the patient comes to her.',
+          'Three routing rules: a question goes to whoever is on the radio; a sentence describing the patient is a report, not an order, however many clinical words it contains; anything else that reads as an order goes to the team.',
+          'Speech names fixed: oust, ost, august, awst, oswald, east side all resolve to Aust. Same for Amie, Loren, Lorraine, Mitchell, Major Bee.',
+          '"Blanket" warms the patient. "Open the OR" opens theatre.']},
+ {v:'1.12',name:'Speaking orders',
+  top:['A speak bar above the order box. Tap it, give the order out loud, and it goes in.',
+       'On a keyboard, hold left Alt, speak, and release — it sends on release.',
+       'Speech input only works on the hosted copy in its own tab. Inside an embedded page the browser blocks the microphone. Keyboard dictation works everywhere.'],
+  detail:['Medical shorthand spelled out as letters is reassembled: "t x a" becomes TXA, "i o" becomes IO, "r s i" becomes RSI.',
+          'A phonetic matcher catches sound-alikes that spelling never would — "sina kit" and "cyanokit" reduce to the same key, as do "rock uronium" and "rocuronium".',
+          'Known mis-hearings mapped: creek and crike for cric, eye gel for i-gel, more fine for morphine, hydroxylamine for hydroxocobalamin, medi back for MEDEVAC, fastest and asked for eFAST.',
+          'Destructive orders are excluded from phonetic rescue, so nothing can end a case by mishearing.',
+          'Long press on any button no longer selects text.']},
+ {v:'1.11',name:'Honest findings, and feedback when you get it right',
+  top:['The team no longer reports things the examination cannot show. Nobody says "it is all going into the retroperitoneum" from an external exam.',
+       'When your treatment works, somebody says so.'],
+  detail:['Eleven omniscient statements rewritten across the case library — the finding is now what was observed, and the inference is left to you.',
+          'The eFAST admits its limits: a negative scan does not clear a pelvis.',
+          'Eleven treatment-response callouts: narrowed complexes after calcium, a settled patient after cooling, colour back after product.',
+          'Handover language tidied — "a fist in it" became "a fist in the wound", and similar throughout.',
+          'Epinephrine now stops the angioedema, hypertonic saline corrects the sodium, cooled heat stroke wakes up, and the malaria case treats the hypoglycaemia it checks for.']},
+ {v:'1.10',name:'Delegating a bed',
+  top:['Put somebody in charge of the other casualty: "Major B, you run bed 2 with Mitch." They work a survey, call out anything critical, and ask before anything invasive.',
+       'Authorising a procedure on their word alone is recorded. Confirm the finding yourself.'],
+  detail:['The delegate works primary, monitors, access, eFAST, secondary, using only the people you gave them.',
+          'They can only act on findings they have personally made.',
+          'Needle decompression is now temporising and sometimes equivocal — a small rush of air, dark blood down the catheter — and the tension rebuilds.']},
+ {v:'1.9',name:'Two casualties, coaching mode, Major B',
+  top:['A two-casualty option: one team, one clock, two beds. Say "bed 2" or "the other bed" to turn across the room.',
+       'Coaching mode in Setup prompts for overdue steps. For a first run.',
+       'Major B joins as the ICU nurse — drips, ventilator, and the calm voice.'],
+  detail:['The bed you are not watching keeps deteriorating and the team shouts across the room.',
+          'The debrief scores both beds and asks whether you chose correctly which one to leave.',
+          'Eight case pairings, drawn at random.']},
+ {v:'1.8',name:'Session log',
+  top:['Every phrase the system failed to understand is recorded, so wording it should have known can be added later.',
+       'Setup, then Session log. Copy it and send it on.'],
+  detail:['Also records doses and routes the team had to ask for, orders objected to, repeats, and unsafe orders challenged.',
+          'Each run is stamped with case, score, outcome, time, harm and complications. Kept locally, survives restarts.']},
+ {v:'1.7',name:'Asking questions, and the radio',
+  top:['Ask the team anything factual — "are we intubated", "how many lines", "what have we given" — and you get an answer from the right person.',
+       'Calling Dr. Moon or the aircrew opens a conversation that stays open.'],
+  detail:['Thirteen topics answered from the actual state of the patient, instantly, with no model involved.',
+          'The radio stays open for seven minutes and refreshes with each exchange. Say "that is all" to close it.']},
+ {v:'1.6',name:'The orders list',
+  top:['One ORDERS button opens the whole catalogue, grouped the way a survey runs, with a search box.',
+       'The list stays open so you can give several orders in a row.',
+       'End case is no longer in the list, so it cannot be tapped by accident.'],
+  detail:['Fifteen collapsible sections, all closed until opened. Searching opens every section with a match.',
+          'Each order shows two or three alternative phrasings, so you learn what you could have said.']},
+ {v:'1.5',name:'Running it anywhere',
+  top:['A standalone file that works with no connection at all, and a hosted version that installs to a phone home screen.',
+       'Everything scored is local. Without a connection you lose conversational understanding and the written coaching paragraph, nothing else.'],
+  detail:['iOS will not run a local HTML file from Files — use the hosted copy on a phone.',
+          'Network calls have deadlines, so a weak signal falls back to the offline engine rather than hanging.']},
+ {v:'1.4',name:'Phones',
+  top:['A layout built for a phone: monitor across the top, vitals in a row, the bay gets the rest.',
+       'Start, pause and end sit at the bottom where no browser bar can cover them.'],
+  detail:['Typing hides the traces and header so the bay stays readable above the keyboard.',
+          'The page sizes itself to the visible viewport rather than the window.']},
+ {v:'1.3',name:'Understanding what you type',
+  top:['Contractions, plurals and misspellings are handled. "What is his mentation" no longer becomes a pregnancy check.'],
+  detail:['Around 600 phrasings across 129 orders, with typo correction that preserves the first letters.',
+          'Plurals resolve — "bilateral finger thoracostomies" used to match nothing at all.',
+          'Seven one-word orders that returned nothing now work, including "access", which was cancelling itself out.']},
+ {v:'1.2',name:'Procedural complications',
+  top:['Every invasive procedure can go wrong at a realistic rate. A subclavian can drop a lung; a tube can go down the oesophagus or the right main.',
+       'The rate rises with agitation, low pressure, cold and unprepped kit — which is the argument for settling those first.'],
+  detail:['Twenty-two complications across eleven procedures. Off, Realistic and Unlucky day in Setup.',
+          'Complications are listed separately from harm in the debrief. What is scored is whether you noticed.']},
+ {v:'1.1',name:'The original',
+  top:['Forty cases, twenty-four trauma and sixteen medical. A team that reads back, asks for doses, and objects when you are wrong.'],
+  detail:['Physiology running once a second. Closed-loop communication, dose gates, harm consequences.',
+          'Scored on the spine every case shares plus the actions specific to that case, with a timed debrief.']},
+];
 const DONE_KEY='frsd_done_v1';
 let DONE={};
 function loadDone(){try{DONE=JSON.parse(localStorage.getItem(DONE_KEY)||'{}')||{};}catch(e){DONE={};}}
@@ -923,7 +1047,7 @@ act({id:'rsi_meds',label:'Induction and paralysis',cat:'RX',by:'lauren',dur:20,
   S.flags.rsiDrugs=true;S.flags.analgesia=true;S.p.pain=Math.max(0,S.p.pain-6);
   return g.d.display+' drawn up and pushed on your count. Paralytic is behind it.';}});
 act({id:'cyanokit',label:'Hydroxocobalamin (Cyanokit)',cat:'RX',by:'lauren',dur:30,
- al:['cyanokit','hydroxocobalamin','cyanide','b12','sodium thiosulfate','thiosulfate','treat the cyanide','b12a','cobalamin','cyanide antidote','give the cyanokit'],
+ al:['cyanokit','hydroxocobalamin','cyanide','b12','sodium thiosulfate','thiosulfate','treat the cyanide','b12a','cobalamin','cyanide antidote','give the cyanokit','hydroxocobalamin','hydroxo cobalamin','hydroxy cobalamin','cyanide antidote','cyano kit','the cyanide drug'],
  std:(S)=>{const kg=S.p.kg||80;return kg<30?{base:kg*70,kind:'mass',display:Math.round(kg*70)+' mg, 70 mg/kg (standard)'}:{base:5000,kind:'mass',display:'5 grams (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80,peds=kg<30;
   if(d.kind!=='mass')return{bad:'Hydroxocobalamin is in grams, sir. How much?'};
@@ -947,7 +1071,7 @@ act({id:'secondary',label:'Secondary survey',cat:'E',by:'aust',dur:60,assess:tru
  al:['secondary survey','secondary','head to toe','full exam','top to toe','complete exam','tertiary','do a secondary','full secondary','head to toe exam','detailed exam','secondary'],
  run:S=>{S.flags.secondary=true;return{find:S.scn.secondary(S)};}});
 act({id:'fast',label:'eFAST',cat:'C',by:'aust',dur:55,assess:true,
- al:['fast','efast','ultrasound','sono','ultrasound the belly','fast exam','four windows','scan him','scan her','get the ultrasound','put the probe on','sono him','look in the belly','check for free fluid','put a probe on him','put a probe on her','probe','bedside ultrasound','look with the probe','sonogram','windows','efast please','ultrasound please','get the sono','point of care ultrasound','pocus','scan him again','repeat the fast','rescan','scan again'],
+ al:['fast','efast','ultrasound','sono','ultrasound the belly','fast exam','four windows','scan him','scan her','get the ultrasound','put the probe on','sono him','look in the belly','check for free fluid','put a probe on him','put a probe on her','probe','bedside ultrasound','look with the probe','sonogram','windows','efast please','ultrasound please','get the sono','point of care ultrasound','pocus','scan him again','repeat the fast','rescan','scan again','performing fast','perform the fast','do the efast','efast now'],
  run:S=>({find:S.scn.fast(S)})});
 act({id:'glucose',label:'Glucose',cat:'D',by:'lauren',dur:10,assess:true,
  al:['glucose','sugar','bgl','fingerstick','accucheck','blood sugar','dstick','sugar please','check his sugar','check her sugar','what is the sugar','finger stick','cbg','bm','check a bm','point of care glucose','glucometer'],
@@ -1151,16 +1275,27 @@ act({id:'io',label:'Intraosseous',cat:'C',by:'lauren',dur:20,al:['io','intraosse
   S.access=2;S.flags.io=true;S.flags.ioSite=site;
   const rate=site==='humeral head'?'That will run product about twice as fast as the tibia.':site==='sternum'?'Sternal flows well but it is in the way if anybody needs to do compressions.':'Good flow for fluids, slower for product.';
   return'Drill is in the '+site+', good flush, no extravasation, pressure bag on. '+rate;}});
-act({id:'blood',label:'Blood products',cat:'C',by:'lauren',dur:30,al:['blood','whole blood','transfuse','prbc','packed cells','hang blood','massive transfusion','mtp','unit of blood','units of blood','o neg','plasma','ffp','platelets','1:1:1','give him blood','give her blood','get blood up','hang a unit','start product','transfuse him','transfuse her','open the cooler','run blood','start transfusing','product','blood product','start the blood','get blood in','more product','units of blood','prbcs','packed red cells','o positive','low titre','ltowb','cold stored','fwb','fresh whole blood','crossmatched','emergency release','units of product','type specific','group o','plasma please','ffp please','platelets please','cryo','cryoprecipitate','fibrinogen concentrate','hang 2 units','hang 4 units','2 units','4 units','give units','more units of blood','units please'],
+act({id:'blood',label:'Blood products',cat:'C',by:'lauren',dur:30,al:['blood','whole blood','transfuse','prbc','packed cells','hang blood','massive transfusion','mtp','unit of blood','units of blood','o neg','plasma','ffp','platelets','1:1:1','give him blood','give her blood','get blood up','hang a unit','start product','transfuse him','transfuse her','open the cooler','run blood','start transfusing','product','blood product','start the blood','get blood in','more product','units of blood','prbcs','packed red cells','o positive','low titre','ltowb','cold stored','fwb','fresh whole blood','crossmatched','emergency release','units of product','type specific','group o','plasma please','ffp please','platelets please','cryo','cryoprecipitate','fibrinogen concentrate','units','hang units','give units','more units','more units of blood','another unit','units please','more product'],
  precheck:S=>S.access?null:'No access yet, sir. Where do you want it to go?',
  run:(S,t,raw)=>{
   const m=(raw||'').match(/(\d+)\s*(?:units?|u\b|bags?)/i);
-  const n=m?clamp(parseInt(m[1]),1,10):1;
+  let n=m?clamp(parseInt(m[1]),1,10):1;
+  if(S.bank<=0){
+   S.lesson('The refrigerator was empty. Twenty units is all a detachment like this holds, and the walking blood bank takes about thirty minutes from the call to the first unit hanging — so it has to be called long before you need it.');
+   return'Sir — we are out. The fridge is empty. '+(S.wbbAt?'Donors are on the table but the first fresh unit is still '+Math.max(0,Math.ceil((S.wbbAt+1800-S.t)/60))+' minutes away.':'Nothing is coming unless you call the walking blood bank, and that is thirty minutes from the call.');
+  }
+  let short=false;
+  if(n>S.bank){n=S.bank;short=true;}
+  S.bank-=n;S.bankUsed+=n;
   const kg=S.p.kg||80,peds=kg<30;
   const secs=peds?150:75;
   S.infusions.push({name:'Whole blood',kind:'blood',target:n,given:0,secsPerUnit:secs,t0:S.t,unitLabel:'unit'});
   S.meds.push({name:'Whole blood',dose:n+' unit'+(n>1?'s':''),t:S.t,by:'Lauren',inf:S.infusions[S.infusions.length-1]});
-  return n+' unit'+(n>1?'s':'')+' of cold-stored whole blood through the warmer, pressure bag on. '+(peds?'Running it at 10 mL per kilo.':'First one is running now.');}});
+  return (short?'I can only give you '+n+' — that is everything left in the fridge. ':'')+
+   n+' unit'+(n>1?'s':'')+' of low titre O negative through the warmer, pressure bag on. '+
+   (peds?'Running it at 10 mL per kilo. ':'First one is running now. ')+
+   S.bank+' unit'+(S.bank===1?'':'s')+' left on the shelf.'+
+   (S.bank<=6&&!S.wbbAt?' Sir, that is getting thin — do you want the walking blood bank called?':'');}});
 act({id:'crystalloid',label:'Crystalloid',cat:'C',by:'lauren',dur:12,al:['saline','normal saline','lr','lactated ringers','crystalloid','fluid bolus','litre of fluid','liter of fluid','plasmalyte','bolus','liters of fluid','litres of fluid','run some fluid','fluid please','give a bolus','open up some fluid','hang a litre','ns','n/s','normal saline','0.9%','0.9 percent','sodium chloride','ringers','hartmanns','d5','d5w','dextrose 5','isotonic','a litre','a liter','one litre','one liter','1l','2l','500 cc','250 cc','fluids','some fluids','give fluids','start fluids','run fluids','maintenance fluids','iv fluids'],
  precheck:S=>S.access?null:'No access yet, sir.',
  run:(S,t,raw)=>{
@@ -1192,7 +1327,7 @@ act({id:'calcium',label:'Calcium',cat:'C',by:'lauren',dur:12,al:['calcium','calc
   return{label:d.display+' calcium '+(gluc?'gluconate':'chloride')};},
  run:(S,t,raw,g)=>{S.flags.calcium=true;S.p.squeeze=Math.min(1.2,(S.p.squeeze||1)+.12);
   return g.d.display+' of calcium '+(/gluconate/i.test(raw||'')?'gluconate':'chloride')+' slow '+(S.flags.io?'through the IO':'through the IV')+'.';}});
-act({id:'warm',label:'Hypothermia prevention',cat:'C',by:'lauren',dur:20,al:['warm him','warm her','hypothermia','blizzard blanket','warm the fluids','blankets','fluid warmer','keep him warm','turn up the heat','warm him up','warm her up','stop the heat loss','get blankets on','fluid warmer on','turn the heat up','wrap him','hypothermia prevention','stop him getting cold','prevent hypothermia','warming','bair hugger','get him warm','get her warm','cover him','cover her','warm fluids','warming blanket','hot line','active warming','warm','warming him','warm the patient'],
+act({id:'warm',label:'Hypothermia prevention',cat:'C',by:'lauren',dur:20,al:['warm him','warm her','hypothermia','blizzard blanket','warm the fluids','blankets','fluid warmer','keep him warm','turn up the heat','warm him up','warm her up','stop the heat loss','get blankets on','fluid warmer on','turn the heat up','wrap him','hypothermia prevention','stop him getting cold','prevent hypothermia','warming','bair hugger','get him warm','get her warm','cover him','cover her','warm fluids','warming blanket','hot line','active warming','warm','warming him','warm the patient','blanket','blankets','warm blanket','get a blanket','get blankets','cover him','cover her','warm blankets on him'],
  run:S=>{S.flags.warmer=true;return'Fluid warmer on the line, blizzard blanket, room heat up.';}});
 act({id:'im_meds',label:'IM induction / sedation',cat:'RX',by:'lauren',dur:15,
  al:['im ketamine','ketamine im','intramuscular ketamine','im meds','intramuscular','im induction','give it im','im drugs','im the ketamine'],
@@ -1270,8 +1405,8 @@ act({id:'epi_drip',label:'Vasopressor infusion',cat:'RX',by:'majorb',dur:35,al:[
  run:S=>{S.flags.pressor=true;S.p.squeeze=Math.min(1.2,(S.p.squeeze||1)+.18);
   if(!S.flags.bloodGiven&&S.p.bleedRate>0)S.lesson('Pressors on an unreplaced haemorrhage squeeze an empty tank. Product first.');
   return'Drip is up and titrating.';}});
-act({id:'antihistamine',label:'Antihistamine / steroid',cat:'RX',by:'lauren',dur:15,al:['benadryl','diphenhydramine','antihistamine','steroid','solumedrol','methylprednisolone','famotidine','pepcid','dexamethasone','solu-medrol','hydrocortisone','prednisolone','dexamethasone iv','h1 blocker','h2 blocker','steroids please','give a steroid'],
- run:S=>{if(S.p.anaphylaxis!==undefined&&!S.flags.epi)S.lesson('Antihistamines and steroids do not treat anaphylactic shock or the airway. Only epinephrine does.');return'Benadryl and Solu-Medrol in.';}});
+act({id:'antihistamine',label:'Antihistamine (anaphylaxis adjunct)',cat:'RX',by:'lauren',dur:15,al:['benadryl','diphenhydramine','antihistamine','famotidine','pepcid','h1 blocker','h2 blocker','antihistamines please','give a steroid'],
+ run:S=>{if(S.p.anaphylaxis!==undefined&&!S.flags.epi)S.lesson('Antihistamines and steroids do not treat anaphylactic shock or the airway. Only epinephrine does.');return'Diphenhydramine and famotidine in. Adjuncts only — they do nothing for the airway or the pressure.';}});
 act({id:'albuterol',label:'Nebulised bronchodilator',cat:'RX',by:'amy',dur:18,al:['albuterol','neb','duoneb','bronchodilator','salbutamol','nebulizer','salbutamol neb','ventolin','ipratropium','atrovent','back to back nebs','nebulise him','both nebs','give both nebs','neb him','nebs'],
  run:S=>{S.p.bronchospasm=Math.max(0,(S.p.bronchospasm||0)-.2);return'Continuous neb running.';}});
 act({id:'cooling',label:'Active cooling',cat:'RX',by:'aust',dur:30,al:['cool him','cool her','cooling','ice','cold water','immersion','ice sheets','cold fluids','ice packs','misting','fan'],
@@ -1491,6 +1626,12 @@ act({id:'beta_blocker',label:'Beta blocker',cat:'RX',by:'lauren',dur:15,
   return null;},
  dose:(S,raw,d)=>({label:d.display+' beta blocker'}),
  run:(S,t,raw,g)=>{
+  if(S.p.thyroid){
+   S.p.thyroid=Math.max(0,S.p.thyroid-.4);
+   S.p.hrBase=Math.max(90,(S.p.hrBase||120)-38);
+   S.p.squeeze=Math.max(.86,(S.p.squeeze||1)-.04);
+   S.flags.betaBlocked=true;
+   return (g&&g.d?g.d.display:'Beta blocker')+' in. Rate is coming down and the tremor is settling. That is the right first drug here — but antithyroid cover has to follow, and iodine only after it, never before.';}
   if(S.sbp()<110||S.p.bleedRate>40){
    S.p.squeeze=Math.max(.35,(S.p.squeeze||1)-.26);S.p.hrBase=(S.p.hrBase||72)-30;
    S.harm('Beta blocker given to a patient compensating with tachycardia. The rate has come down and the pressure has come down with it. That compensation is not coming back.');
@@ -1514,8 +1655,67 @@ act({id:'traction',label:'Traction splint',cat:'C',by:'mitch',dur:70,
  run:S=>{
   S.flags.traction=true;S.p.bleedRate=Math.max(0,S.p.bleedRate-35);S.p.pain=Math.max(0,S.p.pain-2);
   return'Traction splint on the left femur, tension applied, thigh is out to length. That was a lot of shortening.';}});
-act({id:'abx',label:'Antibiotics / tetanus',cat:'RX',by:'lauren',dur:15,al:['antibiotics','abx','ertapenem','cefazolin','ancef','tetanus','ceftriaxone','rocephin','cefazolin','zosyn','pip tazo','meropenem','vancomycin','clindamycin','metronidazole','flagyl','gentamicin','broad spectrum','cover him with antibiotics','give abx','antibiotic please'],
- run:S=>{S.flags.abx=true;return'Ertapenem in, tetanus on the chart.';}});
+act({id:'steroid',label:'Corticosteroid',cat:'RX',by:'lauren',dur:20,
+ al:['hydrocortisone','steroid','steroids','solu cortef','dexamethasone','methylprednisolone','solu medrol',
+  'stress dose steroid','stress dose steroids','give steroid','corticosteroid'],
+ dose:(S,raw,d)=>{
+  const kg=S.p.kg||80;
+  if(/dexamethasone/i.test(raw)){
+   if(!d)return{ask:'What dose of dexamethasone?'};
+   const mg=d.base>=1?d.base:d.base*1000;
+   return (mg<4||mg>10)?{bad:'That is '+d.text+' of dexamethasone. Four to ten milligrams is the usual range. Confirm?'}:{label:d.display+' dexamethasone'};
+  }
+  if(!d)return{ask:'What dose, sir? Hydrocortisone 100 milligrams is the usual stress dose.'};
+  const mg=d.base>=10?d.base:d.base*1000;
+  return (mg<50||mg>200)?{bad:'That is '+d.text+' of hydrocortisone. The stress dose is 100 milligrams intravenously. Confirm?'}:{label:d.display+' hydrocortisone'};},
+ std:S=>({base:100,display:'100 mg',text:'100 mg hydrocortisone'}),
+ run:(S,t,raw,g)=>{
+  S.flags.steroid=true;
+  if(S.p.adrenal){S.p.squeeze=Math.min(1.05,(S.p.squeeze||1)+.3);S.p.adrenalTreated=true;}
+  if(S.p.thyroid)S.p.thyroid=Math.max(0,S.p.thyroid-.15);
+  return ((g&&g.label)?g.label:'Hydrocortisone 100 mg')+' in.'+
+   (S.p.adrenal?' If this is what you think it is, you will see the pressure answer within the hour — and it does not spoil the cortisol you drew.':'');}});
+act({id:'abx',label:'Antibiotics / tetanus',cat:'RX',by:'lauren',dur:15,
+ al:['antibiotics','abx','ertapenem','cefazolin','ancef','tetanus','ceftriaxone','rocephin','zosyn','pip tazo',
+  'meropenem','vancomycin','clindamycin','metronidazole','flagyl','gentamicin','moxifloxacin','broad spectrum',
+  'cover him with antibiotics','give abx','antibiotic please','prophylactic antibiotics','antibiotic prophylaxis'],
+ dose:(S,raw,d)=>{
+  const kg=S.p.kg||80, peds=kg<40;
+  const name=(/ertapenem/i.test(raw)?'ertapenem':/cefazolin|ancef/i.test(raw)?'cefazolin':
+    /ceftriaxone|rocephin/i.test(raw)?'ceftriaxone':/metronidazole|flagyl/i.test(raw)?'metronidazole':
+    /clindamycin/i.test(raw)?'clindamycin':/moxifloxacin/i.test(raw)?'moxifloxacin':
+    /vancomycin/i.test(raw)?'vancomycin':/meropenem/i.test(raw)?'meropenem':null);
+  if(!name)return{ask:'Which antibiotic, and at what dose, sir? For a penetrating wound here I would reach for cefazolin or ertapenem.'};
+  if(!d)return{ask:'What dose of '+name+'?'};
+  const g=d.base>=100?d.base/1000:d.base;      /* accept grams or milligrams */
+  const mg=d.base>=100?d.base:d.base*1000;
+  const chk=(lo,hi,txt)=>(g<lo||g>hi)?{bad:'That is '+d.text+' of '+name+'. '+txt+' Confirm?'}:{label:d.display+' '+name};
+  if(name==='cefazolin'){
+   if(peds)return(mg<20*kg||mg>30*kg)?{bad:'That is '+d.text+' of cefazolin for a '+Math.round(kg)+' kilo child. Paediatric dosing is twenty to thirty milligrams per kilo, so about '+Math.round(25*kg)+' milligrams. Confirm?'}:{label:d.display+' cefazolin'};
+   const want=kg<80?1:kg<=160?2:3;
+   return chk(want-0.5,want+1,'For '+Math.round(kg)+' kilos the guideline is '+want+' gram every six to eight hours.');
+  }
+  if(name==='ertapenem')return chk(0.5,1.5,'Ertapenem is 1 gram daily, intravenous or intramuscular.');
+  if(name==='ceftriaxone')return chk(1,2.5,'Ceftriaxone is 2 grams every twenty-four hours.');
+  if(name==='metronidazole')return (mg<400||mg>600)?{bad:'That is '+d.text+' of metronidazole. It is 500 milligrams every eight to twelve hours. Confirm?'}:{label:d.display+' metronidazole'};
+  if(name==='clindamycin')return (mg<450||mg>900)?{bad:'That is '+d.text+' of clindamycin. It is 600 milligrams every eight hours. Confirm?'}:{label:d.display+' clindamycin'};
+  if(name==='moxifloxacin')return (mg<300||mg>500)?{bad:'That is '+d.text+' of moxifloxacin. It is 400 milligrams, one dose. Confirm?'}:{label:d.display+' moxifloxacin'};
+  if(name==='vancomycin')return (mg<10*kg||mg>20*kg)?{bad:'That is '+d.text+' of vancomycin. Fifteen milligrams per kilo is about '+Math.round(15*kg)+' milligrams. Confirm?'}:{label:d.display+' vancomycin'};
+  return {label:d.display+' '+name};},
+ std:S=>{
+  const kg=S.p.kg||80;
+  if(kg<40)return{base:Math.round(25*kg),display:Math.round(25*kg)+' mg',text:Math.round(25*kg)+' mg cefazolin'};
+  const abdo=S.p.hollowViscus||/abdom|eviscer|bowel|pelvi/i.test(S.scn.title||'');
+  if(abdo)return{base:1,display:'1 g',text:'1 g ertapenem'};
+  const want=kg<80?1:kg<=160?2:3;
+  return{base:want,display:want+' g',text:want+' g cefazolin'};},
+ run:(S,t,raw,g)=>{
+  S.flags.abx=true;
+  const nm=(g&&g.label)?g.label:'antibiotic';
+  const abdo=S.p.hollowViscus||/abdom|eviscer|bowel/i.test(raw||'');
+  return nm+' in, and tetanus on the chart.'+
+   (abdo&&!/ertapenem|metronidazole/i.test(nm)?' If that bowel is open he wants anaerobic cover too — metronidazole five hundred, or swap to ertapenem.':'')+
+   ' Clock started for the next dose.';}});
 act({id:'burnfluid',label:'Burn resuscitation fluid',cat:'RX',by:'lauren',dur:20,al:['burn fluid','rule of tens','parkland','burn resuscitation','fluid for the burn','lr for burns','parkland formula','burn fluids','titrate to urine output'],
  run:S=>{S.flags.burnFluid=true;S.p.replaced+=300;return'LR at four hundred an hour by the Rule of Tens.';}});
 act({id:'escharotomy',label:'Escharotomy',cat:'RX',by:'surgeon',dur:100,al:['escharotomy','release the eschar','circumferential release'],
@@ -1572,6 +1772,9 @@ act({id:'surgeon',label:'Get the surgeon',cat:'CMD',by:'surgeon',dur:10,al:['get
   if(tooSoft)q.unshift('do you actually want him moved, because from what you are telling me he will not survive the corridor — I can come to you instead');
   const pick=q.slice(0,2).join(', and ');
   S.radio={id:'surgeon',t:S.t};S.awaiting=null;
+  if(!S.flags.surgeonHere&&!S.flags.surgeonComing)S.flags.surgeonComing=S.t;
+  if(S.flags.surgeonHere)return rnd(['Tell me what you want me to do with my hands.',
+   'I am here — give me a job or I will pick one myself.','Right. Say the word and I will do it.']);
   return(S.surgeonCalls===1?'I am scrubbed in the next room. Talk to me — ':'Still here. ')+pick+'? And tell me what you want me to do, not just what you found. Just say it, I am listening.';}});
 act({id:'surgeon_bedside',label:'Surgeon to the bedside',cat:'CMD',by:'surgeon',dur:55,
  al:['surgeon to the bedside','surgeon to the bed','moon to the bedside','get moon down here','get the surgeon down here',
@@ -1579,7 +1782,7 @@ act({id:'surgeon_bedside',label:'Surgeon to the bedside',cat:'CMD',by:'surgeon',
   'too unstable to move','cannot move him','cannot move her','we cannot move him','do it here','operate here','bedside surgery',
   'surgeon at the bed','get her in here','get him in here','scrub in here','come to me','ma am to the bedside'],
  run:S=>{
-  S.flags.surgeon=true;S.flags.surgeonHere=true;S.flags.surgeonHereT=S.t;
+  S.flags.surgeon=true;S.flags.surgeonHere=true;S.flags.surgeonHereT=S.t;S.flags.surgeonComing=null;
   S.radio=null;
   const v=vitals(S);
   return'Dr. Moon, gowned and gloved at the bedside. Right — I am here, so tell me what you want done in this room. '+
@@ -1599,7 +1802,7 @@ act({id:'surgery_here',label:'Damage control at the bedside',cat:'C',by:'surgeon
   S.lesson('Damage control at the bedside is a worse operation than the same operation in theatre — no table, no lighting, no assistant, no suction worth the name. It is the right call only when the corridor would kill him.');
   return'Working. '+(S.p.junctionalBleed?'I have proximal control and I am packing hard — that is as good as it gets outside a theatre. ':'Bleeding is slowed as much as I can manage here. ')+
    'This is a holding measure, not a repair. He still needs a table, but he can survive the trip now. Somebody keep product going while I work.';}});
-act({id:'or',label:'Move to the OR',cat:'CMD',by:'surgeon',dur:15,al:['take him to the or','take her to the or','to the or','operating room','laparotomy','damage control surgery','he needs surgery','she needs surgery','get him on a table','get her on a table','move to theatre','take him through','he needs a laparotomy','theatre','move him to theatre','move her to theatre','to theatre','get a table','open a table','surgical suite'],
+act({id:'or',label:'Move to the OR',cat:'CMD',by:'surgeon',dur:15,al:['take him to the or','take her to the or','to the or','operating room','laparotomy','damage control surgery','he needs surgery','she needs surgery','get him on a table','get her on a table','move to theatre','take him through','he needs a laparotomy','theatre','move him to theatre','move her to theatre','to theatre','get a table','open a table','surgical suite','open the or','open a room','open the room','get the or open','open theatre','get a room open','open up the or'],
  run:S=>{
   S.flags.or=true;S.flags.orT=S.t;S.radio={id:'surgeon',t:S.t};S.awaiting=null;
   return(S.flags.surgeon?'':'Dr. Moon here — short notice, but fine. ')+
@@ -1637,14 +1840,23 @@ act({id:'teleconsult',label:'Teleconsult a specialty',cat:'CMD',by:'mitch',dur:7
    id:'Infectious disease. Broad gram-positive and gram-negative plus anaerobic cover, and they stress this is a surgical disease — antibiotics do not penetrate dead tissue. They want blood cultures before the first dose if it does not delay it, and serial lactates.',
    icu:'Critical care. They want lung-protective settings if he goes on a ventilator, a lactate trend rather than a single value, and a clear list of everything that has gone in with times. They will take him and they are asking for your best estimate of how long he has.'};
   return REC[pick]+(fit?'':' They also say, politely, that this may not be the consult this patient needed.');}});
-act({id:'medevac',label:'Request MEDEVAC',cat:'CMD',by:'flight',dur:35,al:['medevac','9 line','nine line','evac','request evac','air evac','casevac','dustoff','get the bird','launch evac','request a flight','get him on a helicopter','get him out of here','get her out of here','call for a bird','launch the bird','arrange evacuation','transport','move him out','9line','nine-line','med evac','casevac request','request medevac'],
+act({id:'medevac',label:'Request MEDEVAC',cat:'CMD',by:'flight',dur:35,al:['medevac','9 line','nine line','evac','request evac','air evac','casevac','dustoff','get the bird','launch evac','request a flight','get him on a helicopter','get him out of here','get her out of here','call for a bird','launch the bird','arrange evacuation','transport','move him out','9line','nine-line','med evac','casevac request','request medevac','evacuation','work on evacuation','plan the evacuation','arrange evacuation','sort the evacuation','get evac moving'],
  run:S=>{
   S.flags.medevac=true;S.radio={id:'flight',t:S.t};S.awaiting=null;
   return'Dustoff 2-1, go ahead with your nine-line. I need lines four through six before I launch — how many patients, what precedence, and what special equipment do you want on board. '+
    (S.airwayDevice?'I have you as one ventilated patient unless you tell me otherwise. ':'')+
    'Urgent surgical or priority, whether he needs product in flight, and your grid and marking method.';}});
-act({id:'blood_bank',label:'Walking blood bank / MTP',cat:'CMD',by:'lauren',dur:20,al:['walking blood bank','blood bank','more blood','activate mtp','massive transfusion protocol','donor panel'],
- run:S=>{S.flags.wbb=true;return'Walking blood bank activated, donor panel being called in.';}});
+act({id:'blood_bank',label:'Walking blood bank / MTP',cat:'CMD',by:'lauren',dur:20,
+ al:['walking blood bank','blood bank','more blood','activate mtp','massive transfusion protocol','donor panel',
+  'call the donors','get donors in','spin up the blood bank','activate the walking blood bank','how much blood is left',
+  'stand up the blood bank','call for donors','fresh whole blood','get more blood coming','how many units left'],
+ run:S=>{
+  if(S.wbbAt){
+   const left=Math.max(0,Math.ceil((S.wbbAt+1800-S.t)/60));
+   return'Already running, sir. Donors are being screened and bled. First fresh units are about '+left+' minute'+(left===1?'':'s')+' out. Fridge has '+S.bank+' left in the meantime.';
+  }
+  S.flags.wbb=true;S.wbbAt=S.t;
+  return'Walking blood bank activated. Panel called, screening and typing starting now. Realistically that is thirty minutes before the first fresh unit hangs, then twenty more units. Fridge has '+S.bank+' unit'+(S.bank===1?'':'s')+' to get us there.';}});
 act({id:'handoff',label:'Hand over to the surgeon or evac team',cat:'CMD',by:'surgeon',dur:45,
  al:['handoff','hand off','sign out','hand over','give report','sbar','summarize for','my report is','mist report','hand her over','brief the evac','report to evac','turnover','hand him over','give them my report','my handover is','report to the receiving team','sign him over','give the surgeon a report','report to the surgeon','tell the surgeon','brief the surgeon','my mist is','mist to the surgeon','pass the report'],
  run:(S,t,raw)=>{
@@ -2198,7 +2410,8 @@ const SCN=[
   {id:'crystalloid',by:200,label:'Aggressive fluid for distributive shock'},
   {id:'albuterol',by:270,label:'Bronchodilator'},
   {id:'epi_drip',by:330,label:'Infusion if the IM doses are not holding'},
-  {id:'antihistamine',by:400,label:'Antihistamine and steroid as adjuncts'},
+  {id:'steroid',by:420,label:'Steroid as an adjunct, after the epinephrine'},
+  {id:'antihistamine',by:400,label:'Antihistamine as adjuncts'},
   {id:'airway_plan',by:200,label:'Have an airway plan ready before you need it'}],
  goal:'Epinephrine intramuscular in the first minutes. Nothing else treats the shock or the airway, and the airway closes while you are reaching for the Benadryl. Plan the airway early — a swollen tongue and stridor is a front-of-neck conversation, not a second look with a laryngoscope.'
 },
@@ -2961,6 +3174,595 @@ const SCN=[
   {id:'teleconsult',by:320,label:'Toxicology reachback — hyperbaric decision'},
   {id:'medevac',by:380,label:'Evacuate; consider hyperbaric for the unconscious one'}],
  goal:'Multiple casualties from one enclosed space with headache and confusion is carbon monoxide until somebody proves otherwise, and the pulse oximeter will read 99 the entire time because it cannot tell carboxyhaemoglobin from oxyhaemoglobin. Treat on the story, not the number. High-flow oxygen from the first second cuts the half-life from hours to under ninety minutes, and unconsciousness is the finding that makes this a hyperbaric conversation. And ask how many other people were in that tent.'
+},
+{
+ id:'t25',kind:'trauma',title:'Mounted blast, both legs gone',
+ arrival:'He comes in on a litter with two windlass tourniquets already on, both high on the thighs, and both still oozing. Below them there is very little left. He is grey, shaking, and asking about his legs.',
+ mist:'Crew report: under-vehicle IED about twenty-two minutes ago. Bilateral traumatic amputations, one above knee, one through knee. Two CATs applied at the point of injury. Nothing else given.',
+ massive:S=>(S.p.extremityBleedRate>25?'Both tourniquets are oozing around the windlass — they are not tight enough. Fresh blood is tracking down both stumps and pooling on the litter.':'Stumps are dry with the second tourniquets on. Nothing running now.')+(S.p.junctionalRate>15?' And there is steady dark bleeding from the perineum that no tourniquet will reach.':''),
+ init:S=>{Object.assign(S.p,{bleedRate:95,extremityBleed:true,extremityBleedRate:80,junctionalBleed:true,junctionalRate:35,pain:10,lost:1500,tempC:35.1,coag:.78,gcsBase:14,glucose:118,kg:84,rewarm:true});S.o2=.21;},
+ knownAtArrival:['front','bleed'],
+ pulses:(S,b)=>'Carotid strong, radials thready and fast. Nothing below either tourniquet, which is what you want.',
+ airwayFind:S=>'Patent. Talking, though he is shaking too hard to finish a sentence.',
+ breath:S=>'Clear both sides. Rate is up.',
+ front:S=>'Bilateral lower extremity amputations, right above knee and left through knee. '+(S.p.extremityBleedRate>25?'Both tourniquets are sitting over soft tissue and are not occlusive — the windlasses have not been turned enough.':'Two tourniquets on each limb now, side by side, both occlusive.')+' Perineum is degloved and dirty. Scrotum is involved.',
+ groin:S=>'This is the problem — the perineal wound extends up into the groin and it is bleeding steadily from deep inside. No tourniquet reaches this. It wants packing and direct pressure, and then a surgeon.',
+ skull:S=>'Scalp intact. No penetrating wound.',
+ axilla:S=>'Axillae clear. Arms intact apart from small fragment wounds.',
+ back:S=>'Fragment peppering across the buttocks. Rectal tone present, no blood on the glove.',
+ secondary:S=>'Fragment wounds across both arms and the abdomen wall, none penetrating on examination. Both hands intact. Pelvis feels stable but the perineal injury makes that an open pelvic fracture until proven otherwise.',
+ fast:S=>'No free fluid in the abdomen, no pericardial fluid, lung sliding both sides. The blood is going into the perineum and the stumps, not the belly.',
+ neuro:S=>'GCS '+S.gcs()+'. Awake, oriented, terrified, asking whether he still has his legs.',
+ labs:S=>'pH '+(7.34-S.p.lost/9000).toFixed(2)+', lactate '+(2.4+S.p.lost/500).toFixed(1)+', base deficit '+Math.round(S.p.lost/260)+', ionised calcium '+(1.12-S.units*.05).toFixed(2)+', haemoglobin '+Math.max(5,Math.round(13-S.p.lost/320))+'.',
+ critical:[{id:'tq',by:60,label:'Second tourniquet above each of the first — the originals are not occlusive'},
+  {id:'pack',by:110,label:'Pack the junctional perineal wound; no tourniquet reaches it',alt:['junctional_tq']},
+  {id:'iv',by:110,label:'Two points of access',alt:['io']},
+  {id:'blood',by:150,label:'Whole blood early — he has lost both legs worth'},
+  {id:'txa',by:170,label:'TXA 2 g bolus, within three hours of injury'},
+  {id:'calcium',by:230,label:'Calcium with the first unit, not after the fourth'},
+  {id:'warm',by:200,label:'Warm him — he is already at 35 and coagulopathic'},
+  {id:'abx',by:280,label:'Antibiotics for an open contaminated wound'},
+  {id:'fast',by:250,label:'eFAST to exclude a second cavity'},
+  {id:'surgeon',by:200,label:'Surgeon early; this is a proximal control problem'},
+  {id:'or',by:420,label:'Theatre for proximal control and washout'}],
+ goal:'A tourniquet that is oozing is a tourniquet that is not working. Do not tighten a windlass that is already at the end of its travel — put a second one above it. The bleeding that kills this man is the perineal wound no tourniquet reaches, and the treatment for that is packing, pressure and a surgeon. Warm him from the first minute; at 35 degrees he will not clot whatever you transfuse.'
+},
+{
+ id:'t26',kind:'trauma',title:'Round through the buttock',
+ arrival:'A young man face down on the litter, one small entry wound in the left buttock and no exit. He looks well. The only thing that is wrong is his colour and the fact that his pressure will not hold.',
+ mist:'Crew report: single round, left buttock, about twenty minutes ago. Small entry, no exit found. He walked to the vehicle. He has become progressively more pale on the drive.',
+ massive:S=>'Almost nothing on the outside — a small entry wound with a little ooze. There is nothing here I can compress and nothing I can tourniquet.',
+ init:S=>{Object.assign(S.p,{bleedRate:85,pelvisRate:70,pain:6,lost:1100,tempC:36.2,coag:.88,gcsBase:15,glucose:104,kg:79,rewarm:true});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials present but thready. Femorals strong. Both feet warm with good pedal pulses.',
+ airwayFind:S=>'Patent and talking.',
+ breath:S=>'Clear both sides, equal.',
+ front:S=>'Abdomen is soft on the first pass and becoming fuller. Pelvis feels stable to gentle compression — and a stable pelvis does not exclude what is bleeding behind it.',
+ groin:S=>'No wound in the groin. No haematoma I can see yet. Femoral pulses equal.',
+ skull:S=>'Clear.',axilla:S=>'Clear.',
+ back:S=>'Single small entry wound over the left buttock, minimal external bleeding. No exit anywhere. Rectal examination: blood on the glove.',
+ secondary:S=>'Blood at the anus on rectal examination. No other wounds. Both legs neurovascularly intact.',
+ fast:S=>'Free fluid in the pelvis, none at Morison\u2019s, no pericardial fluid. A transpelvic round can cross the rectum, the iliac vessels and the bladder, and this probe cannot tell you which.',
+ neuro:S=>'GCS '+S.gcs()+'. Fully alert.',
+ labs:S=>'pH '+(7.35-S.p.lost/9000).toFixed(2)+', lactate '+(2.0+S.p.lost/450).toFixed(1)+', haemoglobin '+Math.max(5,Math.round(14-S.p.lost/300))+'. Urine is frankly bloody.',
+ critical:[{id:'monitor_all',by:80,label:'Monitor — the story here is a trend, not a single number'},
+  {id:'iv',by:100,label:'Two points of access',alt:['io']},
+  {id:'fast',by:170,label:'eFAST — but a negative scan does not clear a transpelvic track'},
+  {id:'blood',by:180,label:'Blood, not crystalloid — he is bleeding somewhere you cannot reach'},
+  {id:'txa',by:200,label:'TXA 2 g'},
+  {id:'logroll',by:150,label:'Roll him and look, including a rectal examination'},
+  {id:'calcium',by:280,label:'Calcium with the first unit'},
+  {id:'abx',by:300,label:'Antibiotics — blood on the glove means an open rectal injury'},
+  {id:'surgeon',by:180,label:'Surgeon now; this needs a laparotomy, not a scan'},
+  {id:'or',by:380,label:'Theatre'}],
+ goal:'A small hole in the buttock with no exit is a transpelvic wound until somebody proves otherwise. The iliac vessels, the rectum and the bladder all live in that track. He looks well because young men look well right up until they do not. Blood on the glove changes his antibiotics and his operation.'
+},
+{
+ id:'t27',kind:'trauma',title:'Fragments to the face and eye',
+ arrival:'Half his face is peppered with small fragment wounds and there is a lot of blood around the right eye. He is holding a field dressing against it and pressing hard. He is frightened and he will not let go.',
+ mist:'Crew report: RPG airburst about twenty-five minutes ago. Fragment wounds to the face. He could not see out of the right eye at the scene. They put a dressing on and he has been pressing on it since.',
+ massive:S=>'Steady venous ooze from the facial wounds, nothing pulsatile. The volume on the dressing is mostly from the scalp.',
+ init:S=>{Object.assign(S.p,{bleedRate:25,airway:.12,pain:8,lost:350,tempC:36.4,coag:1,gcsBase:15,glucose:98,kg:81,openGlobe:true});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'All pulses present and strong. He is not shocked.',
+ airwayFind:S=>S.p.airway>.35?'Blood is collecting at the back of his throat from the facial wounds and he is swallowing constantly. Watch this one.':'Patent, talking, protecting his own airway. There is blood in the mouth but he is clearing it.',
+ breath:S=>'Clear and equal.',
+ front:S=>'Multiple small fragment wounds across the right side of the face and forehead. The right globe is obviously disrupted — there is a teardrop pupil and what looks like uveal tissue at the limbus. He is pressing a dressing directly onto it.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',
+ skull:S=>'Fragment wounds to the scalp, none obviously penetrating the skull on palpation. No step, no boggy swelling.',
+ back:S=>'Clear. No posterior wounds.',
+ secondary:S=>'Fragment wounds across the right arm and shoulder, all superficial. The eye is the injury. No proptosis, no tense orbit, so no orbital compartment for now.',
+ fast:S=>'Negative FAST, lung sliding present.',
+ neuro:S=>'GCS '+S.gcs()+'. Alert. No light perception on the right. Left eye sees normally.',
+ labs:S=>'Unremarkable. Haemoglobin '+Math.round(14-S.p.lost/400)+'.',
+ critical:[{id:'look',by:60,label:'Look before anything is pressed onto that eye'},
+  {id:'expose',by:110,label:'Stop the pressure — a rigid shield, never a pressure dressing'},
+  {id:'airway_assess',by:90,label:'Airway; facial wounds bleed into the pharynx'},
+  {id:'analgesia',by:160,label:'Analgesia, and something for nausea — straining extrudes the globe'},
+  {id:'antiemetic',by:200,label:'Antiemetic; vomiting can expel intraocular contents'},
+  {id:'abx',by:240,label:'Antibiotics for an open globe'},
+  {id:'teleconsult',by:300,label:'Ophthalmology by teleconsult — vision is time-critical'},
+  {id:'document',by:260,label:'Document the visual acuity you found, before anybody else touches it'},
+  {id:'medevac',by:330,label:'Evacuate; an open globe needs a surgeon he does not have here'}],
+ goal:'The reflex is to press on a bleeding eye and the reflex is wrong. Pressure on an open globe extrudes its contents, and so does vomiting, and so does a struggling patient. Shield it, do not patch it. Record the acuity yourself before the next person does, because "no light perception at arrival" and "no light perception after four hands have been on it" are different medicolegal and surgical facts.'
+},
+{
+ id:'t28',kind:'trauma',title:'Chest into the wheel',
+ arrival:'A man in his forties, seatbelt sign across the chest, sitting bolt upright and complaining that his chest hurts in the middle. He does not look shocked. The monitor is what worries you.',
+ mist:'Crew report: unrestrained driver, head-on at about fifty, roughly twenty minutes ago. Steering column deformed. He self-extricated and was walking at the scene. He has complained of central chest pain since.',
+ massive:S=>'No external bleeding anywhere.',
+ init:S=>{Object.assign(S.p,{bleedRate:5,shunt:.1,pain:7,lost:80,tempC:36.5,coag:1,gcsBase:15,glucose:112,kg:92,contusion:true,dysrhythmia:.4,hrBase:104});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radial is present but the rhythm is irregular — it drops out every few beats. Both feet perfused.',
+ airwayFind:S=>'Patent, talking in full sentences.',
+ breath:S=>'Equal air entry. Painful to breathe deeply, splinting a little. No crepitus.',
+ front:S=>'Seatbelt bruising across the sternum and left chest. The sternum is tender and mobile to gentle pressure — that is a sternal fracture. No flail segment.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Bruising over the thoracic spine from the seat. No step or tenderness over the spinous processes.',
+ secondary:S=>'Sternal tenderness and mobility. Abdomen soft. No long bone injury. The abnormality is on the monitor, not on the patient.',
+ fast:S=>'No pericardial fluid, no free fluid, lung sliding both sides.',
+ neuro:S=>'GCS '+S.gcs()+'. Fully alert.',
+ ecg12:S=>'Sinus with frequent ventricular ectopics and short runs of non-sustained VT. No ST elevation. Right bundle branch block that nobody can tell you is old or new.',
+ labs:S=>'Troponin is elevated. Otherwise unremarkable.',
+ critical:[{id:'leads',by:60,label:'On the monitor immediately — the risk here is rhythm'},
+  {id:'ecg12',by:130,label:'Twelve lead; blunt cardiac injury shows itself electrically'},
+  {id:'fast',by:170,label:'eFAST for pericardial fluid'},
+  {id:'iv',by:150,label:'Access before he needs it'},
+  {id:'labs',by:240,label:'Troponin and a gas'},
+  {id:'analgesia',by:200,label:'Analgesia — splinting from sternal pain causes the atelectasis that kills him on day three'},
+  {id:'teleconsult',by:320,label:'Cardiology or critical care by teleconsult'},
+  {id:'medevac',by:360,label:'Evacuate for monitoring; this needs 24 hours of telemetry he cannot have here'}],
+ goal:'A sternal fracture with an abnormal rhythm is a blunt cardiac injury, and the reason it matters is that it kills by dysrhythmia, not by bleeding. He looks well and he needs a monitor, a twelve lead and somewhere with telemetry. A normal echo and a normal ECG together are what let you relax; one of them alone is not.'
+},
+{
+ id:'t29',kind:'trauma',title:'Round through a child\u2019s abdomen',
+ arrival:'A boy of about eight carried in by his father. Small entry wound in the left upper quadrant, no exit. He is quiet, which is worse than screaming. His father will not let go of him.',
+ mist:'No formal report. The father says a stray round came through the wall of their house about twenty-five minutes ago. Nothing has been done.',
+ massive:S=>'Very little on the outside. Small entry wound, minimal ooze. Everything is going into the abdomen.',
+ init:S=>{Object.assign(S.p,{bleedRate:70,pain:8,lost:350,tempC:36.0,coag:.9,gcsBase:14,glucose:88,kg:25,hrBase:140,rewarm:true,hollowViscus:true});S.o2=.21;},
+ knownAtArrival:['front','bleed'],
+ pulses:(S,b)=>'Radial present but very fast and thin. Femoral is stronger. Capillary refill is three to four seconds at the knee. In a child that is the sign — the pressure will be the last thing to go.',
+ airwayFind:S=>'Patent. He is not talking, but he is protecting it.',
+ breath:S=>'Clear and equal. Rate is fast.',
+ front:S=>'Small entry wound in the left upper quadrant. Abdomen is distended and rigid. No exit wound anywhere.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'No exit. No other wounds.',
+ secondary:S=>'Abdomen rigid and distending. No long bone injury. He is cold to touch — a child this size loses heat four times faster than a man.',
+ fast:S=>'Free fluid in Morison\u2019s pouch and the pelvis. No pericardial fluid.',
+ neuro:S=>'GCS '+S.gcs()+'. Awake but withdrawn and will not engage. In a child that is decompensation, not shyness.',
+ labs:S=>'pH '+(7.30-S.p.lost/2600).toFixed(2)+', lactate '+(3.4+S.p.lost/180).toFixed(1)+', haemoglobin '+Math.max(5,Math.round(12-S.p.lost/110))+', glucose '+Math.round(S.p.glucose)+'.',
+ critical:[{id:'weight',by:60,label:'Get a weight before any drug is drawn — everything here is per kilo'},
+  {id:'monitor_all',by:110,label:'Monitor; a child compensates until he does not'},
+  {id:'io',by:130,label:'Access — go to the bone early in a shocked child',alt:['iv']},
+  {id:'blood',by:180,label:'Blood at 10 to 20 mL per kilo, not adult units'},
+  {id:'txa',by:220,label:'TXA 15 mg per kilo, up to 1 gram'},
+  {id:'fast',by:200,label:'eFAST'},
+  {id:'glucose',by:190,label:'Check a glucose — children drop it fast and it looks like head injury'},
+  {id:'warm',by:170,label:'Warm him aggressively; he has a huge surface area for his mass'},
+  {id:'abx',by:290,label:'Antibiotics at paediatric dosing, 20 to 30 mg per kilo of cefazolin'},
+  {id:'surgeon',by:200,label:'Surgeon now'},
+  {id:'or',by:400,label:'Theatre'}],
+ goal:'A child is not a small adult in the only way that matters here: he will hold his blood pressure until he is nearly empty, and then he will fall off a cliff. Tachycardia and a delayed capillary refill are the findings. Weight first, because every dose in this case is per kilo and a drawn-from-memory adult dose will hurt him. And warm him — a 25 kilo child cools faster than anything else in your bay.'
+},
+{
+ id:'t30',kind:'trauma',title:'High voltage through both hands',
+ arrival:'A contractor with charred wounds on both palms and a blown-out area on the sole of his right foot. The skin between looks untouched. He is agitated and his urine in the bottle is the colour of cola.',
+ mist:'Crew report: contact with an overhead line about forty minutes ago while moving scaffolding. Thrown clear. Brief loss of consciousness. No fall from height. Nothing given.',
+ massive:S=>'No significant external bleeding. The wounds are dry and charred.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:8,lost:0,tempC:36.6,coag:1,gcsBase:14,glucose:126,kg:86,hyperK:true,kSev:.42,rhabdo:true,compartment:.3,dysrhythmia:.35,hrBase:106});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials present. The right forearm is tense and the pulse there is harder to find than the left. Pedal pulses present but the right calf is very firm.',
+ airwayFind:S=>'Patent.',breath:S=>'Clear and equal.',
+ front:S=>'Full thickness contact wounds on both palms. The right forearm and the right calf are both tense, swollen and exquisitely painful on passive stretch. Cola-coloured urine in the bottle.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear, no scalp injury.',
+ back:S=>'Exit wound on the sole of the right foot. No spinal tenderness.',
+ secondary:S=>'Entry both palms, exit right sole. What lies between them is the injury and none of it is visible. Compartments tense in the right forearm and right calf.',
+ fast:S=>'Negative FAST, lung sliding present.',
+ neuro:S=>'GCS '+S.gcs()+'. Agitated and repetitive. No focal deficit.',
+ ecg12:S=>'Sinus tachycardia with peaked T waves and a widening QRS. That is potassium, not ischaemia.',
+ labs:S=>'Potassium '+(5.2+(S.p.kSev||0)*5).toFixed(1)+', creatine kinase in the tens of thousands, creatinine rising, myoglobinuria. pH '+(7.28).toFixed(2)+'.',
+ critical:[{id:'leads',by:70,label:'On the monitor — the first thing high voltage kills with is rhythm'},
+  {id:'ecg12',by:140,label:'Twelve lead; look for the potassium'},
+  {id:'iv',by:120,label:'Access',alt:['io']},
+  {id:'calcium',by:190,label:'Calcium to stabilise the myocardium against the potassium'},
+  {id:'k_treatment',by:250,label:'Shift the potassium — insulin with dextrose, salbutamol'},
+  {id:'crystalloid',by:220,label:'Aggressive crystalloid for the rhabdomyolysis — this is the exception to going easy on fluid'},
+  {id:'compartment_check',by:230,label:'Check the compartments; the muscle damage is between the entry and the exit'},
+  {id:'fasciotomy',by:420,label:'Fasciotomy for the tense compartments'},
+  {id:'labs',by:280,label:'Potassium, CK and renal function'},
+  {id:'medevac',by:400,label:'Evacuate — he needs renal support you do not have'}],
+ goal:'Electrical injury is an iceberg: two small wounds and a column of dead muscle between them. Three things will kill him — the rhythm, the potassium and the kidneys. This is the one trauma patient you flood with crystalloid, because you are trying to keep myoglobin moving through the tubules. Check compartments repeatedly; they tighten over hours, not minutes.'
+},
+{
+ id:'t31',kind:'trauma',title:'Stab below the nipple line',
+ arrival:'A soldier walked in holding a folded shirt against his left lower chest. Small wound, tidy edges. He is talking to you and he is not obviously shocked, which is the trap.',
+ mist:'Crew report: single stab wound, left chest, just below the nipple, about fifteen minutes ago. Weapon not recovered. He walked in.',
+ massive:S=>'Minimal external bleeding from a wound about three centimetres long.',
+ init:S=>{Object.assign(S.p,{bleedRate:55,hemothorax:true,shunt:.14,pain:7,lost:600,tempC:36.3,coag:.93,gcsBase:15,glucose:106,kg:83,hollowViscus:true,diaphragm:true,rewarm:true});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials present, a little fast. Femorals strong.',
+ airwayFind:S=>'Patent and talking.',
+ breath:S=>'Reduced air entry at the left base, dull to percussion. The apex sounds fine.',
+ front:S=>'Three centimetre stab wound in the left fifth intercostal space, anterior axillary line. Not sucking. Abdomen is soft but tender in the left upper quadrant.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'No posterior wound. No spinal tenderness.',
+ secondary:S=>'Single anterior wound. Tenderness in the left upper quadrant that was not there on the first pass. Anything below the nipple line is thoracoabdominal and this wound is below the nipple line.',
+ fast:S=>'Fluid at the left base on the thoracic views. A small amount of free fluid in the splenorenal recess. No pericardial fluid. Lung sliding present on the right, difficult to call on the left.',
+ neuro:S=>'GCS '+S.gcs()+'. Fully alert.',
+ labs:S=>'Haemoglobin '+Math.max(6,Math.round(14-S.p.lost/320))+', lactate '+(2.1+S.p.lost/480).toFixed(1)+'.',
+ critical:[{id:'listen',by:80,label:'Listen and percuss — the diagnosis is at the left base'},
+  {id:'monitor_all',by:100,label:'Monitor'},
+  {id:'iv',by:120,label:'Access',alt:['io']},
+  {id:'fast',by:180,label:'eFAST for both cavities'},
+  {id:'chesttube',by:260,label:'Chest tube for the haemothorax — and measure what comes out'},
+  {id:'blood',by:240,label:'Blood if the output is significant'},
+  {id:'txa',by:220,label:'TXA 2 g'},
+  {id:'abx',by:300,label:'Antibiotics; a diaphragm injury with a hollow viscus needs anaerobic cover'},
+  {id:'surgeon',by:220,label:'Surgeon — a thoracoabdominal wound needs a look, not a scan'},
+  {id:'or',by:420,label:'Theatre'}],
+ goal:'Below the nipple line in front, below the tip of the scapula behind: that is thoracoabdominal, and one blade crosses two cavities and the diaphragm between them. A chest tube that drains 1500 mL immediately, or more than 200 mL an hour for three hours, is an operation, not a drain. The missed diaphragm injury is the one that comes back as a strangulated hernia months later.'
+},
+{
+ id:'t32',kind:'trauma',title:'He felt fine for an hour',
+ arrival:'A man who was walking around at the scene and has been in your waiting area for forty minutes. He is now grey, sweating, and complaining of pain in his right shoulder tip. Nobody has laid a hand on him yet.',
+ mist:'Crew report: vehicle rollover about ninety minutes ago. Restrained. Walked at the scene, refused a litter. Handed over as a minor casualty. Nothing given.',
+ massive:S=>'Nothing external. Not a mark on him beyond seatbelt bruising.',
+ init:S=>{Object.assign(S.p,{bleedRate:90,pain:7,lost:1300,tempC:36.1,coag:.85,gcsBase:15,glucose:110,kg:88,rewarm:true});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials thready and fast. Femorals present. He is peripherally shut down and cold to the wrists.',
+ airwayFind:S=>'Patent.',breath:S=>'Clear and equal.',
+ front:S=>'Seatbelt bruising across the right chest and abdomen. Abdomen is distended and tender, worst in the right upper quadrant. He has pain referred to the right shoulder tip.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Seatbelt bruising. No spinal step or tenderness.',
+ secondary:S=>'Right upper quadrant tenderness with referred shoulder tip pain. Right lower ribs tender. No long bone injury.',
+ fast:S=>'Large volume of free fluid at Morison\u2019s pouch and in the pelvis. No pericardial fluid.',
+ neuro:S=>'GCS '+S.gcs()+'. Alert but anxious and repeatedly asking what is happening.',
+ labs:S=>'pH '+(7.32-S.p.lost/9000).toFixed(2)+', lactate '+(3.8+S.p.lost/420).toFixed(1)+', haemoglobin '+Math.max(5,Math.round(13-S.p.lost/300))+', base deficit '+Math.round(S.p.lost/240)+'.',
+ critical:[{id:'monitor_all',by:70,label:'Monitor immediately — this is a delayed presentation, not a stable one'},
+  {id:'iv',by:100,label:'Two points of access',alt:['io']},
+  {id:'fast',by:150,label:'eFAST — the answer is in Morison\u2019s pouch'},
+  {id:'blood',by:170,label:'Blood; he is an hour into a bleed nobody was watching'},
+  {id:'txa',by:200,label:'TXA — still inside three hours, just'},
+  {id:'calcium',by:260,label:'Calcium with the first unit'},
+  {id:'warm',by:230,label:'Warm him'},
+  {id:'surgeon',by:160,label:'Surgeon now'},
+  {id:'or',by:360,label:'Theatre; a delayed splenic or hepatic bleed does not stop on its own'},
+  {id:'document',by:300,label:'Document the times — this one will be reviewed'}],
+ goal:'The casualty who walks at the scene and is triaged as minor is the one who bleeds quietly in the corridor. Referred shoulder tip pain is blood under the diaphragm until proven otherwise. The learning point is not the liver; it is that "he was fine an hour ago" is a reason to look harder, not a reason to relax.'
+},
+{
+ id:'t33',kind:'trauma',title:'Fragment to the neck, and he cannot move his legs',
+ arrival:'He is flat, awake, and completely calm, which is wrong for what has happened to him. He cannot move anything below his chest. His skin is warm and dry and pink, and his pressure is 70.',
+ mist:'Crew report: single fragment to the posterior neck about twenty minutes ago. He said straight away that he could not feel his legs. Collar on. Nothing given.',
+ massive:S=>'Small entry wound posteriorly with almost no bleeding. Nothing else anywhere.',
+ init:S=>{Object.assign(S.p,{bleedRate:10,pain:3,lost:150,tempC:35.6,coag:1,gcsBase:15,glucose:102,kg:80,neurogenic:true,squeeze:.62,hrBase:52,cordLevel:'C7',rewarm:true});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials easy to feel and slow — about fifty. He is warm and pink at the periphery with a pressure of seventy. That combination is not haemorrhage.',
+ airwayFind:S=>'Patent. Watch the diaphragm if the level climbs.',
+ breath:S=>'Air entry equal but shallow — he is breathing with his diaphragm only. No intercostal movement.',
+ front:S=>'No anterior wounds. Abdomen soft. Priapism present.',
+ groin:S=>'Priapism. No wounds.',
+ axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Single fragment entry wound over the lower cervical spine, minimal bleeding. Step palpable at C7.',
+ secondary:S=>'Dense motor and sensory loss below the clavicles, sensory level at about C7. Priapism. Flaccid tone, no reflexes, no rectal tone. Warm, dry, pink peripheries with a systolic of seventy and a heart rate of fifty.',
+ fast:S=>'Negative FAST. No free fluid, no pericardial fluid, lung sliding both sides. Nothing to explain the pressure.',
+ neuro:S=>'GCS '+S.gcs()+'. Fully alert and oriented. Complete motor and sensory loss below C7. Priapism. No rectal tone.',
+ labs:S=>'Haemoglobin '+Math.round(14-S.p.lost/400)+' — unchanged. Lactate '+(1.6).toFixed(1)+'. Nothing here says haemorrhage.',
+ critical:[{id:'ccollar',by:80,label:'Immobilise — and keep him flat'},
+  {id:'monitor_all',by:100,label:'Monitor; the bradycardia is the clue'},
+  {id:'iv',by:120,label:'Access',alt:['io']},
+  {id:'fast',by:170,label:'eFAST to exclude haemorrhage before you call it neurogenic'},
+  {id:'crystalloid',by:220,label:'A measured fluid challenge — but he is not empty, he is dilated'},
+  {id:'epi_drip',by:300,label:'Vasopressor for neurogenic shock; more fluid will only drown him'},
+  {id:'atropine',by:330,label:'Atropine for symptomatic bradycardia'},
+  {id:'warm',by:200,label:'Warm him — he cannot vasoconstrict and he will get cold fast'},
+  {id:'document',by:260,label:'Document the exact level and the time; this examination is the one that matters'},
+  {id:'teleconsult',by:340,label:'Neurosurgery by teleconsult'},
+  {id:'medevac',by:400,label:'Evacuate'}],
+ goal:'Warm, pink, bradycardic and hypotensive is neurogenic shock, and it is the one shocked trauma patient who does not want more blood. Exclude haemorrhage first — you can have both — then treat the vasodilation with a vasopressor rather than drowning him in crystalloid. He cannot shiver and cannot vasoconstrict, so he will become hypothermic in front of you unless you actively warm him.'
+},
+{
+ id:'t34',kind:'trauma',title:'Blast, and one pupil is bigger',
+ arrival:'Carried in unresponsive with a scalp laceration and blood in the right ear. His right pupil is larger than his left and slow. His breathing is irregular and his pressure is high.',
+ mist:'Crew report: dismounted IED about thirty minutes ago, thrown against a wall. GCS six at the scene, now less. No other obvious injuries. Nothing given.',
+ massive:S=>'Scalp bleeding only — steady but not exsanguinating. Nothing else external.',
+ init:S=>{Object.assign(S.p,{bleedRate:25,airway:.42,airwayClosing:false,shunt:.1,pain:0,lost:250,tempC:36.0,coag:.95,gcsBase:6,glucose:138,kg:85,tbi:true,herniation:.35,squeeze:1.18,hrBase:56,rewarm:true});S.o2=.21;},
+ knownAtArrival:['front','airway'],
+ pulses:(S,b)=>'Radial is strong and slow, about fifty-five. The pressure is high, not low.',
+ airwayFind:S=>'He is not protecting it. Snoring respirations, irregular pattern, and he tolerates an oral airway — which tells you what you need to know.',
+ breath:S=>'Irregular, slow, with long pauses. Air entry equal.',
+ front:S=>'No chest or abdominal injury. Scalp laceration over the right parietal region, bleeding steadily.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',
+ skull:S=>'Boggy swelling over the right parietal scalp with a palpable depression. Blood behind the right ear and from the right ear canal.',
+ back:S=>'No penetrating wound. Collar in place.',
+ secondary:S=>'Battle sign developing behind the right ear, blood from the ear canal. No other injury found. The examination that matters is the pupils and the pattern of breathing.',
+ fast:S=>'Negative FAST. No other cavity bleeding to explain anything.',
+ neuro:S=>'GCS '+S.gcs()+(S.airwayDevice?'T':'')+'. Right pupil five millimetres and sluggish, left three and reactive. Extensor posturing on the left to pain. Bradycardic, hypertensive and breathing irregularly.',
+ labs:S=>'Glucose '+Math.round(S.p.glucose)+', sodium '+Math.round(140-(S.flags.hypertonic?0:2))+', pH 7.36.',
+ critical:[{id:'airway_plan',by:90,label:'Plan the airway; he is not protecting it'},
+  {id:'rsi',by:190,label:'Intubate — avoid hypoxia and hypotension, both of which kill this brain',alt:['cric']},
+  {id:'monitor_all',by:110,label:'Monitor, and get a pressure — target systolic above 110 here, not 90'},
+  {id:'pupils',by:130,label:'Pupils, and repeat them'},
+  {id:'hypertonic',by:260,label:'Hypertonic saline for the blown pupil and posturing'},
+  {id:'etco2',by:220,label:'End-tidal — ventilate to 35 to 40, do not hyperventilate blindly'},
+  {id:'postintubation',by:300,label:'Head up 30 degrees, sedation, ventilation targets'},
+  {id:'glucose',by:200,label:'Glucose; both high and low make this worse'},
+  {id:'abx',by:340,label:'Antibiotics for the open skull fracture'},
+  {id:'teleconsult',by:330,label:'Neurosurgery by teleconsult'},
+  {id:'medevac',by:380,label:'Evacuate to neurosurgery'}],
+ goal:'A blown pupil with posturing, bradycardia and hypertension is herniation, and you have minutes. The interventions that change outcome are unglamorous: no hypoxia, no hypotension, head up, end-tidal in the thirties, hypertonic saline. Blood pressure target for an isolated head injury is higher than for a bleeding patient — above 110 systolic — which is the opposite of what the rest of your training says.'
+},
+{
+ id:'t35',kind:'trauma',title:'Pregnant, and she has stopped talking',
+ arrival:'A woman close to term, carried in after a blast. She was talking at the scene. In the doorway she stops responding. There is no radial pulse and the monitor shows a rhythm with no output.',
+ mist:'Crew report: market blast about eighteen minutes ago. She was walking and talking. She deteriorated in the vehicle and lost her pulse about ninety seconds out. Compressions started in the doorway. The family say she is due any day.',
+ massive:S=>'Fragment wounds to the left flank and thigh with steady dark bleeding. Nothing arterial that I can compress.',
+ init:S=>{Object.assign(S.p,{bleedRate:150,pain:0,lost:2200,tempC:35.4,coag:.62,gcsBase:3,glucose:96,kg:78,pregnant:true,gestation:38,arrestCase:true,periArrest:1,rewarm:true});S.o2=.21;},
+ knownAtArrival:['front','bleed'],
+ pulses:(S,b)=>'No carotid, no femoral. Compressions are the only output in the room.',
+ airwayFind:S=>'Unprotected. She needs it secured, and a pregnant airway is a difficult airway — swollen, friable and desaturating fast.',
+ breath:S=>'Nothing spontaneous. Equal with the bag.',
+ front:S=>'Gravid uterus at term, fundus well above the umbilicus. Fragment wounds across the left flank and left thigh.',
+ groin:S=>'Blood at the introitus. No crowning.',
+ axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Fragment wounds posteriorly on the left. No spinal deformity palpable.',
+ secondary:S=>'Term uterus. Penetrating fragment wounds left flank and thigh. In arrest, with compressions running.',
+ fast:S=>'Free fluid in the abdomen. No pericardial fluid. No fetal cardiac activity seen on the brief look I can take between compressions.',
+ neuro:S=>'GCS 3. No response to anything.',
+ labs:S=>'No meaningful numbers yet.',
+ critical:[{id:'cpr',by:40,label:'Compressions, hands slightly higher on the sternum than usual'},
+  {id:'tilt',by:60,label:'Manual left uterine displacement — the uterus is obstructing her own venous return'},
+  {id:'io',by:100,label:'Access above the diaphragm',alt:['iv']},
+  {id:'fingerthor',by:140,label:'Bilateral decompression as part of the arrest algorithm',alt:['needle','chesttube']},
+  {id:'blood',by:150,label:'Blood — this is a haemorrhagic arrest, not a medical one'},
+  {id:'rsi',by:200,label:'Secure the airway; expect a difficult one',alt:['igel','cric']},
+  {id:'surgeon',by:110,label:'Surgeon immediately — the decision here is hers and yours together'},
+  {id:'fetal',by:170,label:'Establish the gestation; above 20 weeks the uterus must come out of the equation'},
+  {id:'thoracotomy',by:300,label:'Resuscitative thoracotomy if the arrest was witnessed and penetrating'},
+  {id:'warm',by:250,label:'Warm her'}],
+ goal:'Two patients, one of whom you can only help by treating the other. Above twenty weeks the gravid uterus obstructs venous return during compressions — left uterine displacement is not optional, it is part of the CPR. If there is no return of circulation within four minutes of a witnessed arrest at term, resuscitative hysterotomy is the intervention that may save both: it is done at the bedside, for the mother\u2019s benefit as much as the infant\u2019s, and hesitating past five minutes wastes the only window there is.'
+},
+{
+ id:'t36',kind:'trauma',title:'Burning wounds that will not go out',
+ arrival:'He comes in with multiple deep wounds across the chest and arms that are smoking. When the dressings come off they begin to glow and smoke again in the air. There is a sharp garlic smell in the bay.',
+ mist:'Crew report: munition airburst about twenty-five minutes ago, fragments embedded. The wounds kept smoking at the scene so they covered them with wet dressings. Nothing else given.',
+ massive:S=>'Moderate bleeding from the deep wounds, nothing arterial. The problem is not the bleeding.',
+ init:S=>{Object.assign(S.p,{bleedRate:35,pain:10,lost:400,tempC:36.2,coag:1,gcsBase:15,glucose:104,kg:82,wp:true,tbsa:12,hypoCa:true});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'All pulses present and strong.',
+ airwayFind:S=>'Patent. No facial or airway burn. He is shouting in pain, which is a good airway sign and a bad pain sign.',
+ breath:S=>'Clear and equal. The smell is from the wounds, not the lungs.',
+ front:S=>'Multiple deep wounds across the anterior chest and both forearms with embedded fragments. '+(S.flags.decon?'Wounds are covered with saline-soaked dressings and are no longer smoking.':'The wounds smoke and glow when exposed to air. Any that dry out reignite.'),
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Two further embedded fragments in the left flank, same appearance.',
+ secondary:S=>'Perhaps twelve percent of body surface involved, all deep punctate wounds rather than a sheet burn. Embedded particles in most of them.',
+ fast:S=>'Negative FAST.',
+ neuro:S=>'GCS '+S.gcs()+'. Alert and in severe pain.',
+ ecg12:S=>'Prolonged QT interval. Watch for arrhythmia.',
+ labs:S=>'Ionised calcium '+(0.88).toFixed(2)+' — low. Phosphate elevated. That is the systemic effect of the fragments, not the burn.',
+ critical:[{id:'ppe',by:60,label:'Protect the team — these fragments will burn your people too'},
+  {id:'decon',by:120,label:'Keep every wound covered with saline-soaked dressings; dry means burning',alt:['expose']},
+  {id:'analgesia',by:180,label:'Analgesia; these are among the most painful wounds there are'},
+  {id:'monitor_all',by:110,label:'Monitor, and a twelve lead — the calcium will show itself in the QT'},
+  {id:'labs',by:240,label:'Ionised calcium and phosphate'},
+  {id:'calcium',by:290,label:'Calcium for the hypocalcaemia this causes systemically'},
+  {id:'ecg12',by:250,label:'Twelve lead for QT prolongation'},
+  {id:'abx',by:300,label:'Antibiotics for deep contaminated wounds'},
+  {id:'surgeon',by:280,label:'Surgeon — each fragment has to be removed, in water'},
+  {id:'or',by:440,label:'Theatre for debridement under water'}],
+ goal:'White phosphorus burns while it has air, and stops when it does not. Everything is wet: wet dressings, wet debridement, and never let a wound dry out under a blanket. It is also a systemic poison — it drops ionised calcium and raises phosphate, and the first sign is a long QT on your monitor. And protect your own team: a fragment that is still burning will burn the hand that picks it up.'
+},
+{
+ id:'m17',kind:'med',title:'Rash that appeared in an hour',
+ arrival:'A soldier brought in by his section. Two hours ago he had a headache. Now he is mottled, shivering, and there are dark purple blotches on his shins and forearms that were not there when they set off.',
+ mist:'Crew report: headache and fever since this morning, vomited twice, went to lie down. His section found him confused about an hour ago with a rash. Nothing given.',
+ massive:S=>'No bleeding. The purple marks are in the skin, not from it.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:4,lost:0,tempC:39.4,coag:.72,gcsBase:12,glucose:82,kg:77,septic:.78,squeeze:.72,hrBase:126,shunt:.08});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials present but fast and thin. Capillary refill four seconds. Hands and feet are cold and mottled to the elbows and knees.',
+ airwayFind:S=>'Patent, though he is drowsy.',
+ breath:S=>'Clear. Rate is 30 and deep.',
+ front:S=>'Non-blanching purpuric rash over the shins, forearms and trunk, some lesions already coalescing into dark plaques. He is mottled to the knees.',
+ groin:S=>'Purpura extending onto the thighs.',axilla:S=>'Purpura present.',skull:S=>'Neck is stiff. Photophobic when the light comes on.',
+ back:S=>'Purpura across the back. No wounds.',
+ secondary:S=>'Neck stiffness, photophobia, non-blanching rash, and peripheral shutdown. The rash is spreading while I look at it.',
+ fast:S=>'Empty inferior vena cava, hyperdynamic heart, no free fluid. That is an empty tank with a fast pump.',
+ neuro:S=>'GCS '+S.gcs()+'. Drowsy, rousable, confused about where he is. Neck stiff.',
+ labs:S=>'Lactate '+(4.6).toFixed(1)+', pH 7.24, platelets falling, INR rising, glucose '+Math.round(S.p.glucose)+'. This is disseminated intravascular coagulation.',
+ critical:[{id:'ppe',by:60,label:'Mask and gloves — this is droplet-transmissible and your team is standing over him'},
+  {id:'abx',by:120,label:'Antibiotics inside the hour, before any scan or lumbar puncture; ceftriaxone 2 g'},
+  {id:'iv',by:100,label:'Access',alt:['io']},
+  {id:'crystalloid',by:170,label:'Fluid resuscitation — this is the septic patient who needs volume'},
+  {id:'monitor_all',by:110,label:'Monitor'},
+  {id:'labs',by:220,label:'Lactate, coagulation, glucose'},
+  {id:'epi_drip',by:320,label:'Vasopressor once he is filled and still shut down'},
+  {id:'glucose',by:200,label:'Glucose'},
+  {id:'teleconsult',by:340,label:'Infectious disease and critical care by teleconsult'},
+  {id:'medevac',by:380,label:'Evacuate — and tell them what he has so they meet him properly'},
+  {id:'document',by:300,label:'Document who has been in contact; they will need prophylaxis'}],
+ goal:'A purpuric rash that spreads while you watch, in a young person with a headache, is meningococcal sepsis until proven otherwise. Antibiotics go in before imaging and before a lumbar puncture — nothing you find later changes the fact that every hour of delay costs survival. Then remember the people standing next to you: this is droplet spread, and his section needs prophylaxis.'
+},
+{
+ id:'m18',kind:'med',title:'He has missed three sessions',
+ arrival:'A local national in his fifties, brought in weak and breathless. His forearm has an old fistula with a thrill. He can barely lift his arms and his monitor trace looks wrong from across the room.',
+ mist:'No formal report. Family say he has kidney failure and has dialysis three times a week, and the road to the clinic has been closed for over a week. He has become weaker each day.',
+ massive:S=>'No bleeding.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:2,lost:0,tempC:36.5,coag:1,gcsBase:14,glucose:118,kg:70,hyperK:true,kSev:.72,hrBase:44,squeeze:.9,shunt:.14});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radial is slow and regular, about forty-four. Peripheries are warm. There is a palpable thrill over the left forearm fistula.',
+ airwayFind:S=>'Patent.',
+ breath:S=>'Fine crackles at both bases. He is fluid overloaded as well as hyperkalaemic.',
+ front:S=>'Raised jugular venous pressure. Bilateral basal crackles. Pitting oedema to the thighs. Left forearm arteriovenous fistula with a good thrill.',
+ groin:S=>'Oedematous. No wounds.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Sacral oedema. No wounds.',
+ secondary:S=>'Generalised weakness, worst proximally. He cannot lift his head from the pillow. Fluid overloaded with a working fistula and no dialysis for nine days.',
+ fast:S=>'B-lines throughout both lung fields, full inferior vena cava, poor cardiac contractility. He is wet, not dry.',
+ neuro:S=>'GCS '+S.gcs()+'. Alert but exhausted. Profound proximal weakness.',
+ ecg12:S=>'Rate 44. Peaked T waves, flattened P waves, and a QRS that is broadening into a sine wave pattern. This is a pre-arrest ECG.',
+ labs:S=>'Potassium '+(5.4+(S.p.kSev||0)*3.6).toFixed(1)+', creatinine grossly elevated, pH 7.18, bicarbonate 12.',
+ critical:[{id:'leads',by:50,label:'On the monitor before anything else'},
+  {id:'ecg12',by:110,label:'Twelve lead; the QRS width tells you how much time you have'},
+  {id:'calcium',by:140,label:'Calcium first — it stabilises the myocardium and buys you the next twenty minutes'},
+  {id:'iv',by:120,label:'Access',alt:['io']},
+  {id:'k_treatment',by:220,label:'Then shift it: insulin with dextrose, and salbutamol'},
+  {id:'glucose',by:250,label:'Glucose after insulin — and again, because it will fall'},
+  {id:'labs',by:260,label:'Potassium, gas, renal function'},
+  {id:'teleconsult',by:330,label:'Nephrology by teleconsult; shifting is temporary, only dialysis removes it'},
+  {id:'medevac',by:360,label:'Evacuate to somewhere with dialysis — everything you do here wears off'}],
+ goal:'A sine wave QRS is minutes from arrest. Calcium does not lower the potassium at all; it protects the heart while insulin and salbutamol move potassium into cells, and neither of those removes a single milligram from the body. Every treatment you have here is temporary, so the disposition decision — getting him to dialysis — starts the moment the calcium is in, not after the potassium comes back.'
+},
+{
+ id:'m19',kind:'med',title:'Agitated, hot, and the heart will not slow',
+ arrival:'A woman in her thirties, brought in agitated and confused, soaked in sweat and burning hot. Her heart rate is 168 and irregular. Her eyes are prominent and there is a swelling at the front of her neck.',
+ mist:'Crew report: unwell for a week with palpitations and weight loss, deteriorated today after a chest infection. Confused since this morning. The family mention thyroid tablets she stopped taking months ago.',
+ massive:S=>'No bleeding.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:2,lost:0,tempC:40.2,coag:1,gcsBase:13,glucose:142,kg:62,hot:true,coolRate:.03,hrBase:168,afib:true,squeeze:.88,thyroid:.8});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radial is fast and completely irregular — I cannot count it by hand. Peripheries are warm and wet.',
+ airwayFind:S=>'Patent but she is thrashing.',
+ breath:S=>'Clear with a few basal crackles. Rate 32.',
+ front:S=>'Diffuse goitre, visible and palpable. Lid lag and proptosis. Skin is hot, flushed and drenched. Tremor of both hands.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Clear.',
+ secondary:S=>'Goitre, proptosis, tremor, fever of forty, atrial fibrillation with a rapid response, and agitated delirium. Early congestive signs at the bases.',
+ fast:S=>'Hyperdynamic left ventricle, no effusion, no free fluid.',
+ neuro:S=>'GCS '+S.gcs()+'. Agitated, confused, not following commands reliably. Coarse tremor.',
+ ecg12:S=>'Atrial fibrillation at 168 with a rapid ventricular response. No ischaemic changes.',
+ labs:S=>'Glucose '+Math.round(S.p.glucose)+', mildly deranged liver enzymes, calcium normal. Thyroid function is not available here — this is a clinical diagnosis.',
+ critical:[{id:'monitor_all',by:80,label:'Monitor'},
+  {id:'iv',by:110,label:'Access',alt:['io']},
+  {id:'beta_blocker',by:180,label:'Beta blockade first — it treats the rate and the peripheral effects together'},
+  {id:'cooling',by:200,label:'Active cooling; forty degrees is part of the illness, not a coincidence'},
+  {id:'crystalloid',by:230,label:'Fluid — she has been running a fever and sweating for days'},
+  {id:'sedate',by:260,label:'Sedation for the agitation, once the cause is being treated'},
+  {id:'glucose',by:210,label:'Glucose'},
+  {id:'labs',by:280,label:'Gas, glucose, liver function'},
+  {id:'teleconsult',by:330,label:'Endocrinology by teleconsult — order of drugs matters here'},
+  {id:'medevac',by:390,label:'Evacuate'}],
+ goal:'Fever, tachyarrhythmia and delirium in someone with a goitre is thyroid storm. It has a mortality that cold and fluid alone will not touch. The order is the teaching point: beta blockade and then antithyroid therapy, and iodine only after antithyroid drugs are on board, never before, or you feed the gland the substrate it needs. Treat the temperature as part of the disease.'
+},
+{
+ id:'m20',kind:'med',title:'Shocked, and fluid is not working',
+ arrival:'A contractor in his fifties, hypotensive and vomiting, who has had three litres of crystalloid on the way in and is no better. He looks tanned in places that should not be tanned.',
+ mist:'Crew report: vomiting and abdominal pain for two days, collapsed this morning. Three litres of saline given on the drive with no response. History unknown beyond some tablets he takes for a joint condition.',
+ massive:S=>'No bleeding anywhere.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:5,lost:0,tempC:37.8,coag:1,gcsBase:13,glucose:52,kg:80,adrenal:true,squeeze:.64,hrBase:118,hyperK:true,kSev:.3,hypoNa:.35});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials thready. He has had three litres and his pressure has not moved, which should make you think.',
+ airwayFind:S=>'Patent.',breath:S=>'Clear and equal.',
+ front:S=>'Abdomen diffusely tender, no guarding. Hyperpigmentation in the palmar creases and an old scar that is much darker than it should be.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Buccal pigmentation inside the mouth.',
+ back:S=>'Clear.',
+ secondary:S=>'Hyperpigmented palmar creases, buccal mucosa and old scars. Hypotension unresponsive to volume. Low-grade fever.',
+ fast:S=>'Empty inferior vena cava, no free fluid, no effusion.',
+ neuro:S=>'GCS '+S.gcs()+'. Drowsy and slow to answer, which improves a little as the sugar is corrected.',
+ labs:S=>'Glucose '+Math.round(S.p.glucose)+' — low. Sodium '+Math.round(134-(S.p.hypoNa||0)*22)+' — low. Potassium '+(4.6+(S.p.kSev||0)*3).toFixed(1)+' — high. That triad with shock is the diagnosis.',
+ critical:[{id:'glucose',by:110,label:'Glucose early — hypoglycaemia is part of this picture'},
+  {id:'dextrose',by:160,label:'Treat the hypoglycaemia'},
+  {id:'labs',by:180,label:'Sodium, potassium and glucose together tell the story'},
+  {id:'iv',by:100,label:'Access',alt:['io']},
+  {id:'crystalloid',by:200,label:'Fluid — but recognise that fluid alone will not fix this'},
+  {id:'steroid',by:240,label:'Hydrocortisone; this is the treatment and it should not wait for a test',alt:['abx']},
+  {id:'monitor_all',by:120,label:'Monitor'},
+  {id:'teleconsult',by:330,label:'Endocrinology or critical care by teleconsult'},
+  {id:'medevac',by:380,label:'Evacuate'}],
+ goal:'Shock that does not answer three litres of fluid is shock with a reason you have not found. Low sodium, high potassium, low glucose and hyperpigmentation is adrenal crisis. Steroid is the treatment and giving it does not spoil any test that matters at this level of care. The trap is continuing to pour in fluid and reaching for a pressor while the actual deficiency goes untreated.'
+},
+{
+ id:'m21',kind:'med',title:'Blind, and breathing hard',
+ arrival:'A man carried in by two friends. He is breathing deeply and fast, complaining that he cannot see properly, and saying the room is snowing. He smells of alcohol but not the usual kind.',
+ mist:'No formal report. His friends say three of them drank from a jerrycan of spirits last night. One is outside feeling unwell. They do not know what was in it.',
+ massive:S=>'No bleeding.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:4,lost:0,tempC:36.4,coag:1,gcsBase:13,glucose:96,kg:74,toxAlcohol:.7,squeeze:.9,hrBase:104,acidosis:.6});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials present, regular, a little fast. Perfusion is adequate.',
+ airwayFind:S=>'Patent. He is talking, though not making much sense.',
+ breath:S=>'Deep, sighing, fast respirations. Clear chest. That breathing is compensation, not lung disease.',
+ front:S=>'No injury. Abdomen soft with epigastric tenderness.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Clear.',
+ secondary:S=>'No trauma. Visual acuity is down to counting fingers in both eyes. Pupils are large and sluggish. He describes a snowfield in his vision.',
+ fast:S=>'Normal cardiac windows, no free fluid.',
+ neuro:S=>'GCS '+S.gcs()+'. Confused. Visual acuity grossly reduced bilaterally with dilated, sluggish pupils.',
+ labs:S=>'pH 7.08, bicarbonate 6, anion gap 32, lactate only 2.4, glucose '+Math.round(S.p.glucose)+'. A large anion gap with a lactate that does not explain it, and an osmolar gap.',
+ critical:[{id:'monitor_all',by:100,label:'Monitor'},
+  {id:'iv',by:110,label:'Access',alt:['io']},
+  {id:'labs',by:160,label:'Gas and gap — the diagnosis is in the numbers, not the examination'},
+  {id:'glucose',by:150,label:'Glucose, to exclude the easy cause of confusion'},
+  {id:'teleconsult',by:220,label:'Toxicology by teleconsult, urgently — there is a specific antidote'},
+  {id:'crystalloid',by:240,label:'Fluid'},
+  {id:'thiamine',by:300,label:'Thiamine and folate as adjuncts'},
+  {id:'medevac',by:330,label:'Evacuate for dialysis — it is the only thing that clears the toxic metabolite'},
+  {id:'document',by:280,label:'Document what they drank and how many drank it; there are others'}],
+ goal:'Visual disturbance with a severe metabolic acidosis and an anion gap that lactate does not explain is toxic alcohol until proven otherwise. Methanol blinds through its metabolite, so the treatment is to block the enzyme — fomepizole, or ethanol if that is all you have — and then remove it by dialysis. And there is a second patient outside who drank from the same container; ask.'
+},
+{
+ id:'m22',kind:'med',title:'Chest pain in a sickle patient',
+ arrival:'A young local man, known to the clinic, brought in with chest pain and breathlessness after two days of bone pain in his arms and legs. He is jaundiced and breathing fast, and his saturations are 86.',
+ mist:'Crew report: pain crisis for two days treated at home, developed chest pain and fever this morning. Known sickle cell disease. Nothing given today.',
+ massive:S=>'No bleeding.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:9,lost:0,tempC:38.6,coag:1,gcsBase:15,glucose:106,kg:63,sickle:.7,shunt:.3,hrBase:118,septic:.3});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials present and fast. Peripheries warm.',
+ airwayFind:S=>'Patent and talking, though in short sentences.',
+ breath:S=>'Reduced air entry at the left base with bronchial breathing. Rate 32. He is splinting because of chest wall pain.',
+ front:S=>'Scleral icterus. Chest wall tender over the ribs bilaterally. No trauma.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Clear.',
+ back:S=>'Tender over the lumbar spine and both posterior ribs. No wounds.',
+ secondary:S=>'Jaundiced, febrile, hypoxic, with focal signs at the left base and diffuse bone pain. Spleen not palpable.',
+ fast:S=>'Consolidation and B-lines at the left base. Normal cardiac windows. No free fluid.',
+ neuro:S=>'GCS '+S.gcs()+'. Fully alert, in severe pain.',
+ labs:S=>'Haemoglobin 6.4 against a baseline of about 8. Reticulocytes high, bilirubin high. White cells raised. pH 7.36.',
+ critical:[{id:'o2',by:90,label:'Oxygen — hypoxia drives further sickling'},
+  {id:'monitor_all',by:110,label:'Monitor'},
+  {id:'analgesia',by:140,label:'Analgesia early and properly; undertreated pain worsens the crisis'},
+  {id:'iv',by:120,label:'Access',alt:['io']},
+  {id:'crystalloid',by:190,label:'Careful hydration — enough, not a flood into a consolidated lung'},
+  {id:'abx',by:200,label:'Antibiotics covering atypicals; you cannot distinguish this from pneumonia'},
+  {id:'labs',by:240,label:'Haemoglobin against his baseline, not against normal'},
+  {id:'warm',by:260,label:'Keep him warm; cold provokes sickling'},
+  {id:'blood',by:340,label:'Transfusion for the falling haemoglobin and the hypoxia'},
+  {id:'teleconsult',by:320,label:'Haematology by teleconsult — exchange transfusion may be needed'},
+  {id:'medevac',by:380,label:'Evacuate'}],
+ goal:'Acute chest syndrome is the commonest way sickle cell disease kills adults, and it looks exactly like pneumonia because it often starts as one. Hypoxia, cold, dehydration and pain all drive more sickling, so all four are treatment targets. Judge the haemoglobin against his own baseline: 6.4 in someone who lives at 8 is a significant fall, not a stable anaemia.'
+},
+{
+ id:'m23',kind:'med',title:'Dry as a bone and not making sense',
+ arrival:'An older man brought in after four days of getting gradually more confused. He is profoundly dehydrated, his tongue is like leather, and he is drowsy but rousable. There is no smell of ketones.',
+ mist:'No formal report. Family say he has diabetes treated with tablets, has been passing huge amounts of urine for a week, and has barely eaten for four days. He stopped making sense two days ago.',
+ massive:S=>'No bleeding.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:1,lost:0,tempC:37.4,coag:1,gcsBase:11,glucose:820,kg:72,hhs:true,squeeze:.76,hrBase:112,hypoNa:0});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radials thready and fast. Skin turgor is gone. Capillary refill four seconds.',
+ airwayFind:S=>'Patent but he is drowsy — watch it if he drops further.',
+ breath:S=>'Clear. Rate 20 and unremarkable. There is no Kussmaul breathing and no ketotic smell, which is the point.',
+ front:S=>'Profoundly dehydrated. Sunken eyes, dry mucous membranes, no axillary sweat. Abdomen soft.',
+ groin:S=>'Clear.',axilla:S=>'Dry — no sweat at all.',skull:S=>'Clear.',
+ back:S=>'Sacral skin tenting. No pressure sores yet.',
+ secondary:S=>'No focal neurology. Profound dehydration. Estimated deficit is eight to ten litres in a man this size.',
+ fast:S=>'Completely collapsed inferior vena cava. No free fluid.',
+ neuro:S=>'GCS '+S.gcs()+'. Drowsy, confused, no focal deficit.',
+ labs:S=>'Glucose '+Math.round(S.p.glucose)+'. Sodium 158 corrected. Osmolality above 340. pH 7.33 with a bicarbonate of 20 and only trace ketones — this is not ketoacidosis.',
+ critical:[{id:'glucose',by:90,label:'Glucose; the number is the diagnosis'},
+  {id:'iv',by:110,label:'Two points of access',alt:['io']},
+  {id:'crystalloid',by:170,label:'Fluid is the treatment — most of the deficit is water, and it is enormous'},
+  {id:'monitor_all',by:120,label:'Monitor'},
+  {id:'labs',by:210,label:'Sodium, osmolality, ketones and a gas — this must be distinguished from ketoacidosis'},
+  {id:'k_treatment',by:300,label:'Potassium will fall as you treat; check it before insulin'},
+  {id:'insulin_inf',by:360,label:'Insulin later and slowly, after fluid — and only once potassium is known'},
+  {id:'abx',by:320,label:'Look for the precipitant; it is usually infection'},
+  {id:'teleconsult',by:340,label:'Critical care by teleconsult'},
+  {id:'medevac',by:400,label:'Evacuate'}],
+ goal:'Hyperosmolar state is not ketoacidosis with bigger numbers. There is no significant acidosis and no ketones, the deficit is water more than salt, and it has built over days rather than hours. Fluid does most of the work, insulin comes later and slower, and dropping the osmolality too fast is what causes cerebral oedema. Check the potassium before any insulin goes in.'
+},
+{
+ id:'m24',kind:'med',title:'A cut he treated at home',
+ arrival:'A local national in his forties, rigid, sweating, with a fixed grimace. Every time the door bangs his whole body arches off the litter. He is fully awake throughout.',
+ mist:'No formal report. The family say he cut his foot on a nail about twelve days ago and dressed it himself. His jaw started sticking three days ago and he has not been able to open his mouth since yesterday.',
+ massive:S=>'No bleeding. A small healing wound on the sole of the right foot.',
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:8,lost:0,tempC:37.9,coag:1,gcsBase:15,glucose:112,kg:66,tetanus:.7,hrBase:124,squeeze:1.1,spasm:true,airway:.25});S.o2=.21;},
+ knownAtArrival:['front'],
+ pulses:(S,b)=>'Radial is fast and the rate swings with the spasms. Peripheries are warm and drenched with sweat.',
+ airwayFind:S=>S.p.airway>.45?'He is in spasm and I cannot ventilate him through it. The jaw will not open.':'Patent between spasms. Trismus — the jaw is locked. If a spasm involves the larynx we will not get in through the mouth.',
+ breath:S=>'Clear between spasms. During them the chest wall is rigid and he does not move air.',
+ front:S=>'Board-like abdominal wall. Opisthotonic arching with any stimulus. Risus sardonicus — the fixed grimace.',
+ groin:S=>'Clear.',axilla:S=>'Clear.',skull:S=>'Trismus. Jaw will not open more than a centimetre.',
+ back:S=>'Arching during spasms. No spinal injury.',
+ secondary:S=>'Healing puncture wound on the right sole with a little surrounding erythema. Generalised rigidity with stimulus-provoked spasms, fully conscious throughout. Autonomic instability — the pressure and rate swing wildly.',
+ fast:S=>'Difficult to obtain between spasms. No free fluid seen.',
+ neuro:S=>'GCS '+S.gcs()+'. Fully alert and aware. That is the cruelty of this one — he is awake for all of it.',
+ labs:S=>'Unremarkable. This is a clinical diagnosis and there is no test that will make it for you.',
+ critical:[{id:'quiet',by:80,label:'Dim the lights and keep the bay quiet — every stimulus triggers a spasm'},
+  {id:'monitor_all',by:110,label:'Monitor; the autonomic swings are dangerous in themselves'},
+  {id:'iv',by:120,label:'Access',alt:['io']},
+  {id:'sedate',by:170,label:'Benzodiazepines, generously — they are the mainstay for spasm'},
+  {id:'airway_plan',by:150,label:'Plan the airway now; trismus means the mouth may not be an option'},
+  {id:'abx',by:240,label:'Metronidazole for the wound, and immunoglobulin if it can be found'},
+  {id:'analgesia',by:220,label:'Analgesia — he is awake and in agony throughout'},
+  {id:'cric',by:420,label:'Surgical airway if laryngospasm closes the throat',alt:['rsi']},
+  {id:'teleconsult',by:320,label:'Critical care by teleconsult'},
+  {id:'medevac',by:380,label:'Evacuate; he needs weeks of ventilation and sedation'}],
+ goal:'Trismus and stimulus-provoked spasms in a fully conscious patient with an old dirty wound is tetanus. Two things will kill him: laryngeal spasm, which you cannot relieve through a locked jaw, and autonomic storm. Plan the surgical airway before you need it rather than after. And every noise, light and touch in your bay is a trigger, so the first intervention costs nothing — quieten the room.'
 }
 ];
 
@@ -2972,6 +3774,7 @@ function newState(scn,shared){
   o2:.21,access:0,units:0,crystalloid:0,airwayDevice:null,
   nibpPending:0,lastBp:null,firstBpT:null,flags:{},log:[],done:[],busy:{},queue:[],
   comms:{total:0,directed:0},lessons:[],errors:[],known:{},called:{},lastCall:-99,
+  bank:20,bankUsed:0,wbbAt:null,wbbDone:false,
   phase:'pre',meds:[],prepped:{},lastChatter:0,radio:null,diag:[],infusions:[],nibpInterval:0,nibpLast:-999,quiet:false,
   lesson(t){if(!this.lessons.includes(t))this.lessons.push(t);},
   sbp(){return vitals(this).sbp;},
@@ -3287,6 +4090,13 @@ function watch(S){
  if(S.p.bleedRate<30&&S.known.bleed&&S.units>=2&&v.sbp>95&&fire('bleed_ok','aust','Bleeding is controlled and his colour is back. He looks like a different man to the one who came in.'))return;
  if(S.p.tension<.15&&S.flags.chestTube&&fire('chest_ok','aust','Air entry is equal now and the tube is swinging nicely. That chest is sorted.'))return;
  if(S.airwayDevice&&S.flags.postIntubation&&v.spo2>95&&fire('vent_ok','majorb','He is settled on the ventilator, saturations good, end-tidal steady. The airway is off your list.'))return;
+ if(S.wbbAt&&!S.wbbDone&&S.t-S.wbbAt>=1800){
+  S.wbbDone=true;S.bank+=20;
+  say('crit','First fresh whole blood is up from the donor panel. Twenty more units available. Bank now holds '+S.bank+'.');
+ }
+ if(S.wbbAt&&!S.wbbDone&&S.t-S.wbbAt>=900&&!S.called.wbbHalf){S.called.wbbHalf=true;
+  say('team','Donor panel is bled and being typed. Fifteen minutes or so before the first fresh units are ready.',person('lauren').nm);}
+ if(S.bank<=4&&!S.wbbAt&&S.units>0&&fire('bank_low','lauren','Sir, we are down to '+S.bank+' unit'+(S.bank===1?'':'s')+' in the fridge and nothing is coming behind it. The walking blood bank is thirty minutes from the call.'))return;
  if(S.units>=4&&!S.flags.calcium&&fire('ca','lauren','That is four units in. Do you want calcium?'))return;
 }
 function step(S,dt){
@@ -3297,6 +4107,20 @@ function step(S,dt){
   const triad=(1-p.coag)*.5+Math.max(0,35.5-p.tempC)*.1;
   p.bleedRate*=(1+triad*dt/240);
  }
+ /* hyperosmolar hyperglycaemic state — the deficit is water, and volume is the treatment */
+ if(p.hhs){
+  const given=(S.crystalloid||0)+(S.units||0)*.5;
+  if(given>0){
+   p.squeeze=Math.min(1,(p.squeeze||1)+.00011*dt*given);
+   p.gcsBase=Math.min(15,(p.gcsBase||11)+.0009*dt*given);
+   p.glucose=Math.max(160,p.glucose-(0.30+(S.flags.insulin?0.55:0))*dt*Math.min(given,4));
+  }
+  if(S.flags.insulin&&given<1&&!S.called.hhsWarn){S.called.hhsWarn=true;
+   S.lesson('Insulin before adequate fluid in a hyperosmolar patient pulls water into the cells from a circulation that is already empty. Fluid first, insulin later and slower.');}
+ }
+ /* toxic alcohol — the acidosis answers only to the antidote and dialysis */
+ if(p.toxAlcohol&&S.flags.teleconsult&&!S.called.toxNote){S.called.toxNote=true;
+  say('team','Toxicology says block the enzyme now — fomepizole if you have it, an ethanol infusion if you do not — and start arranging dialysis. Bicarbonate will buy time for the acidosis but it does not clear the metabolite.',person('majorb').nm);}
  if(p.hot){
   if(S.flags.cooling)p.tempC-=(p.coolRate||.05)*dt/6; else p.tempC+=.0012*dt;
   if(p.tempC<38.5&&p.gcsBase<15)p.gcsBase=Math.min(15,p.gcsBase+.004*dt);
@@ -3376,7 +4200,7 @@ function step(S,dt){
   S.nibpPending=0;S.nibpLast=S.t;
  }
  Object.keys(S.busy).forEach(k=>{const j=S.busy[k];if(j&&S.t>=j.until){delete S.busy[k];if(j.job)finish(j);}});
- watch(S);coach(S);patientVoice(S);majorb(S);chatter(S);
+ watch(S);coach(S);surgeonArrival(S);patientVoice(S);majorb(S);chatter(S);
  const v=vitals(S);
  if(S.p.arrestCase&&!S.rosc){
   S.arrestClock=(S.arrestClock||0)+dt;
@@ -3433,8 +4257,38 @@ function lev(a,b,max){
 }
 const KEEP=new Set(('percussion rales rhonchi mentation crepitus priapism peritonism posturing obtunded lucid the and for with from that this they them then than there their have has had not but you your his her him she are was were will would could should about into over under back front left right side both all any each every some more most less least much many other another same such just only also very still even well good bad worse better best deep shallow clean dirty clear cloudy open closed close cold warm hot cool wet dry hard soft tight loose fast slow high low big small large long short thick thin full empty new old young last next first second third leg legs arm arms hand hands foot feet head neck face chest belly abdomen back skin bone vein veins wound wounds blood bleeding pain injury injuries patient guy man woman kid child boy girl people team room bay floor door bed litter time minute minutes hour hours second seconds now soon later before after while during until since again once twice please thanks thank okay yeah yes no nope sure fine need needs needed want wants get gets got give gives gave take takes took put puts make makes made keep keeps kept find finds found look looks looked see sees saw tell tells told say says said ask asks asked think thinks thought know knows knew come comes came going go goes went done doing did been being can cannot cant do does don dont what when where which who whom whose why how many much bag bags box boxes kit kits tray trays glove gloves mask masks tube tubes line lines').split(' '));
 /* people type contractions; the alias list does not contain any */
+const MEDSWAP={
+ 'oust':'aust','ost':'aust','august':'aust','awst':'aust','ausd':'aust','oswald':'aust','aussie':'aust',
+ 'east side':'aust','oz':'aust','osk':'aust','aust':'aust',
+ 'amie':'amy','aimee':'amy','ami':'amy','amii':'amy',
+ 'loren':'lauren','laurin':'lauren','lorraine':'lauren','laura n':'lauren','lawrence':'lauren',
+ 'mich':'mitch','mitchell':'mitch','which':'mitch','mitts':'mitch',
+ 'major bee':'major b','major be':'major b','majorbee':'major b','major v':'major b',
+ 'doctor moon':'dr moon','dr mune':'dr moon','doctor mune':'dr moon','dr moone':'dr moon','dr. moon':'dr moon',
+ 'sina kit':'cyanokit','sino kit':'cyanokit','china kit':'cyanokit','cyanide kit':'cyanokit','cyano kit':'cyanokit',
+ 'hydroxylamine':'hydroxocobalamin','hydroxy cobalamin':'hydroxocobalamin','hydroxo cobalamin':'hydroxocobalamin',
+ 'medi back':'medevac','medi vac':'medevac','media vac':'medevac','meta vac':'medevac','metta back':'medevac',
+ 'medivac':'medevac','med evac':'medevac','medi bac':'medevac','medford back':'medevac',
+ 'rock uronium':'rocuronium','rocker onium':'rocuronium','rock oronium':'rocuronium',
+ 'sucks in ill choline':'succinylcholine','succinyl choline':'succinylcholine',
+ 'tran exam ic':'tranexamic','tranexamic acid':'txa','tran ex am ic':'tranexamic',
+ 'norep in efrin':'norepinephrine','nor epinephrine':'norepinephrine',
+ 'cric oh thyroid otomy':'cricothyroidotomy','crike oh thyroidotomy':'cricothyroidotomy',
+ 'i gel':'igel','eye gel':'igel','king l t':'igel',
+ 'pearl a doxime':'pralidoxime','prala doxime':'pralidoxime','to pam':'pralidoxime',
+ 'arte sunate':'artesunate','art a sunate':'artesunate',
+ 'hyper tonic':'hypertonic','three percent':'hypertonic',
+ 'tension new mo':'tension pneumothorax','new mo thorax':'pneumothorax','numo thorax':'pneumothorax',
+ 'hemo thorax':'haemothorax','heemo thorax':'haemothorax',
+ 'tam pond aid':'tamponade','tampon aid':'tamponade','tam pon ade':'tamponade',
+};
+function medSwap(x){
+ let t=' '+x+' ';
+ for(const k in MEDSWAP)t=t.split(' '+k+' ').join(' '+MEDSWAP[k]+' ');
+ return t.trim();
+}
 function expand(t){
- return String(t)
+ return medSwap(String(t)
   .replace(/\bwhat'?s\b/gi,'what is').replace(/\bthat'?s\b/gi,'that is')
   .replace(/\bhe'?s\b/gi,'he is').replace(/\bshe'?s\b/gi,'she is').replace(/\bit'?s\b/gi,'it is')
   .replace(/\bwho'?s\b/gi,'who is').replace(/\bhow'?s\b/gi,'how is').replace(/\bwhere'?s\b/gi,'where is')
@@ -3446,7 +4300,7 @@ function expand(t){
   .replace(/\bi'?ll\b/gi,'i will').replace(/\bwe'?ll\b/gi,'we will')
   .replace(/\b(do|does|did|is|are|was|were|has|have|had|should|would|could|ai)n'?t\b/gi,'$1 not')
   .replace(/\bgonna\b/gi,'going to').replace(/\bwanna\b/gi,'want to').replace(/\bgimme\b/gi,'give me')
-  .replace(/\blemme\b/gi,'let me').replace(/\bkinda\b/gi,'kind of');
+  .replace(/\blemme\b/gi,'let me').replace(/\bkinda\b/gi,'kind of').toLowerCase());
 }
 function fixSpelling(raw){
  if(!VOCAB)buildVocab();
@@ -3474,6 +4328,67 @@ function fixSpelling(raw){
 
 let DRUGSET=null;
 /* find every distinct action named in one sentence, longest alias wins its span */
+/* A crude phonetic key. "sina kit" and "cyanokit" collapse to the same thing,
+   which spelling distance never would. */
+function phon(w){
+ let x=String(w).toLowerCase().replace(/[^a-z]/g,'');
+ if(!x)return '';
+ x=x.replace(/^(kn|gn|pn|wr|ps)/,m=>m[1])
+    .replace(/^x/,'s')
+    .replace(/ough|augh/g,'f')
+    .replace(/ph/g,'f').replace(/gh/g,'').replace(/ck/g,'k')
+    .replace(/sch/g,'sk').replace(/ch/g,'k').replace(/sh/g,'s')
+    .replace(/th/g,'t').replace(/wh/g,'w')
+    .replace(/c(?=[eiy])/g,'s').replace(/c/g,'k')
+    .replace(/q/g,'k').replace(/x/g,'ks').replace(/z/g,'s')
+    .replace(/j/g,'g').replace(/v/g,'f').replace(/y/g,'i');
+ const first=x[0];
+ x=first+x.slice(1).replace(/[aeiouh]/g,'');
+ x=x.replace(/(.)\1+/g,'$1');
+ return x;
+}
+let PHONIDX=null;
+const PHON_NEVER=new Set(['end_case','kiss','switch_pt','delegate','ack','hold','quiet','stop','foot_exam','confirm']);
+function buildPhon(){
+ PHONIDX={};
+ for(const id in A){
+  if(PHON_NEVER.has(id))continue;
+  for(const al of A[id].al){
+   if(al.length<7)continue;                 /* short aliases collide far too easily */
+   const k=phon(al);
+   if(k.length<5)continue;
+   if(!PHONIDX[k])PHONIDX[k]={id,al};
+  }
+ }
+}
+/* try to rescue a phrase nothing matched, by sound */
+const PHON_STOP=new Set(['lets','let','please','get','give','the','and','him','her','patient','okay','now','him a','work on','we are','going to','want to','need to']);
+function phoneticRescue(raw){
+ if(!PHONIDX)buildPhon();
+ const words=String(raw).toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(Boolean);
+ let exact=null,near=null,nearD=99;
+ /* longest phrase first: a long match is far more trustworthy than a short one */
+ for(let n=4;n>=1;n--){
+  for(let i=0;i+n<=words.length;i++){
+   const phrase=words.slice(i,i+n).join(' ');
+   if(phrase.length<6||PHON_STOP.has(phrase))continue;
+   if(words.slice(i,i+n).every(w=>PHON_STOP.has(w)))continue;
+   const k=phon(phrase);
+   if(k.length<5)continue;
+   if(PHONIDX[k]&&!exact)exact={id:PHONIDX[k].id,heard:phrase,meant:PHONIDX[k].al};
+   if(exact)continue;
+   if(k.length<7)continue;                   /* one edit is only allowed on a long key */
+   for(const key in PHONIDX){
+    if(Math.abs(key.length-k.length)>1)continue;
+    if(key[0]!==k[0]||key[1]!==k[1])continue;
+    const d=lev(k,key,1);
+    if(d<=1&&d<nearD){nearD=d;near={id:PHONIDX[key].id,heard:phrase,meant:PHONIDX[key].al};}
+   }
+  }
+  if(exact)break;
+ }
+ return exact||near;
+}
 function matchAll(rawIn){
  const raw=fixSpelling(expand(rawIn));
  const s=' '+raw.toLowerCase().replace(/[^a-z0-9\s':-]/g,' ').replace(/\s+/g,' ')+' ';
@@ -3767,6 +4682,7 @@ async function submitOrder(raw){
   }
  }
  /* a radio call stays open until you close it or turn back to the room */
+ if(S.radio&&S.radio.id==='surgeon'&&S.flags.surgeonHere)S.radio=null;
  if(S.radio&&S.t-S.radio.t<420){
   const sp=person(S.radio.id);
   /* closing the channel is checked first, so "that is all" never ends the case by mistake */
@@ -3783,16 +4699,31 @@ async function submitOrder(raw){
    await respondAs(named,raw);return;
   }
   const namesTeam=detectPersons(raw).some(pp=>!['surgeon','flight'].includes(pp.id));
-  const isOrder=matchAll(raw).length>0;
-  /* short input, or anything that reads as an order, goes to the room — not the radio */
-  if(!namesTeam&&!(isOrder&&raw.trim().length<=22)&&raw.trim().length>14){
+  const isQuestionToThem=/\?\s*$/.test(raw)||/^(what|how|when|should|do you|can you|are you|is it|where|why|who|would you|could you)\b/i.test(raw.trim());
+  if(!namesTeam&&isQuestionToThem){S.radio.t=S.t;await respondAs(person(S.radio.id),raw);return;}
+  /* a sentence describing the patient is a report, however many clinical words it contains */
+  const narrative=/\b(he is|she is|he has|she has|he was|she was|we have|i have|i think|i want|i need|he needs|she needs|looks|sounds|is going|has been|about to)\b/i.test(raw)&&raw.trim().length>22;
+  if(!namesTeam&&narrative){S.radio.t=S.t;await respondAs(person(S.radio.id),raw);return;}
+  const acts0=matchAll(raw);
+  /* anything that reads as an order goes to the room, unless it is plainly aimed at her */
+  const aimedAtRadio=detectPersons(raw).some(pp=>pp.id===S.radio.id);
+  const isOrder=acts0.length>0&&!acts0.every(a=>['or','medevac','surgeon','handoff'].includes(a.id));
+  if(!namesTeam&&(aimedAtRadio||!isOrder)&&raw.trim().length>10){
    S.radio.t=S.t;await respondAs(sp,raw);return;
   }
  }
 
  const LA=localAnswer(raw);
  if(LA){say('team',LA.txt,LA.who);return;}
- const acts=matchAll(raw);
+ let acts=matchAll(raw);
+ if(!acts.length){
+  const ph=phoneticRescue(raw);
+  if(ph&&A[ph.id]){
+   diag('phonetic',raw,ph.id+' <- "'+ph.heard+'"');
+   say('sys','Heard that as "'+ph.meant+'".');
+   acts=[A[ph.id]];
+  }
+ }
  if(acts.length){acts.forEach(a=>dispatch(a,raw,who));return;}
  /* if somebody just asked you something, plain speech goes back to them */
  if(!matchAll(raw).length&&(who||(S.awaiting&&S.t-S.awaiting.t<180))){
@@ -3808,7 +4739,8 @@ async function submitOrder(raw){
 }
 function dispatch(a,raw,who){
  const REMOTE=['surgeon','flight'];
- let doer=(who&&!REMOTE.includes(who.id)&&!REMOTE.includes(a.by))?who:person(a.by);
+ const surgeonAvailable=who&&who.id==='surgeon'&&S.flags&&S.flags.surgeonHere&&['A','B','C','E'].includes(a.cat);
+ let doer=((who&&!REMOTE.includes(who.id)&&!REMOTE.includes(a.by))||surgeonAvailable)?who:person(a.by);
  if(!who&&S.roleMap&&!REMOTE.includes(a.by)){
   const cat=a.id==='document'?'DOC':a.id==='fast'?'US':a.cat;
   for(const id in S.roleMap){
@@ -4058,6 +4990,47 @@ async function respondAs(sp,raw){
  if(/txa|tranexamic/i.test(raw))heard.push('TXA');
  if(/calcium/i.test(raw))heard.push('calcium');
  const echo=heard.length?'Copy — '+heard.join(', ')+'. ':'Copy. ';
+ if(sp.id==='surgeon'){
+  const t=String(raw).toLowerCase();
+  const here=S.flags.surgeonHere;
+  /* she responds to the thing that was raised, rather than reciting a script */
+  if(/\b(theatre|theater|the table|operat|laparotom|thoracotom|surgery|surgical|take him up|take her up|needs the or|to the or|open the or|damage control)/.test(t)){
+   S.flags.or=true;S.flags.orT=S.t;
+   say('team',echo+'Understood — he needs an operation. Table is open and I am scrubbed. '+
+    (vitals(S).sbp<80?'But he is too soft for the corridor as he stands. Get product into him first, or I will come to you and do what I can there. ':'')+
+    'Bring the product with you and somebody who has the times. Say "take him" when you are ready.',sp.nm);
+   return;
+  }
+  if(/\b(chest tube|thoracostom|drain)\b/.test(t)){
+   say('team',echo+(here?'I will put it in. Which side, and somebody give me a tray.':'Put a finger in it now, do not wait for me. I will come and formalise it when I am round.'),sp.nm);
+   return;
+  }
+  if(/\b(central|cordis|line|access)\b/.test(t)){
+   say('team',echo+(here?'I will take the groin. Keep the arm for your nurse.':'Use the drill while you wait for me — a humeral IO takes product as fast as a cordis.'),sp.nm);
+   return;
+  }
+  if(/\b(airway|cric|intubat|tube him|cannot ventilate)\b/.test(t)){
+   say('team',echo+(here?'I am at the neck with a blade in my hand. Tell me when you want me to cut rather than after a failed look.':'Do not let it get to three attempts. Call me before, not after.'),sp.nm);
+   return;
+  }
+  if(/\b(blood|units|product|transfus|massive)\b/.test(t)){
+   say('team',echo+'Keep it going and keep him warm. '+(S.units>=4&&!S.flags.calcium?'And give him calcium — you are four units in.':'Tell me the running total when I take him.'),sp.nm);
+   return;
+  }
+  if(/\b(pelvi|binder)\b/.test(t)){
+   say('team',echo+'Binder stays on until we are on the table. Do not roll him for anything.',sp.nm);return;
+  }
+  if(/\b(what|should|do you want|advice|think|recommend|how long|when)\b/.test(t)){
+   const want=[];
+   if(!S.done.some(d=>d.id==='fast'))want.push('get a probe on him');
+   if(!S.access)want.push('get access');
+   if(!S.units&&S.p.bleedRate>40)want.push('start product');
+   if(!S.flags.txa&&S.p.bleedRate>30)want.push('give TXA');
+   if(!S.mon.nibp)want.push('get a pressure');
+   say('team',echo+(want.length?'What I would want before he comes to me: '+want.slice(0,3).join(', ')+'.':'From what you are telling me, you are ahead of it. Package him and bring him through.'),sp.nm);
+   return;
+  }
+ }
  if(sp.id==='flight'){
   say('team',echo+'Bird is turning, forty mikes to you. '+
    (S.airwayDevice?'I will take him tubed — hand the bag and his drugs over with him. ':'')+
@@ -4214,6 +5187,7 @@ function renderStrip(){
  if(S.flags.sedationDrip)meds.push(S.flags.sedationDrip+' drip');
  const parts=[];
  if(S.radio)parts.push('<b style="color:var(--nibp)">RADIO OPEN — '+esc(person(S.radio.id).nm)+'</b>');
+ if(S.phase==='run'&&(S.bankUsed>0||S.bank<20))parts.push('<span style="color:'+(S.bank<=4?'var(--alarm)':'var(--sand-dim)')+'">BANK '+S.bank+'u'+(S.wbbAt&&!S.wbbDone?' · WBB '+Math.max(0,Math.ceil((S.wbbAt+1800-S.t)/60))+'min':'')+'</span>');
  if(busy.length)parts.push(busy.join(' &nbsp;·&nbsp; '));
  parts.push('<i>free: '+(idle.length?idle.join(', '):'nobody')+'</i>');
  if(meds.length)parts.push('<i>'+meds.join(', ')+'</i>');
@@ -4317,6 +5291,18 @@ function delegateWants(p){
  if(p.p.tamponade>.45&&p.done.some(x=>x.id==='fast')&&!p.flags.pericardio&&!d.asked.pericardio)return{proc:'pericardio',why:'there is fluid around the heart on the probe and he is obstructive'};
  if(vitals(p).sbp<85&&p.access&&!p.units&&!d.asked.blood)return{proc:'blood',why:'he is soft and I have access'};
  return null;
+}
+/* Called in, she walks round. Once she is in the room she is a person you talk
+   to normally, not a radio channel — and she has two hands. */
+function surgeonArrival(S){
+ if(!S.flags.surgeonComing||S.flags.surgeonHere||S.over)return;
+ if(S.t-S.flags.surgeonComing<45)return;
+ S.flags.surgeonHere=true;S.radio=null;renderRoster();
+ const v=vitals(S);
+ say('team','I am in the room. Gloves on, standing on your left. '+
+  (S.p.tension>.3&&!S.flags.chestTube?'If you want a tube in that chest I can do it while you carry on. ':'')+
+  (!S.access||S.access<2?'I can put a cordis in the groin if you are short of access. ':'')+
+  (v.sbp<85?'He is soft — tell me what you want done first. ':'What do you want from me?'),person('surgeon').nm);
 }
 function runDelegate(p){
  const d=delegateOf(p);
@@ -4640,6 +5626,7 @@ function buildDebrief(reason){
  if(S.p.femur&&!S.flags.traction)viol.push('A femur fracture went unsplinted. Traction restores length, cuts the bleeding into the thigh and takes the pain down.');
  if(!S.done.some(d=>d.by==='mitch')&&S.t>150)viol.push('Mitch stood there the whole case without a job. He is cross-trained into every role in this bay — an unused set of hands is a resource you chose not to use.');
  if(S.ivFails>=2&&!S.flags.io)viol.push('Two failed IV attempts and you never went to the bone. In a clamped-down patient the IO is the first choice, not the fallback.');
+ if(S.bankUsed>=8&&!S.wbbAt)viol.push('You transfused '+S.bankUsed+' units without ever calling the walking blood bank. Twenty units is the whole shelf, and fresh blood is thirty minutes from the call — by the time you need it, it is too late to ask.');
  if(S.units>=4&&!S.flags.calcium)viol.push('Four or more units of product without calcium.');
  if(S.p.tempC<35&&scn.kind==='trauma')viol.push('Core temperature ended at '+S.p.tempC.toFixed(1)+'°C.');
  if(directed<50&&S.comms.total>4)viol.push('Only '+directed+' percent of orders named a person.');
@@ -4778,10 +5765,22 @@ function startMCI(){
  if(!a||!b)return;
  startScenarioPair(a,b);
 }
+let MENUFILTER='all';
+function filteredCases(){return MENUFILTER==='all'?SCN:SCN.filter(x=>x.kind===MENUFILTER);}
+function renderFilter(){
+ const f=$('#scnFilter');if(!f)return;
+ const n={all:SCN.length,trauma:SCN.filter(x=>x.kind==='trauma').length,med:SCN.filter(x=>x.kind==='med').length};
+ f.innerHTML=[['all','Everything',n.all],['trauma','Trauma',n.trauma],['med','Medical',n.med]]
+  .map(([k,lbl,c])=>'<button class="fbtn'+(MENUFILTER===k?' on':'')+'" data-f="'+k+'">'+lbl+' <span>'+c+'</span></button>').join('');
+ let fb=[];try{fb=f.querySelectorAll('[data-f]')||[];}catch(e){fb=[];}
+ Array.prototype.forEach.call(fb,b=>{b.onclick=()=>{MENUFILTER=b.dataset.f;renderMenu();};});
+}
 function renderMenu(){
  const g=$('#scnGrid');g.innerHTML='';
- const left=undoneCases().length;
- SCN.forEach((s,i)=>{
+ renderFilter();
+ const pool=filteredCases();
+ const left=pool.filter(x=>!DONE[x.id]).length;
+ pool.forEach((s,i)=>{
   const d=DONE[s.id];
   const b=document.createElement('button');
   b.className='scn'+(d?' done':'');
@@ -4797,10 +5796,12 @@ function renderMenu(){
  mci.onclick=startMCI;
  g.appendChild(mci);
  const r=document.createElement('button');r.className='scn rnd';
- r.innerHTML='<div class="meta cond">RANDOM</div><h3 class="cond">?</h3><p>'+left+' not yet run</p>';
+ const what=MENUFILTER==='trauma'?'trauma':MENUFILTER==='med'?'medical':'any';
+ r.innerHTML='<div class="meta cond">RANDOM '+what.toUpperCase()+'</div><h3 class="cond">?</h3><p>'+left+' not yet run</p>';
  r.onclick=()=>{
-  const pool=undoneCases();
-  if(pool.length){startScenario(rnd(pool));return;}
+  const un=filteredCases().filter(x=>!DONE[x.id]);
+  if(un.length){startScenario(rnd(un));return;}
+  startScenario(rnd(filteredCases()));return;
   showSheet('<h2 class="cond">All forty run</h2>'+
    '<p>Every case in the library has been through at least once. Running them again is worth doing — the second run is where the learning is — but you will be working from memory rather than cold.</p>'+
    '<div class="btns"><button data-any="1">Run a random one anyway</button><button class="ghost" data-clear="1">Clear the record and start fresh</button><button class="ghost" data-close="1">Back</button></div>');
@@ -4845,6 +5846,95 @@ function diagText(){
   });
  });
  return L.join('\n');
+}
+/* ---------------- REFERENCES ----------------
+   What the clinical content was written against, so anyone can go and read it. */
+const REFS=[
+ {group:'Joint Trauma System clinical practice guidelines',
+  note:'The JTS library is the primary source for the deployed trauma content here. All CPGs are public.',
+  items:[
+   {t:'Infection Prevention in Combat-Related Injuries (27 Jan 2021)',
+    d:'Antibiotic choice, dose and duration by injury pattern. The source for the dosing the team checks against: cefazolin by body mass, ertapenem 1 g, metronidazole 500 mg for hollow viscus, paediatric dosing per kilo.',
+    u:'https://jts.health.mil/assets/docs/cpgs/Infection_Prevention_in_Combat-related_Injuries_27_Jan_2021_ID24.pdf'},
+   {t:'Damage Control Resuscitation',
+    d:'Whole blood first, TXA 2 g as a single bolus, calcium with the first unit and after every four, permissive hypotension to a systolic around 100 except in head injury, vasopressin for refractory shock.',
+    u:'https://jts.health.mil/assets/docs/cpgs/Damage_Control_Resuscitation_12_Jul_2019_ID18.pdf'},
+   {t:'Damage Control Resuscitation in Prolonged Field Care (01 Oct 2018)',
+    d:'Resuscitation when evacuation is delayed. Responder, transient responder and non-responder framing, and the endpoints used when laboratory support is thin.',
+    u:'https://jts.health.mil/assets/docs/cpgs/Damage_Control_Resuscitation_PFC_01_Oct_2018_ID73.pdf'},
+   {t:'Anesthesia for Trauma Patients (05 Apr 2021)',
+    d:'Induction in the shocked patient, and the same TXA and calcium guidance from the anaesthetic side.',
+    u:'https://jts.health.mil/assets/docs/cpgs/Anesthesia_for_Trauma_Patients_05_Apr_2021_ID40.pdf'},
+   {t:'The Use of Dried Plasma in the Deployed Trauma System (09 Jun 2026)',
+    d:'Product selection when whole blood is not available, and the time-to-transfusion evidence behind treating minutes as the currency.',
+    u:'https://jts.health.mil/assets/docs/cpgs/Dried_Plasma_CPG_09_Jun_2026_ID103.pdf'},
+   {t:'All JTS CPGs — the full library',
+    d:'Burns, traumatic brain injury, pelvic fracture, spine, eye, paediatric care, prolonged casualty care and the rest. Worth a browse.',
+    u:'https://jts.health.mil/index.cfm/PI_CPGs/cpgs'}]},
+ {group:'Resuscitation guidelines',
+  note:'',
+  items:[
+   {t:'2025 AHA Guidelines for CPR and Emergency Cardiovascular Care — Executive Summary',
+    d:'The current cycle. Overview of what changed across BLS, ALS and paediatrics.',
+    u:'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001372'},
+   {t:'2025 AHA Guidelines, Part 9: Adult Advanced Life Support',
+    d:'Intravenous access attempted first with intraosseous if that fails, epinephrine 1 mg every three to five minutes, given early in non-shockable rhythms and after failed defibrillation in shockable ones, and no substitution of vasopressin.',
+    u:'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001376'}]},
+ {group:'Trauma surgery literature',
+  note:'',
+  items:[
+   {t:'AAST / ACS Committee on Trauma: clinical protocol for damage-control resuscitation (J Trauma Acute Care Surg, March 2024)',
+    d:'The civilian counterpart to the JTS guidance, including the three-hour window for TXA.',
+    u:'https://journals.lww.com/jtrauma/fulltext/2024/03000/american_association_for_the_surgery_of.23.aspx'},
+   {t:'Prophylactic antibiotic use for penetrating trauma in prolonged casualty care (J Trauma Acute Care Surg, 2024)',
+    d:'Review of how antibiotic practice differs when evacuation is delayed — broader cover, longer courses.',
+    u:'https://journals.lww.com/jtrauma/fulltext/2024/08001/prophylactic_antibiotic_use_for_penetrating_trauma.22.aspx'},
+   {t:'JTS Traumatic Brain Injury Management and Basic Neurosurgery in the Deployed Environment (Military Medicine, 2025)',
+    d:'Blood pressure and oxygenation targets in head injury, seizure management, and antibiotic cover for penetrating brain injury.',
+    u:'https://academic.oup.com/milmed/article/190/1-2/124/7693828'}]},
+ {group:'Standard courses and references',
+  note:'Not linked because they are not freely available, but they are what the survey structure and the general approach are built on. These were not re-verified line by line for this build.',
+  items:[
+   {t:'ATLS, American College of Surgeons',d:'The primary survey sequence, the adjuncts, and the trauma examination structure the scoring uses.',u:''},
+   {t:'Tactical Combat Casualty Care (TCCC) guidelines, Committee on TCCC',d:'Point-of-injury care, the MARCH sequence, and tourniquet and junctional haemorrhage doctrine. Published at deployedmedicine.com.',u:''},
+   {t:'Emergency War Surgery, 5th edition',d:'Surgical management of the injury patterns in the trauma cases.',u:''}]},
+];
+function openRefs(){
+ let h='<h2 class="cond">References</h2>'+
+  '<p>What the clinical content in this trainer was written against. Everything linked is publicly available — the Joint Trauma System library in particular is worth reading directly rather than through a simulator.</p>'+
+  '<p style="color:var(--nibp)">This is a training tool, not a clinical reference. Where it disagrees with the guideline in front of you, the guideline is right and this is wrong. Guidelines are also revised: check the date on anything you rely on.</p>';
+ REFS.forEach((g,i)=>{
+  h+='<details class="ogrp"'+(i===0?' open':'')+'><summary>'+esc(g.group)+'<span>'+g.items.length+'</span></summary><div class="obody">';
+  if(g.note)h+='<p style="color:var(--sand-dim);font-size:13.5px;margin-bottom:10px">'+esc(g.note)+'</p>';
+  g.items.forEach(it=>{
+   h+='<div class="refitem">';
+   h+=it.u?('<a href="'+it.u+'" target="_blank" rel="noopener">'+esc(it.t)+'</a>'):('<span class="reft">'+esc(it.t)+'</span>');
+   h+='<div class="refd">'+esc(it.d)+'</div>';
+   if(it.u)h+='<div class="refu">'+esc(it.u)+'</div>';
+   h+='</div>';
+  });
+  h+='</div></details>';
+ });
+ h+='<div class="btns"><button class="ghost" data-close="1">Close</button></div>';
+ showSheet(h);
+}
+function openChangelog(){
+ let h='<h2 class="cond">What has changed</h2>'+
+  '<p>Version '+VERSION+'. Newest first. The bullets at the top of each are the ones worth knowing before you run a case; the rest is detail.</p>';
+ CHANGELOG.forEach((c,i)=>{
+  h+='<details class="ogrp"'+(i===0?' open':'')+'><summary>'+c.v+' &nbsp;·&nbsp; '+esc(c.name)+'</summary><div class="obody">';
+  h+='<div class="clog-top">';
+  c.top.forEach(t=>h+='<div class="clog-line"><span class="mk">▸</span><span>'+esc(t)+'</span></div>');
+  h+='</div>';
+  if(c.detail&&c.detail.length){
+   h+='<div class="clog-det">';
+   c.detail.forEach(t=>h+='<div class="clog-line sub"><span class="mk">·</span><span>'+esc(t)+'</span></div>');
+   h+='</div>';
+  }
+  h+='</div></details>';
+ });
+ h+='<div class="btns"><button class="ghost" data-close="1">Close</button></div>';
+ showSheet(h);
 }
 function openDiag(){
  const totals={};
@@ -4906,6 +5996,8 @@ function openSettings(){
   h+='<p>The monitor runs across the top with the numbers in a row. Tap INFUSIONS &amp; MEDS to open or close it. When the keyboard comes up the traces and the header hide themselves so the bay stays readable — they come back when you tap away from the box.</p>';
   h+='<p>For a cleaner run, open the link in Safari and add it to the home screen. It launches with no browser bars at all, which gives you about another eighty pixels of trauma bay.</p>';
  }
+ h+='<h3 class="cond">Version '+VERSION+'</h3>';
+ h+='<div class="btns" style="margin:0 0 10px"><button class="ghost" id="btnChangelog">What has changed</button><button class="ghost" id="btnRefs">References</button></div>';
  h+='<h3 class="cond">Session log</h3>';
  h+='<p>'+DIAG.length+' run'+(DIAG.length===1?'':'s')+' recorded. Every phrase the system failed to understand is kept, so wording it should have known can be added in a later version.</p>';
  h+='<div class="btns" style="margin:0 0 4px"><button class="ghost" id="btnDiag">Open the session log</button></div>';
@@ -4923,6 +6015,8 @@ function openSettings(){
  const cmpSet=v=>{CFG.compRate=v;['cmp0','cmp1','cmp2'].forEach((id,i)=>$('#'+id).classList.toggle('on',[0,1,2][i]===v));};
  cmpSet(CFG.compRate);
  $('#cmp0').onclick=()=>cmpSet(0);$('#cmp1').onclick=()=>cmpSet(1);$('#cmp2').onclick=()=>cmpSet(2);
+ $('#btnChangelog').onclick=openChangelog;
+ $('#btnRefs').onclick=openRefs;
  $('#btnDiag').onclick=openDiag;
  $('#btnClearDone').onclick=()=>{DONE={};saveDone();renderMenu();closeSheet();};
  $('#oPtt').onchange=e=>CFG.ptt=e.target.checked;
@@ -4962,6 +6056,8 @@ function normalizeSpeech(t){
   'chest to':'chest tube','check stupe':'chest tube','needle d':'needle decompression',
   'g c s':'gcs','n g':'ng','o g':'og','r s i':'rsi','i gel':'igel','eye gel':'igel',
   'sat probe':'sat probe','co two':'co2','end title':'end tidal','end tidle':'end tidal',
+  'fastest':'efast','fast est':'efast','asked':'efast','ee fast':'efast','a fast':'efast',
+  'work on meta':'work on medevac','on meta':'on medevac','the meta':'the medevac',
   'more fine':'morphine','cal see um':'calcium','bye carb':'bicarb',
  };
  Object.keys(SWAP).forEach(k=>{x=x.split(' '+k+' ').join(' '+SWAP[k]+' ');});
