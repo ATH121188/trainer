@@ -475,8 +475,36 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.15';
+const VERSION='1.18';
 const CHANGELOG=[
+ {v:'1.18',name:'Stacked orders',
+  top:['Give several people orders in one breath: "Aust get the primary, Mitch expose him, Amy monitors." One press of the talk key, three orders, three people.',
+       'Works the same typed — one sentence, commas between.',
+       'A question inside a stacked order stays a question: "Amy monitors, Lauren how many lines do we have, Aust eFAST" gets two orders and one answer.'],
+  detail:['The sentence is split at each name and each fragment is matched on its own, so every person gets only their own instruction.',
+          'If one fragment is not understood the rest still go through, and the team names the part it missed rather than silently dropping it.',
+          'Naming two people for one job — "Aust and Mitch log roll him" — still sends both of them.',
+          'Directed communication is credited for each order in the stack, so talking this way helps your communication score rather than hurting it.']},
+ {v:'1.17',name:'The surgeon works the way she actually would',
+  top:['Call her by radio, she walks round, and the first thing she asks for is a handover in person. Give her one with "update the surgeon".',
+       'After that she stands by and stays out of your way. She speaks when spoken to, when a major procedure is ordered, or when the pressure gets bad enough that she will not stay quiet.',
+       'Book a named operation: "activate the OR for an ex lap". She confirms the operation, the set and the kit.',
+       'Asking how much of something you have never spends any of it.'],
+  detail:['Eight operations this detachment can do: damage control laparotomy, thoracotomy, vascular control and shunting, completion amputation, external fixation, fasciotomy, washout and debridement, neck exploration or surgical airway. Ask for anything else and she tells you it is a flight.',
+          'She offers her hands once for each major procedure — chest tube, finger thoracostomy, thoracotomy, pericardiocentesis, cric, central line, fasciotomy, packing. Never for intubation; that is the head of the bed.',
+          'If you have not briefed her within about a minute of her arriving she says so, once, without interrupting your work.',
+          'Stock questions answer from the shelf: units left in the fridge as opposed to units given, whether a chest tube is in, what kit is open.',
+          'Any "how many" or "do we have" phrasing is now blocked from starting a task even if it goes unrecognised — the team asks you to say it again rather than guessing and doing something.']},
+ {v:'1.16',name:'Fixes from the bay',
+  top:['Ask for antibiotics and you are now asked which one, not just what dose.',
+       'Tetanus is its own order — it is a vaccine, not a dosed antibiotic.',
+       'Dr. Moon answers what you actually say, including when she is standing next to you rather than on the radio.'],
+  detail:['Speech names the recogniser mangles now resolve: lost, austin, osseous and boston all reach Aust, and moonlight reaches Dr. Moon. Names are matched after correction rather than before.',
+          'Drug names the recogniser mangles resolve too: "air tap in em" is ertapenem, "sef azole in" is cefazolin, "ex lap" is a laparotomy.',
+          'Tell her what you are worried about and she tells you what she is watching for.',
+          'A question with a name in front of it is still a question — "Lauren, how many IVs do we have" is answered rather than ordered.',
+          'Asking about the chest tube answers about the chest tube, including the output and the thresholds that make it an operation.',
+          'A stray "standard dose" can no longer be heard as induction drugs; intubation and surgical orders are excluded from phonetic rescue entirely.']},
  {v:'1.15',name:'A blood bank that can run out',
   top:['The fridge holds twenty units of low titre O negative. When they are gone, they are gone.',
        'The walking blood bank takes thirty minutes from the call to the first fresh unit, then gives you twenty more. Call it before you need it.',
@@ -607,10 +635,13 @@ function parseDose(raw,kg){
 }
 /* ask / push back / accept */
 const STD_RE=/\b(standard|usual|normal|typical|routine|weight[- ]based|per protocol|by the book|book dose|your call|you pick|whatever you|dealer'?s choice|however you)\b/i;
-function doseGate(spec,S,raw,std){
+function doseGate(spec,S,raw,std,askText){
  if(STD_RE.test(raw)&&std){const d=std(S);return{ok:true,d,label:d.display,standard:true};}
  const d=parseDose(raw,S.p.kg);
- if(!d)return{ask:'What dose?'};
+ if(!d){
+  try{const q=spec(S,raw,null);if(q&&q.ask)return{ask:q.ask};}catch(e){}
+  return{ask:askText||'What dose?'};
+ }
  const r=spec(S,raw,d);
  if(r&&r.bad)return{bad:r.bad};
  return{ok:true,d,note:r&&r.note,label:r&&r.label};
@@ -750,7 +781,7 @@ act({id:'airway_plan',label:'Airway plan',cat:'A',by:'amy',lockTo:'amy',dur:12,a
   return'Here is my plan. Preoxygenate with a nasal cannula underneath and gentle bagging, ramp him up, cricoid off, suction on my right. '+dev+
    '. '+drugs+access+' First attempt is mine, second attempt is mine with a different blade, then we go to the i-gel, then front of neck — and I will call it out loud at each step. Failure plan is the cric kit open on the tray before I start.'+risk;}});
 act({id:'prep_room',label:'Prepare the whole room',cat:'CMD',by:'mitch',dur:40,
- al:['prep the room','prepare the room','set the room up','set up the room','get everything ready','prep everything','ready the room','room prep','set everything up','get the bay ready','prep the bay','standard setup','get everything out','set up for a bad one','open the kits','prep for trauma'],
+ al:['prep the room','prepare the room','set the room up','set up the room','get everything ready','prep everything','ready the room','room prep','set everything up','get the bay ready','prep the bay','standard setup','get everything out','set up for a bad one','open the kits','prep for trauma','pumps ready','get the pumps ready','pumps up','prime the pumps','lines primed','get the lines primed','kit ready','get set up'],
  run:S=>{
   ['leads','spo2','nibp','etco2','iv','io','rsi','cric','chesttube','blood','fast','suction','tq','pack','binder','warm','seal'].forEach(id=>{S.prepped[id]=S.t+1;});
   S.flags.roomPrepped=true;
@@ -1675,12 +1706,21 @@ act({id:'steroid',label:'Corticosteroid',cat:'RX',by:'lauren',dur:20,
   if(S.p.thyroid)S.p.thyroid=Math.max(0,S.p.thyroid-.15);
   return ((g&&g.label)?g.label:'Hydrocortisone 100 mg')+' in.'+
    (S.p.adrenal?' If this is what you think it is, you will see the pressure answer within the hour — and it does not spoil the cortisol you drew.':'');}});
-act({id:'abx',label:'Antibiotics / tetanus',cat:'RX',by:'lauren',dur:15,
- al:['antibiotics','abx','ertapenem','cefazolin','ancef','tetanus','ceftriaxone','rocephin','zosyn','pip tazo',
+act({id:'tetanus',label:'Tetanus immunisation',cat:'RX',by:'lauren',dur:12,
+ al:['tetanus','tetanus shot','tetanus toxoid','tdap','update his tetanus','update her tetanus','update the tetanus',
+  'tetanus immunisation','tetanus immunization','tetanus cover','tetanus booster','check his tetanus','tetanus status',
+  'tig','tetanus immunoglobulin','immunoglobulin'],
+ run:S=>{S.flags.tetanus=true;
+  return'Tetanus toxoid 0.5 millilitres intramuscular, and it is on the chart.'+
+  (S.p.tetanus?' For an established case the toxoid alone will not touch what is already bound — we want immunoglobulin as well if it can be found.':' If the wound is dirty and his cover is out of date or unknown, immunoglobulin goes with it.');}});
+act({id:'abx',label:'Antibiotics',cat:'RX',by:'lauren',dur:15,
+ doseAsk:'Which antibiotic, sir, and what dose? For a penetrating wound here I would reach for cefazolin or ertapenem.',
+ al:['antibiotics','abx','ertapenem','cefazolin','ancef','ceftriaxone','rocephin','zosyn','pip tazo',
   'meropenem','vancomycin','clindamycin','metronidazole','flagyl','gentamicin','moxifloxacin','broad spectrum',
   'cover him with antibiotics','give abx','antibiotic please','prophylactic antibiotics','antibiotic prophylaxis'],
  dose:(S,raw,d)=>{
   const kg=S.p.kg||80, peds=kg<40;
+  raw=expand(String(raw||''));
   const name=(/ertapenem/i.test(raw)?'ertapenem':/cefazolin|ancef/i.test(raw)?'cefazolin':
     /ceftriaxone|rocephin/i.test(raw)?'ceftriaxone':/metronidazole|flagyl/i.test(raw)?'metronidazole':
     /clindamycin/i.test(raw)?'clindamycin':/moxifloxacin/i.test(raw)?'moxifloxacin':
@@ -1710,10 +1750,10 @@ act({id:'abx',label:'Antibiotics / tetanus',cat:'RX',by:'lauren',dur:15,
   const want=kg<80?1:kg<=160?2:3;
   return{base:want,display:want+' g',text:want+' g cefazolin'};},
  run:(S,t,raw,g)=>{
-  S.flags.abx=true;
+  S.flags.abx=true;raw=expand(String(raw||''));
   const nm=(g&&g.label)?g.label:'antibiotic';
   const abdo=S.p.hollowViscus||/abdom|eviscer|bowel/i.test(raw||'');
-  return nm+' in, and tetanus on the chart.'+
+  return nm+' in.'+
    (abdo&&!/ertapenem|metronidazole/i.test(nm)?' If that bowel is open he wants anaerobic cover too — metronidazole five hundred, or swap to ertapenem.':'')+
    ' Clock started for the next dose.';}});
 act({id:'burnfluid',label:'Burn resuscitation fluid',cat:'RX',by:'lauren',dur:20,al:['burn fluid','rule of tens','parkland','burn resuscitation','fluid for the burn','lr for burns','parkland formula','burn fluids','titrate to urine output'],
@@ -1776,6 +1816,22 @@ act({id:'surgeon',label:'Get the surgeon',cat:'CMD',by:'surgeon',dur:10,al:['get
   if(S.flags.surgeonHere)return rnd(['Tell me what you want me to do with my hands.',
    'I am here — give me a job or I will pick one myself.','Right. Say the word and I will do it.']);
   return(S.surgeonCalls===1?'I am scrubbed in the next room. Talk to me — ':'Still here. ')+pick+'? And tell me what you want me to do, not just what you found. Just say it, I am listening.';}});
+act({id:'surgeon_update',label:'Update the surgeon on the case',cat:'CMD',by:'surgeon',dur:0,instant:true,
+ al:['update the surgeon','brief the surgeon','update dr moon','brief dr moon','give her the picture',
+  'update her','bring her up to speed','here is where we are','the story so far','update moon','my update is',
+  'let me update you','here is the picture','update for the surgeon'],
+ run:(S,t,raw)=>{
+  if(!S.flags.surgeonHere&&!S.flags.surgeon)return{say:'She has not been called yet, sir.',nocredit:true};
+  S.flags.awaitUpdate=false;S.flags.sgUpdated=S.t;
+  const missing=[];
+  if(!S.done.some(d=>d.id==='fast'))missing.push('nobody has put a probe on him');
+  if(!S.access)missing.push('he has no access');
+  if(S.p.bleedRate>40&&!S.units)missing.push('he is bleeding and has had no product');
+  if(!S.flags.txa&&S.p.bleedRate>30)missing.push('no TXA');
+  if(S.p.tempC<35.5)missing.push('he is cold');
+  return'Copy all of that. On board I have: '+S.interventions()+'. '+
+   (missing.length?'What I would want before he comes to me — '+missing.slice(0,2).join(', and ')+'. ':'That is a tidy resuscitation. ')+
+   'I will stay out of your way. Shout if you want my hands.';}});
 act({id:'surgeon_bedside',label:'Surgeon to the bedside',cat:'CMD',by:'surgeon',dur:55,
  al:['surgeon to the bedside','surgeon to the bed','moon to the bedside','get moon down here','get the surgeon down here',
   'bring the surgeon here','surgeon in here now','i need her at the bed','i need him at the bed','he is too unstable to move','she is too unstable to move',
@@ -1802,7 +1858,26 @@ act({id:'surgery_here',label:'Damage control at the bedside',cat:'C',by:'surgeon
   S.lesson('Damage control at the bedside is a worse operation than the same operation in theatre — no table, no lighting, no assistant, no suction worth the name. It is the right call only when the corridor would kill him.');
   return'Working. '+(S.p.junctionalBleed?'I have proximal control and I am packing hard — that is as good as it gets outside a theatre. ':'Bleeding is slowed as much as I can manage here. ')+
    'This is a holding measure, not a repair. He still needs a table, but he can survive the trip now. Somebody keep product going while I work.';}});
-act({id:'or',label:'Move to the OR',cat:'CMD',by:'surgeon',dur:15,al:['take him to the or','take her to the or','to the or','operating room','laparotomy','damage control surgery','he needs surgery','she needs surgery','get him on a table','get her on a table','move to theatre','take him through','he needs a laparotomy','theatre','move him to theatre','move her to theatre','to theatre','get a table','open a table','surgical suite','open the or','open a room','open the room','get the or open','open theatre','get a room open','open up the or'],
+act({id:'book_or',label:'Book a specific operation',cat:'CMD',by:'surgeon',dur:10,
+ al:['activate the or for','book the or for','open the or for','table for a','set up for a','we need a',
+  'prepare for a laparotomy','set up for a thoracotomy','get the table ready for','activate theatre for'],
+ run:(S,t,raw)=>{
+  const k=namedSurgery(raw);
+  if(!k)return{say:'Which operation, sir? I can give you a damage control laparotomy, a thoracotomy, vascular control and shunting, a completion amputation, external fixation, a fasciotomy, a washout and debridement, or a neck exploration. That is what this detachment can do — anything else is a flight.',nocredit:true};
+  S.flags.or=true;S.flags.orT=S.t;S.flags.orFor=k;
+  const kit={laparotomy:'Laparotomy set, retractors, packs and suction.',
+   thoracotomy:'Thoracotomy tray, rib spreader and internal paddles.',
+   vascular:'Vascular set, shunts and a Doppler.',
+   amputation:'Amputation set and the tourniquet stays on until I say.',
+   exfix:'External fixator set, and I want imaging if we can get it.',
+   fasciotomy:'Fasciotomy set — four compartments, two incisions.',
+   washout:'Litres of saline, pulse lavage and a debridement set.',
+   neck:'Neck set, and the airway kit on the table beside me.'}[k];
+  return'Copy — '+FRSD_SURGERY[k]+'. Table is being set now. '+kit+' '+
+   (vitals(S).sbp<80?'Get product into him before he travels, or I will come to you instead. ':'')+
+   'Say "take him" when you are ready.';}});
+act({id:'or',label:'Move to the OR',cat:'CMD',by:'surgeon',dur:15,al:['take him to the or','take her to the or','to the or','operating room','laparotomy','damage control surgery','he needs surgery','she needs surgery','get him on a table','get her on a table','move to theatre','take him through','he needs a laparotomy','theatre','move him to theatre','move her to theatre','to theatre','get a table','open a table','surgical suite','open the or','open a room','open the room','get the or open','open theatre','get a room open','open up the or',
+  'exploratory laparotomy','needs a laparotomy','he needs a laparotomy','she needs a laparotomy','needs an operation'],
  run:S=>{
   S.flags.or=true;S.flags.orT=S.t;S.radio={id:'surgeon',t:S.t};S.awaiting=null;
   return(S.flags.surgeon?'':'Dr. Moon here — short notice, but fine. ')+
@@ -4200,7 +4275,7 @@ function step(S,dt){
   S.nibpPending=0;S.nibpLast=S.t;
  }
  Object.keys(S.busy).forEach(k=>{const j=S.busy[k];if(j&&S.t>=j.until){delete S.busy[k];if(j.job)finish(j);}});
- watch(S);coach(S);surgeonArrival(S);patientVoice(S);majorb(S);chatter(S);
+ watch(S);coach(S);surgeonArrival(S);surgeonStandby(S);patientVoice(S);majorb(S);chatter(S);
  const v=vitals(S);
  if(S.p.arrestCase&&!S.rosc){
   S.arrestClock=(S.arrestClock||0)+dt;
@@ -4258,6 +4333,13 @@ function lev(a,b,max){
 const KEEP=new Set(('percussion rales rhonchi mentation crepitus priapism peritonism posturing obtunded lucid the and for with from that this they them then than there their have has had not but you your his her him she are was were will would could should about into over under back front left right side both all any each every some more most less least much many other another same such just only also very still even well good bad worse better best deep shallow clean dirty clear cloudy open closed close cold warm hot cool wet dry hard soft tight loose fast slow high low big small large long short thick thin full empty new old young last next first second third leg legs arm arms hand hands foot feet head neck face chest belly abdomen back skin bone vein veins wound wounds blood bleeding pain injury injuries patient guy man woman kid child boy girl people team room bay floor door bed litter time minute minutes hour hours second seconds now soon later before after while during until since again once twice please thanks thank okay yeah yes no nope sure fine need needs needed want wants get gets got give gives gave take takes took put puts make makes made keep keeps kept find finds found look looks looked see sees saw tell tells told say says said ask asks asked think thinks thought know knows knew come comes came going go goes went done doing did been being can cannot cant do does don dont what when where which who whom whose why how many much bag bags box boxes kit kits tray trays glove gloves mask masks tube tubes line lines').split(' '));
 /* people type contractions; the alias list does not contain any */
 const MEDSWAP={
+ 'lost':'aust','austin':'aust','osseous':'aust','boston':'aust','ausust':'aust','oz it':'aust','arst':'aust',
+ 'dr moonlight':'dr moon','moonlight':'moon','dr moonlit':'dr moon','doctor moonlight':'dr moon',
+ 'air tap in em':'ertapenem','urta penem':'ertapenem','ertapenum':'ertapenem','erta penem':'ertapenem',
+ 'ert a penem':'ertapenem','are ta penem':'ertapenem','ertapenim':'ertapenem',
+ 'sef azole in':'cefazolin','kefzol':'cefazolin','ceph azolin':'cefazolin','cefazolan':'cefazolin','sefazolin':'cefazolin',
+ 'metro nidazole':'metronidazole','met ronidazole':'metronidazole',
+ 'ex lap':'laparotomy','exlap':'laparotomy','ex-lap':'laparotomy','explap':'laparotomy','x lap':'laparotomy','xlap':'laparotomy',
  'oust':'aust','ost':'aust','august':'aust','awst':'aust','ausd':'aust','oswald':'aust','aussie':'aust',
  'east side':'aust','oz':'aust','osk':'aust','aust':'aust',
  'amie':'amy','aimee':'amy','ami':'amy','amii':'amy',
@@ -4348,7 +4430,7 @@ function phon(w){
  return x;
 }
 let PHONIDX=null;
-const PHON_NEVER=new Set(['end_case','kiss','switch_pt','delegate','ack','hold','quiet','stop','foot_exam','confirm']);
+const PHON_NEVER=new Set(['end_case','kiss','switch_pt','delegate','ack','hold','quiet','stop','foot_exam','confirm','rsi','rsi_meds','cric','thoracotomy','pericardio']);
 function buildPhon(){
  PHONIDX={};
  for(const id in A){
@@ -4436,6 +4518,9 @@ function matchAll(rawIn){
  if(res.some(a=>a.id==='central'))return res.filter(a=>a.id!=='pulsecheck');
  if(res.length>1&&res.some(a=>a.id==='ack'))return res.filter(a=>a.id!=='ack');
  if(res.length>1&&res.some(a=>a.id==='reassess'))return res.filter(a=>a.id!=='reassess');
+ if(res.some(a=>a.id==='book_or'))return [A.book_or];
+
+ /* ---- asking how much of something you have must never spend any of it ---- */
  if(res.some(a=>a.id==='foot_exam'))return res.filter(a=>a.id==='foot_exam');
  if(res.some(a=>a.id==='sedation_drip'))return res.filter(a=>!['analgesia','sedate','epi_drip','im_meds'].includes(a.id));
  if(res.some(a=>a.id==='sedate'))return res.filter(a=>!['analgesia','im_meds'].includes(a.id));
@@ -4463,7 +4548,7 @@ function matchAll(rawIn){
 const detectLat=r=>/\bleft\b/i.test(r)?'left':/\bright\b/i.test(r)?'right':null;
 /* an order to do something already done gets said, not done again */
 const REDO=/\b(again|re-?check|re-?ass?ess?|re-?peat|repeat|another|second|third|more|new|fresh|one more|update|recycle|re-?do|once more|do it again)\b/i;
-const REPEAT_OK=new Set(['roles','brief','document','prep_room','checklist','anticipate','ppe','report',
+const REPEAT_OK=new Set(['book_or','surgeon_update','roles','brief','document','prep_room','checklist','anticipate','ppe','report',
  'nibp','blood','crystalloid','iv','io','tq','pack','needle','fingerthor','chesttube',
  'analgesia','epi_im','epi_drip','calcium','reassess','recap','look','ack','hold','quiet','surgeon','handoff',
  'bleedcheck','pulsecheck','k_treatment','rsi_meds','cpr','pericardio','thoracotomy','suction','jawthrust','bvm','o2']);
@@ -4496,7 +4581,7 @@ function alreadyDone(S,a){
 }
 const PREP_RE=/\b(prep|prepare|prepping|prepped|set ?up|ready|kit|tray|draw|draws|draw up|drawn|drawn up|stand(?:ing)? by|break out|lay out|on standby|get set|pull up|spike)\b/i;
 function detectPersons(raw){
- const s=' '+raw.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ')+' ';
+ const s=' '+expand(String(raw)).toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ')+' ';
  const hits=[];
  for(const p of TEAM){
   let best=-1;
@@ -4513,13 +4598,34 @@ function detectPerson(raw){
 /* ---- factual questions are answered from state, instantly, with no model ---- */
 function localAnswer(raw){
  if(!S||S.over)return null;
- const q=expand(String(raw)).toLowerCase();
- if(!/\?\s*$|^(are|is|do|does|did|has|have|how|what|which|who|where|when|am i)\b/.test(q.trim()))return null;
+ let q=expand(String(raw)).toLowerCase().trim();
+ /* strip a leading name so "Lauren, how many lines" is still a question */
+ q=q.replace(/^(amy|aust|lauren|mitch|major b|majorb|everyone|team|somebody|someone)\s*[,:]?\s*/,'');
+ if(!/\?\s*$|^(are|is|do|does|did|has|have|how|what|which|who|where|when|am i|tell me how|remind me how)\b/.test(q))return null;
  const v=vitals(S),P=S.p;
  const say2=(who,txt)=>({who:person(who).nm,txt});
 
+ /* what is left on the shelf, as opposed to what has gone in */
+ if(/\b(left|remaining|in the fridge|on the shelf|in the bank|spare)\b/.test(q)&&/\b(blood|unit|units|product|bank)\b/.test(q)){
+  return{who:person('lauren').nm,txt:S.bank+' unit'+(S.bank===1?'':'s')+' of low titre O negative left in the fridge'+
+   (S.bankUsed?', '+S.bankUsed+' used so far':'')+'. '+
+   (S.wbbAt?(S.wbbDone?'The walking blood bank has already delivered.':'Walking blood bank is running — first fresh units about '+Math.max(0,Math.ceil((S.wbbAt+1800-S.t)/60))+' minutes out.'):
+    (S.bank<=8?'Nothing coming behind it unless you call the walking blood bank, and that is thirty minutes.':'No donor panel called yet.'))};
+ }
+ /* the chest, before anything that mentions a tube is assumed to be the airway */
+ if(/\b(chest tube|thoracostom|chest drain)\b/.test(q)){
+  if(S.flags.chestTube)return{who:person('aust').nm,txt:'Chest tube is in on the '+(S.p.tensionSide||'left')+' and swinging. Anything over 1500 straight out, or 200 an hour for three hours, is an operation rather than a drain.'};
+  if(S.flags.fingerThor)return{who:person('aust').nm,txt:'Finger thoracostomy only, no tube yet.'};
+  return{who:person('aust').nm,txt:'No chest tube in, sir.'};
+ }
+ /* what is in the room */
+ if(/\b(tourniquet|tourniquets|gauze|packing|binder|kit|trays?|supplies|stock|equipment)\b/.test(q)&&/\b(have|left|got|any|spare|more)\b/.test(q)){
+  const k=Object.keys(S.prepped||{});
+  return{who:person('mitch').nm,txt:'Stock is not the problem, sir — we hold plenty of tourniquets, gauze and binders. '+
+   (k.length?'Open and to hand right now: '+k.map(id=>A[id]?A[id].label.toLowerCase():id).slice(0,6).join(', ')+'.':'Nothing is opened yet, though.')};
+ }
  /* airway */
- if(/\b(intubated|tubed|tube in|airway secure|secured|what airway|airway status|got an airway|et tube|ett)\b/.test(q)){
+ if(/\b(intubated|tubed|airway secure|secured|what airway|airway status|got an airway|et tube|\bett\b|breathing tube)\b/.test(q)){
   if(S.airwayDevice)return say2('amy',airwayStatus(S));
   if(S.flags.bvm)return say2('amy','No tube. I am bag-mask ventilating him — that is all we have.');
   return say2('amy','No, sir. No tube, no supraglottic, nothing. He is on his own airway'+(P.airway>.3?', and it is not a good one.':'.'));
@@ -4562,6 +4668,14 @@ function localAnswer(raw){
   const names={ecg:'leads',spo2:'sat probe',nibp:'cuff',co2:'end-tidal',temp:'temperature'};
   return say2('amy',on.length?('On him: '+on.map(k=>names[k]).join(', ')+'.'+(S.mon.nibp?' Cuff is cycling'+(S.nibpInterval?' every '+(S.nibpInterval/60)+' minutes':'')+'.':'')):'Nothing is on him, sir. He is not monitored at all.');
  }
+ /* a specific procedure */
+ if(/\b(chest tube|thoracostomy|drain|the tube)\b/.test(q)&&!/\b(et|endotracheal|airway)\b/.test(q)){
+  if(S.flags.chestTube)return{who:person('aust').nm,txt:'Chest tube is in on the '+(S.p.tensionSide||'left')+'. '+
+   (S.p.chestOut?Math.round(S.p.chestOut)+' millilitres out so far and still draining.':'It drained well initially and it is swinging.')+
+   ' Anything over 1500 straight away, or 200 an hour for three hours, is an operation rather than a drain.'};
+  if(S.flags.fingerThor)return{who:person('aust').nm,txt:'Finger thoracostomy only — no tube yet. It is open and the lung is down.'};
+  return{who:person('aust').nm,txt:'No chest tube in, sir.'};
+ }
  /* the clock */
  if(/\b(how long|what time|elapsed|clock|since he arrived|since she arrived|been here)\b/.test(q))
   return say2('mitch','He has been in the bay '+mmss(S.t)+'.'+(S.flags.medevacT?' Bird was called at '+mmss(S.flags.medevacT)+'.':''));
@@ -4589,6 +4703,37 @@ function localAnswer(raw){
   return say2('aust',S.summaryLine());
  return null;
 }
+/* ---------------- STACKED ORDERS ----------------
+   "Aust take the primary, Mitch expose him, Amy get him on the monitor" is one
+   breath and three orders to three people. Split it at the names. */
+function splitByPerson(raw){
+ const t=expand(String(raw||'')).toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+ if(!t)return null;
+ const hits=[];
+ TEAM.forEach(p=>{
+  if(['surgeon','flight'].includes(p.id))return;
+  p.keys.forEach(k=>{
+   let i=t.indexOf(' '+k+' ');
+   const startsWith=t.startsWith(k+' ');
+   if(startsWith)hits.push({p,at:0,len:k.length});
+   while(i>=0){hits.push({p,at:i+1,len:k.length});i=t.indexOf(' '+k+' ',i+1);}
+  });
+ });
+ if(!hits.length)return null;
+ hits.sort((a,b)=>a.at-b.at);
+ /* keep the first mention of each person, in the order they were named */
+ const seen=new Set(),marks=[];
+ hits.forEach(h=>{if(seen.has(h.p.id))return;seen.add(h.p.id);marks.push(h);});
+ if(marks.length<2)return null;
+ const segs=[];
+ marks.forEach((m,i)=>{
+  const from=m.at+m.len;
+  const to=(i+1<marks.length)?marks[i+1].at:t.length;
+  segs.push({p:m.p,text:t.slice(from,to).replace(/^(\s|,|and|then|you|please|can|could|will|go|now)+/,'').trim()});
+ });
+ return segs;
+}
+const INQUIRY_RE=/\b(how many|how much|do we have|have we got|do we still have|what do we have|what have we got|any left|how many are|what is left|how much is left|is there any|are there any|what is on board|what has he had|what has she had)\b/i;
 const isQuestion=r=>/\?\s*$/.test(r.trim())||/^(what|where|how|why|who|when|is |are |does |do |did |can |any |tell me|show me)/i.test(r.trim());
 
 async function submitOrder(raw){
@@ -4713,8 +4858,48 @@ async function submitOrder(raw){
   }
  }
 
+ /* she is in the room rather than on the radio, but you are still talking to her */
+ if(!S.radio&&(S.flags.surgeonHere||S.flags.medevac)){
+  const rp=detectPersons(raw).find(pp=>['surgeon','flight'].includes(pp.id));
+  if(rp&&raw.trim().length>12){
+   const acts1=matchAll(raw);
+   const narrative1=/\b(he is|she is|he has|she has|we have|i have|i think|i want|i need|worried|concerned|most worried|looks|about to|will need|needs|requires|is going to need|my concern)\b/i.test(raw);
+   if(!acts1.length||narrative1){await respondAs(rp,raw);return;}
+  }
+ }
  const LA=localAnswer(raw);
  if(LA){say('team',LA.txt,LA.who);return;}
+ /* several people named in one breath: give each of them their own order */
+ const segs=splitByPerson(raw);
+ if(segs){
+  const done=[],failed=[];
+  for(const sg of segs){
+   if(!sg.text){failed.push(sg.p.nm);continue;}
+   if(INQUIRY_RE.test(sg.text)){
+    const la=localAnswer(sg.text);
+    if(la){say('team',la.txt,la.who);done.push(sg.p.nm);continue;}
+    failed.push(sg.p.nm+' ("'+sg.text+'")');continue;
+   }
+   const a2=matchAll(sg.text);
+   if(!a2.length){failed.push(sg.p.nm+' ("'+sg.text+'")');continue;}
+   for(const a3 of a2){ dispatch(a3,sg.text,sg.p); }
+   done.push(sg.p.nm);
+  }
+  if(done.length>=2){
+   S.comms.total+=done.length-1;S.comms.directed+=done.length-1;
+   if(failed.length)say('team','I did not catch what you wanted for '+failed.join(' or ')+'.',person('aust').nm);
+   return;
+  }
+  /* only one of them resolved — fall through and treat it as a single order */
+ }
+ /* "how many lines do we have" is a question, and asking it must not create another line */
+ if(INQUIRY_RE.test(expand(raw))){
+  diag('inquiry_missed',raw);
+  say('team',rnd(['Say again what you want to know, sir — I do not want to start doing something you did not ask for.',
+   'Ask me that again? I would rather check than guess and go and do it.',
+   'Not sure what you are asking for, sir. Say it plainly and I will tell you.']),(who||person('aust')).nm);
+  return;
+ }
  let acts=matchAll(raw);
  if(!acts.length){
   const ph=phoneticRescue(raw);
@@ -4763,6 +4948,11 @@ function dispatch(a,raw,who){
  const FORCED0=raw.indexOf('\u0001')>=0;
  if(FORCED0)raw=raw.replace('\u0001','');
  const FORCED=FORCED0;
+ /* a surgeon standing beside you is worth using for the big ones */
+ if(S.flags&&S.flags.surgeonHere&&!isPrep&&SURGEON_ASSISTS.has(a.id)&&doer.id!=='surgeon'&&!S.called['sgOffer_'+a.id]){
+  S.called['sgOffer_'+a.id]=1;
+  say('team','I can take that if you want me to — say the word and it is mine.',person('surgeon').nm);
+ }
  /* the same order given twice while it is under way */
  if(!isPrep){
   for(const pid in S.busy){
@@ -4806,7 +4996,7 @@ function dispatch(a,raw,who){
  }
  /* a drug order is not an order until there is a dose on it */
  if(a.dose&&!isPrep){
-  let g=doseGate(a.dose,S,raw,a.std);
+  let g=doseGate(a.dose,S,raw,a.std,a.doseAsk);
   if(g.ask){diag('dose_prompt',raw,a.id);say('team',g.ask+' You can say "standard dose" if you want the book number.',doer.nm);S.doseAsks=(S.doseAsks||0)+1;S.awaiting={id:doer.id,t:S.t,a,raw,kind:'dose'};return;}
   if(g.bad&&!FORCED){say('team',g.bad,doer.nm);S.doseAsks=(S.doseAsks||0)+1;S.awaiting={id:doer.id,t:S.t,a,raw,kind:'confirm'};return;}
   if(g.bad&&FORCED){
@@ -4980,6 +5170,7 @@ function stateBrief(){
 async function respondAs(sp,raw){
  const ai=await getAI();
  if(ai){await aiAnswer(raw,sp);return;}
+ raw=expand(String(raw||''));
  const heard=[];
  const gm=(re)=>{const m=String(raw).match(re);return m?m[1]:null;};
  const units=gm(/(\d+)\s*units?/i), bp=gm(/(\d{2,3})\s*(?:over|\/)\s*\d{2,3}/i);
@@ -5019,6 +5210,17 @@ async function respondAs(sp,raw){
   }
   if(/\b(pelvi|binder)\b/.test(t)){
    say('team',echo+'Binder stays on until we are on the table. Do not roll him for anything.',sp.nm);return;
+  }
+  if(/\b(worried|worry|concern|concerned|afraid|nervous|expect)\b/.test(t)){
+   const risks=[];
+   if(S.p.bleedRate>50)risks.push('he bleeds faster than you can replace');
+   if(S.p.tension>.25)risks.push('that chest tensions again');
+   if(S.p.airway>.3&&!S.airwayDevice)risks.push('the airway closes before it is secured');
+   if(S.p.tempC<35.5)risks.push('he gets too cold to clot');
+   if(S.bank<=6)risks.push('the blood runs out');
+   say('team',echo+'Then we agree. '+(risks.length?'What I am watching for is that '+risks.slice(0,2).join(', and that ')+'. ':'')+
+    'Tell me the moment it starts and I will not wait for the rest of the picture.',sp.nm);
+   return;
   }
   if(/\b(what|should|do you want|advice|think|recommend|how long|when)\b/.test(t)){
    const want=[];
@@ -5208,7 +5410,7 @@ function renderRoster(){
 }
 /* fixed quick bar — identical in every case so it gives nothing away */
 const PRE_QUICK=['roles','brief','anticipate','prep_room','checklist','ppe','document','surgeon','blood_bank','medevac','report','weight','advice'];
-const QUICK=['switch_pt','delegate','bed_report','surgeon_bedside','surgery_here','primary','bleedcheck','blood_sweep','monitor_all','prep_room','checklist','airway_plan','postintubation','tubefix','advice','howlong','ecg12','sedate','dextrose','surgeon','or','handoff','pelvis_assess','teleconsult','document','look','roles','report','weight','traction','airway_assess','listen','pulsecheck','gcs','expose','leads','spo2','nibp','fast','iv','groin_sweep','skull_sweep','logroll','secondary','reassess'];
+const QUICK=['switch_pt','delegate','bed_report','surgeon_update','book_or','surgeon_bedside','surgery_here','primary','bleedcheck','blood_sweep','monitor_all','prep_room','checklist','airway_plan','postintubation','tubefix','advice','howlong','ecg12','sedate','dextrose','surgeon','or','handoff','pelvis_assess','teleconsult','document','look','roles','report','weight','traction','airway_assess','listen','pulsecheck','gcs','expose','leads','spo2','nibp','fast','iv','groin_sweep','skull_sweep','logroll','secondary','reassess'];
 function syncBarCtl(){
  const c=$('#barCtl');if(!c)return;
  const bits=[];
@@ -5294,15 +5496,50 @@ function delegateWants(p){
 }
 /* Called in, she walks round. Once she is in the room she is a person you talk
    to normally, not a radio channel — and she has two hands. */
+/* The surgical procedures an FRSD is resourced to do. */
+const FRSD_SURGERY={
+ laparotomy:'damage control laparotomy',
+ thoracotomy:'thoracotomy',
+ vascular:'vascular control and temporary shunting',
+ amputation:'completion amputation',
+ exfix:'external fixation',
+ fasciotomy:'fasciotomy',
+ washout:'washout and debridement',
+ neck:'neck exploration or surgical airway',
+};
+const SURGERY_WORDS=[
+ [/\b(ex ?lap|laparotom|belly|abdomen open|open the abdomen)/i,'laparotomy'],
+ [/\bthoracotom|open the chest|clamshell/i,'thoracotomy'],
+ [/\bvascular|shunt|proximal control|repair the artery|arterial/i,'vascular'],
+ [/\bamputat|complete the amputation|finish the leg|guillotine/i,'amputation'],
+ [/\bex ?fix|external fixation|external fixator|frame|stabilis|stabiliz/i,'exfix'],
+ [/\bfasciotom|release the compartment/i,'fasciotomy'],
+ [/\bwashout|debride|irrigat|clean the wound/i,'washout'],
+ [/\bneck explor|explore the neck|surgical airway|cric/i,'neck'],
+];
+function namedSurgery(raw){
+ const t=expand(String(raw||''));
+ for(const [re,k] of SURGERY_WORDS)if(re.test(t))return k;
+ return null;
+}
+/* Procedures where a surgeon standing there is worth having. Intubation is not one. */
+const SURGEON_ASSISTS=new Set(['chesttube','fingerthor','thoracotomy','pericardio','cric','central','fasciotomy','escharotomy','surgery_here','impaled','pack','junctional_tq']);
 function surgeonArrival(S){
  if(!S.flags.surgeonComing||S.flags.surgeonHere||S.over)return;
  if(S.t-S.flags.surgeonComing<45)return;
- S.flags.surgeonHere=true;S.radio=null;renderRoster();
- const v=vitals(S);
- say('team','I am in the room. Gloves on, standing on your left. '+
-  (S.p.tension>.3&&!S.flags.chestTube?'If you want a tube in that chest I can do it while you carry on. ':'')+
-  (!S.access||S.access<2?'I can put a cordis in the groin if you are short of access. ':'')+
-  (v.sbp<85?'He is soft — tell me what you want done first. ':'What do you want from me?'),person('surgeon').nm);
+ S.flags.surgeonHere=true;S.radio=null;S.flags.awaitUpdate=true;renderRoster();
+ say('team','I am in the room, gloved, standing on your left. Give me the picture from the top — what he is, what you have found and what you have done. Then I will stay out of your way until you want me.',person('surgeon').nm);
+}
+/* She does not chatter. She speaks when she is spoken to, or when it matters. */
+function surgeonStandby(S){
+ if(!S.flags.surgeonHere||S.over)return;
+ if(S.flags.awaitUpdate&&S.t-(S.flags.surgeonHereT||S.flags.surgeonComing||0)>75&&!S.called.sgNag){
+  S.called.sgNag=true;
+  say('team','Sir — I still have not had a handover. I am not going to interrupt you, but I am working blind over here.',person('surgeon').nm);
+  return;
+ }
+ if(vitals(S).sbp<70&&!S.called.sgCrit){S.called.sgCrit=true;
+  say('team','I am not going to stand here quietly for that pressure. Tell me what you want me to open, or tell me he is going to my table.',person('surgeon').nm);}
 }
 function runDelegate(p){
  const d=delegateOf(p);
@@ -5391,12 +5628,12 @@ const OGROUPS=[
  ['Resuscitation',['blood','crystalloid','txa','calcium','warm','cooling','blood_bank','burnfluid','hypertonic','epi_drip']],
  ['Sweeps and exposure',['blood_sweep','groin_sweep','skull_sweep','axilla_sweep','logroll','secondary','compartment_check','foot_exam']],
  ['Imaging and labs',['fast','labs','glucose','fetal']],
- ['Medications',['analgesia','sedate','sedation_drip','im_meds','epi_im','naloxone','atropine','pralidoxime','seizure_med',
+ ['Medications',['analgesia','sedate','sedation_drip','im_meds','epi_im','naloxone','atropine','pralidoxime','seizure_med','tetanus','steroid',
    'dextrose','thiamine','insulin_inf','k_treatment','potassium','magnesium','antiemetic','amiodarone','nitro','beta_blocker',
    'aspirin','reperfusion','antihistamine','abx','antipyretic','artesunate','cyanokit','decon']],
  ['Surgical procedures',['pericardio','thoracotomy','fasciotomy','escharotomy','cpr','tilt']],
  ['Talking to the team',['advice','howlong','canyou','readback_req','swap','restrain','quiet','hold','recap','reassess','look','ack']],
- ['Surgeon, evacuation, disposition',['surgeon','surgeon_bedside','surgery_here','or','medevac','teleconsult','handoff']],
+ ['Surgeon, evacuation, disposition',['surgeon','surgeon_update','surgeon_bedside','book_or','surgery_here','or','medevac','teleconsult','handoff']],
 ];
 function orderRows(filter){
  const f=(filter||'').trim().toLowerCase();
