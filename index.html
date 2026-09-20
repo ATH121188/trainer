@@ -475,8 +475,61 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.18';
+const VERSION='1.24';
 const CHANGELOG=[
+ {v:'1.24',name:'REBOA, the ICU, and the rules that change when he is cold',
+  top:['REBOA is in — zone 1 for abdominal or traumatic arrest, zone 3 for pelvis and junctional. Penetrating chest arrest is a contraindication and Dr. Moon says so.',
+       'Non-surgical patients waiting for a bird can go to the FRSD ICU with Major B. Your bay clears — but you are then a man down if another casualty comes through the door.',
+       'Below thirty degrees the rules change, and the team now says so: three shocks and stop, no vasoactive drugs until he is over thirty, handle him gently, and nobody is dead until they are warm and dead.'],
+  detail:['REBOA inflation starts a clock — definitive control inside thirty to sixty minutes for zone 1, two to three hours for zone 3, and longer with partial occlusion targeting a proximal systolic of 90 to 110 with pulsatile distal flow.',
+          'Rewarming was running at about a degree and a half a minute, which is not a thing that happens. It is now one to two degrees an hour with active warming, so a severely hypothermic patient cannot be warmed up in your bay — which is the point.',
+          'Adrenaline below thirty degrees accumulates rather than works, and the team tells you that when you order it.',
+          'Defibrillation was an alias of the antiarrhythmic drug order, so "shock him" was giving amiodarone.',
+          'Checked against the JTS REBOA CPG (v1.4, April 2026), AHA and Wilderness Medical Society hypothermia guidance.']},
+ {v:'1.23',name:'Newborn resuscitation, done properly',
+  top:['Rebuilt against NRP 9th edition, which the AAP released in November 2025. The first version was written from memory and had the ventilation rate wrong.',
+       'Apgar is scored at one and five minutes and called out — and the team says plainly that it is a record, not an instruction. Nobody waits for it before ventilating.',
+       'The full ladder is in: initial steps, ventilation, corrective steps, compressions, adrenaline — each with the right threshold.'],
+  detail:['Ventilation is thirty to sixty a minute, not forty to sixty as the previous version said.',
+          'Positive pressure if apnoeic, gasping or heart rate under a hundred. Compressions three to one only after thirty seconds of ventilation that is actually moving the chest. Adrenaline at ten to thirty micrograms per kilo after sixty seconds of coordinated compressions, umbilical vein or intraosseous.',
+          'Corrective steps when the chest is not moving — mask, reposition, suction, open mouth, pressure, alternative airway. Most failed ventilation is a seal or a head position.',
+          'Preductal saturation targets: sixty to sixty-five percent at one minute, rising to eighty-five to ninety-five by ten. Probe on the right hand. Do not chase a hundred.',
+          'The cord is clamped immediately here — deferred clamping does not apply to a perimortem delivery.',
+          'The debrief records the Apgars, whether chest movement was ever confirmed, and whether it started inside the golden minute.']},
+ {v:'1.22',name:'The baby',
+  top:['After a perimortem caesarean there is now a second patient. "Infant out. Sir — who is taking the baby? He is blue, floppy and not breathing, and whoever you name is off your mother from this second."',
+       'Name somebody and they dry him, wrap him, get a hat on him and put him under the warmer — then ventilate, because in a newborn ventilation is the resuscitation.',
+       'Leave him and he is called out at twenty-five seconds, offered for at seventy, and gone by two and a half minutes.'],
+  detail:['Positive pressure ventilation at forty to sixty a minute, twenty to thirty centimetres of water, titrated to chest rise. Compressions three to one and adrenaline at ten to thirty micrograms per kilo if the rate stays under sixty.',
+          'Warming is not an afterthought — a newborn loses heat faster than anything else in the bay and a cold newborn will not resuscitate.',
+          'The debrief records when he was delivered, when somebody was named, by whom, and whether he was ever actually ventilated.',
+          'And it names the cost: whoever takes the baby is a quarter of your team off the mother for the rest of the case.']},
+ {v:'1.21',name:'Gaps found by auditing all sixty cases',
+  top:['The tamponade case had no pericardiocentesis on its scored list. The traumatic arrest scored neither compressions nor a rhythm check. Both fixed.',
+       'The pregnant arrest now scores the hysterotomy and the rhythm check — they were written but never attached to the case.',
+       'Four bleeding cases did not score warming, and one did not score blood.'],
+  detail:['A rollover with a femur and an unstable pelvis now scores the binder as well as the traction splint.',
+          'Ninety-six interventions the cases talk about were checked against what the lead can actually order; three were unreachable and now are.',
+          'Every critical action in all sixty cases was checked as reachable through its own plain phrasing.',
+          'All sixty cases were played through to a debrief looking for broken text or missing scores. None found.']},
+ {v:'1.20',name:'Cardiac arrest',
+  top:['Perimortem caesarean exists. It did not, which made the pregnant arrest case unwinnable — the one intervention that saves her was not in the vocabulary.',
+       'Pads, rhythm checks and defibrillation exist. Ask for a rhythm and you get one; try to shock PEA and Amy refuses and tells you why.',
+       'Epinephrine in an arrest is 1 mg intravenously, not 0.5 intramuscular. Answering the route question now actually changes the dose that is checked.'],
+  detail:['Resuscitative hysterotomy is for the mother — it relieves the aortocaval compression defeating your compressions. It is scored against the four minute window and the debrief says so if you are late.',
+          '"Where are we in ACLS" gives the elapsed time, the rhythm, how many doses of epinephrine and how long since the last, shocks delivered, and the reversible causes still on the table for this patient.',
+          'Each dose of arrest epinephrine is counted and the next one announced.',
+          'A rhythm check with the pads on reports what is actually on the screen, and names PEA as PEA.',
+          'Pre-arrival phrasings that were missed now work: "get the room prepared", "airway preparation".']},
+ {v:'1.19',name:'The wrong drug, and other fixes from a seizure case',
+  top:['Asking for midazolam no longer gives ketamine. "Versed" heard as "overseed" was landing on the wrong drug entirely, and the dose was being checked against the wrong range.',
+       'A benzodiazepine given as sedation to a patient who is still fitting now treats the fit.',
+       '"Did we roll him yet", "have we given TXA", "is he still seizing", "how does he look" are all answered instead of ignored — and none of them start a task.'],
+  detail:['Benzodiazepine dosing is checked properly: midazolam 1 to 5 intravenously and up to 10 intramuscular, lorazepam 2 to 4, diazepam 5 to 10. Propofol has its own range.',
+          'More mis-hearings mapped: overseed and versaid for Versed, rocky romeo and rocky rhodium for rocuronium, amulets for "Amy, let\'s", propofal, keppra, ativan.',
+          'Phonetic rescue no longer matches a fragment of a sentence — "hang on to it" was being heard as "hang a unit" and ordering blood.',
+          '"Have we done X" questions are answered from the record with the time and the finding.',
+          'The aircrew\'s radio line was coming out of Dr. Moon\'s mouth on handover. Fixed.']},
  {v:'1.18',name:'Stacked orders',
   top:['Give several people orders in one breath: "Aust get the primary, Mitch expose him, Amy monitors." One press of the talk key, three orders, three people.',
        'Works the same typed — one sentence, commas between.',
@@ -769,7 +822,7 @@ act({id:'ack',instant:true,label:'Acknowledge / short reply',cat:'CMD',by:'aust'
   if(/what|huh|sorry/.test(r))return{say:rnd(['I said we are waiting on you, sir.','Standing by.','Say again what you want.']),nocredit:true};
   return{say:rnd(['Copy — doing it now.','Roger that.','Moving, sir.','On it.']),nocredit:true};}});
 act({id:'airway_plan',label:'Airway plan',cat:'A',by:'amy',lockTo:'amy',dur:12,assess:true,
- al:['airway plan','what is your plan','whats your plan','plan for the airway','what is the plan','how are you taking this airway','walk me through it','what do you need for the airway','give me your plan','intubation plan','share your plan','talk me through the airway','what do you need from me','how are you doing this','plan please'],
+ al:['airway plan','what is your plan','whats your plan','plan for the airway','what is the plan','how are you taking this airway','walk me through it','what do you need for the airway','give me your plan','intubation plan','share your plan','talk me through the airway','what do you need from me','how are you doing this','plan please','airway preparation','prepare the airway','airway prep','get the airway ready'],
  run:S=>{
   const kg=S.p.kg||80;
   const dev=S.p.airway>.45||S.p.midface?'video laryngoscope with a bougie already loaded, and my hand on the scalpel':'video laryngoscope, bougie ready';
@@ -781,7 +834,7 @@ act({id:'airway_plan',label:'Airway plan',cat:'A',by:'amy',lockTo:'amy',dur:12,a
   return'Here is my plan. Preoxygenate with a nasal cannula underneath and gentle bagging, ramp him up, cricoid off, suction on my right. '+dev+
    '. '+drugs+access+' First attempt is mine, second attempt is mine with a different blade, then we go to the i-gel, then front of neck — and I will call it out loud at each step. Failure plan is the cric kit open on the tray before I start.'+risk;}});
 act({id:'prep_room',label:'Prepare the whole room',cat:'CMD',by:'mitch',dur:40,
- al:['prep the room','prepare the room','set the room up','set up the room','get everything ready','prep everything','ready the room','room prep','set everything up','get the bay ready','prep the bay','standard setup','get everything out','set up for a bad one','open the kits','prep for trauma','pumps ready','get the pumps ready','pumps up','prime the pumps','lines primed','get the lines primed','kit ready','get set up'],
+ al:['prep the room','prepare the room','set the room up','set up the room','get everything ready','prep everything','ready the room','room prep','set everything up','get the bay ready','prep the bay','standard setup','get everything out','set up for a bad one','open the kits','prep for trauma','pumps ready','get the pumps ready','pumps up','prime the pumps','lines primed','get the lines primed','kit ready','get set up','get the room prepared','room prepared','get the room ready','room ready','prepare the room','prepare the bay','team get the room prepared'],
  run:S=>{
   ['leads','spo2','nibp','etco2','iv','io','rsi','cric','chesttube','blood','fast','suction','tq','pack','binder','warm','seal'].forEach(id=>{S.prepped[id]=S.t+1;});
   S.flags.roomPrepped=true;
@@ -846,12 +899,36 @@ act({id:'sedate',label:'Sedate for agitation',cat:'RX',by:'lauren',dur:20,routeA
  al:['sedate him','sedate her','sedation for agitation','calm him down','calm her down','settle him','settle her','chemical restraint','knock him down','drop him','snow him','sedate for agitation','ketamine for sedation','propofol','midazolam for agitation','droperidol','haloperidol','haldol','olanzapine','zyprexa','sedate','sedate the patient'],
  std:(S)=>{const kg=S.p.kg||80;return{base:kg*1,kind:'mass',display:Math.round(kg)+' mg ketamine, 1 mg/kg (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
+  const t=expand(String(raw||''));
+  const im=/\bim\b|intramuscular/i.test(t);
+  if(!d)return null;
+  if(/versed|midazolam/i.test(t)){
+   const hi=im?12:10;
+   if(d.base<1||d.base>hi)return{bad:'That is '+d.text+' of midazolam. One to five intravenously, up to ten intramuscular. Confirm?'};
+   return{label:d.display+' midazolam'};
+  }
+  if(/lorazepam|ativan/i.test(t)){
+   if(d.base<1||d.base>8)return{bad:'That is '+d.text+' of lorazepam. Two to four milligrams is the usual. Confirm?'};
+   return{label:d.display+' lorazepam'};
+  }
+  if(/diazepam|valium/i.test(t)){
+   if(d.base<2||d.base>20)return{bad:'That is '+d.text+' of diazepam. Five to ten milligrams. Confirm?'};
+   return{label:d.display+' diazepam'};
+  }
+  if(/propofol/i.test(t)){
+   if(d.base<10||d.base>3*kg)return{bad:'That is '+d.text+' of propofol. For '+Math.round(kg)+' kilos, and only if the pressure will take it. Confirm?'};
+   return{label:d.display+' propofol'};
+  }
   if(d.base<.2*kg||d.base>3*kg)return{bad:'That is '+d.text+'. For sedation in '+Math.round(kg)+' kilos I would expect around '+Math.round(kg)+' milligrams of ketamine. Confirm?'};
   return{label:d.display+' ketamine for sedation'};},
  danger:(S,raw)=>{
   if(S.sbp()<80&&/midazolam|versed|propofol|diazepam/i.test(raw||''))return'Sir, a benzodiazepine or propofol on a pressure that low will drop him further. Ketamine holds the pressure.';
   return null;},
  run:(S,t,raw,g)=>{
+  if(S.p.seizing&&/versed|midazolam|lorazepam|ativan|diazepam|valium/i.test(expand(String(raw||'')))){
+   S.flags.benzo=true;S.p.seizing=false;
+   return ((g&&g.label)?g.label:'Benzodiazepine')+' in — and that is the right drug for a man who is still fitting, so the seizure should settle with it. Watch his airway now.';
+  }
   const dep=respDepress(S,raw,g&&g.d&&g.d.base);
   if(dep>0){
    S.p.opioid=clamp((S.p.opioid||0)+dep,0,1);S.p.airway=clamp((S.p.airway||0)+dep*.4,0,1);
@@ -1168,7 +1245,7 @@ act({id:'cric',label:'Cricothyroidotomy',cat:'A',by:'aust',dur:70,al:['cric','cr
 act({id:'tubefix',preempt:true,label:'Correct a misplaced tube',cat:'A',by:'amy',lockTo:'amy',dur:12,
  al:['pull the tube','take the tube out','pull it back','reposition the tube','withdraw the tube','it is oesophageal',
   'it is esophageal','wrong place','re-intubate','reintubate','pull back two','tube is too deep','pull it back two centimetres',
-  'take it out and bag him','remove the tube','check the tube placement','confirm tube placement','pull him back','back two','two centimetres back','two centimeters back','withdraw it','it is too deep','adjust the tube'],
+  'take it out and bag him','remove the tube','check the tube placement','confirm tube placement','pull him back','back two','two centimetres back','two centimeters back','withdraw it','it is too deep','adjust the tube','correct the tube','tube correction','fix the tube'],
  precheck:S=>S.airwayDevice?null:'There is no tube in, sir.',
  run:S=>{
   if(S.flags.oesophageal){
@@ -1254,7 +1331,7 @@ act({id:'pack',label:'Pack / direct pressure',cat:'C',by:'aust',dur:45,al:['pack
   S.p.bleedRate=Math.max(0,S.p.bleedRate-S.p.junctionalRate*.8);S.p.junctionalRate*=.2;S.flags.packed=true;
   return S.scn.packText||'Packed with hemostatic gauze, holding three minutes. Controlled.';}});
 act({id:'pelvis_assess',label:'Assess pelvic stability',cat:'E',by:'aust',dur:15,assess:true,
- al:['assess the pelvis','pelvic stability','is the pelvis stable','check the pelvis','springing the pelvis','spring the pelvis','palpate the pelvis','feel the pelvis','pelvic exam','how is the pelvis','pelvis','is that pelvis stable','check pelvic stability','feel the pelvis for me','pelvis stable','pelvis again','recheck the pelvis'],
+ al:['assess the pelvis','pelvic stability','is the pelvis stable','check the pelvis','springing the pelvis','spring the pelvis','palpate the pelvis','feel the pelvis','pelvic exam','how is the pelvis','pelvis','is that pelvis stable','check pelvic stability','feel the pelvis for me','pelvis stable','pelvis again','recheck the pelvis','pelvic assessment','assess the pelvis','pelvis assessment'],
  run:S=>{S.known.pelvis=true;
   if(S.flags.binder)return{find:'Binder is already on, so I am not going to spring it again. It was unstable before we bound it.'};
   if(S.p.pelvis)return{find:'Gentle pressure on both iliac wings — it moves. There is give on the left and he does not like it. That pelvis is unstable. I only pressed once, sir, I am not repeating it.'};
@@ -1361,7 +1438,7 @@ act({id:'calcium',label:'Calcium',cat:'C',by:'lauren',dur:12,al:['calcium','calc
 act({id:'warm',label:'Hypothermia prevention',cat:'C',by:'lauren',dur:20,al:['warm him','warm her','hypothermia','blizzard blanket','warm the fluids','blankets','fluid warmer','keep him warm','turn up the heat','warm him up','warm her up','stop the heat loss','get blankets on','fluid warmer on','turn the heat up','wrap him','hypothermia prevention','stop him getting cold','prevent hypothermia','warming','bair hugger','get him warm','get her warm','cover him','cover her','warm fluids','warming blanket','hot line','active warming','warm','warming him','warm the patient','blanket','blankets','warm blanket','get a blanket','get blankets','cover him','cover her','warm blankets on him'],
  run:S=>{S.flags.warmer=true;return'Fluid warmer on the line, blizzard blanket, room heat up.';}});
 act({id:'im_meds',label:'IM induction / sedation',cat:'RX',by:'lauren',dur:15,
- al:['im ketamine','ketamine im','intramuscular ketamine','im meds','intramuscular','im induction','give it im','im drugs','im the ketamine'],
+ al:['im ketamine','ketamine im','intramuscular ketamine','im meds','im induction','give it im','im drugs','im the ketamine'],
  std:(S)=>{const kg=S.p.kg||80;return{base:kg*4,kind:'mass',display:Math.round(kg*4)+' mg ketamine IM, 4 mg/kg (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
   if(d.base<2*kg||d.base>6*kg)return{bad:'That is '+d.text+' intramuscular. For '+Math.round(kg)+' kilos I would expect around '+Math.round(4*kg)+' milligrams, four per kilo. Confirm?'};
@@ -1405,12 +1482,25 @@ act({id:'analgesia',label:'Analgesia / sedation',cat:'RX',by:'lauren',dur:15,rou
   return g.d.display+' '+rt+'. Comfortable, still breathing.';}});
 
 /* --- scenario meds --- */
-act({id:'epi_im',label:'Epinephrine',cat:'RX',by:'lauren',dur:12,routeAsk:'Epi which way — intramuscular in the thigh, or intravenous?',al:['epi','epinephrine','adrenaline','im epi','epipen','intramuscular epi','im epi now','epi in the thigh','adrenaline im','epinephrine im','adrenaline 0.5','epi pen','epi im now'],
- std:(S)=>{const kg=S.p.kg||80;return kg<30?{base:kg*.01,kind:'mass',display:(kg*.01).toFixed(2)+' mg IM (standard)'}:{base:.5,kind:'mass',display:'0.5 mg IM (standard)'};},
+act({id:'epi_im',label:'Epinephrine',cat:'RX',by:'lauren',dur:12,routeAsk:'Epi which way — intramuscular in the thigh, or intravenous? In an arrest it is 1 milligram intravenously; for anaphylaxis it is 0.5 intramuscular.',al:['epi','epinephrine','adrenaline','im epi','epipen','intramuscular epi','im epi now','epi in the thigh','adrenaline im','epinephrine im','adrenaline 0.5','epi pen','epi im now'],
+ std:(S)=>{const kg=S.p.kg||80;
+  if((S.p.arrestCase&&!S.rosc)||S.sbp()<=0)return kg<30?{base:kg*.01,kind:'mass',display:(kg*.01).toFixed(2)+' mg IV (arrest)'}:{base:1,kind:'mass',display:'1 mg IV (arrest)'};
+  return kg<30?{base:kg*.01,kind:'mass',display:(kg*.01).toFixed(2)+' mg IM (standard)'}:{base:.5,kind:'mass',display:'0.5 mg IM (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80,peds=kg<30;
-  const lo=peds?.08:.25, hi=peds?.2:.6;
+  const t=expand(String(raw||''));
+  const arrest=(S.p.arrestCase&&!S.rosc)||S.sbp()<=0;
+  const iv=/\biv\b|intravenous|\bio\b|intraosseous|central/i.test(t);
+  if(!d)return null;
   if(d.kind!=='mass')return{bad:'Epi in milligrams or micrograms, sir. How much?'};
-  if(d.base<lo||d.base>hi)return{bad:'That is '+d.text+' of epi intramuscular. I would expect '+(peds?'0.01 mg per kilo, about '+(kg*.01).toFixed(2)+' milligrams':'0.3 to 0.5 milligrams')+'. Confirm?'};
+  /* arrest dosing is a different drug order from anaphylaxis dosing */
+  if(arrest&&(iv||d.base>=.8)){
+   const want=peds?kg*.01:1;
+   if(Math.abs(d.base-want)>(peds?want*.5:.3))
+    return{bad:'That is '+d.text+' of epi for an arrest. It is '+(peds?'0.01 mg per kilo, about '+want.toFixed(2)+' milligrams':'1 milligram')+' intravenously every three to five minutes. Confirm?'};
+   return{label:d.display+' epinephrine IV, arrest dosing'};
+  }
+  const lo=peds?.08:.25, hi=peds?.2:.6;
+  if(d.base<lo||d.base>hi)return{bad:'That is '+d.text+' of epi intramuscular. I would expect '+(peds?'0.01 mg per kilo, about '+(kg*.01).toFixed(2)+' milligrams':'0.3 to 0.5 milligrams')+(arrest?'. For an arrest it is 1 milligram intravenously':'')+'. Confirm?'};
   return{label:d.display+' epinephrine IM'};},
  danger:(S,raw)=>{
   const d=parseDose(raw,S.p.kg);
@@ -1419,6 +1509,17 @@ act({id:'epi_im',label:'Epinephrine',cat:'RX',by:'lauren',dur:12,routeAsk:'Epi w
   return null;},
  run:(S,t,raw,g)=>{S.flags.epi=(S.flags.epi||0)+1;
   const d=g.d;
+  const arrest=(S.p.arrestCase&&!S.rosc)||S.sbp()<=0;
+  if(S.p.tempC<30){
+   S.flags.coldEpi=(S.flags.coldEpi||0)+1;
+   S.lesson('Below thirty degrees, vasoactive drugs do not work reliably and they accumulate to toxic levels because the patient is not metabolising them. Withhold them until the core is above thirty, then double the usual dosing interval until he is normothermic.');
+   return'In, sir — but on a core of '+S.p.tempC.toFixed(1)+' that adrenaline will sit in the circulation rather than work. Below thirty we withhold it and rewarm; above thirty we give it at double the usual interval.';
+  }
+  if(arrest){
+   S.flags.epiArrest=(S.flags.epiArrest||0)+1;S.flags.lastEpi=S.t;
+   return ((d&&d.display)?d.display:'1 mg')+' of epinephrine in, arrest dosing. That is dose '+S.flags.epiArrest+
+    '. Next one is due in three to five minutes — I will call it. Compressions have not stopped.';
+  }
   if(/\biv\b|intravenous|push/i.test(raw||'')&&d&&d.base>=.5&&!S.p.arrestCase){
    S.p.periArrest=(S.p.periArrest||0)+.5;S.p.squeeze=Math.min(1.6,(S.p.squeeze||1)+.5);
    S.harm('A milligram-range dose of epinephrine intravenously in a perfusing patient. His pressure has spiked and the rhythm has broken up — that is the dose you give a dead heart.');
@@ -1476,7 +1577,7 @@ act({id:'magnesium',label:'Magnesium',cat:'RX',by:'lauren',dur:20,
  run:(S,t,raw,g)=>{S.flags.magnesium=true;if(S.p.bronchospasm)S.p.bronchospasm=Math.max(0,S.p.bronchospasm-.18);
   return g.d.display+', running over twenty minutes.';}});
 act({id:'amiodarone',label:'Antiarrhythmic',cat:'RX',by:'lauren',dur:20,
- al:['amiodarone','amio','antiarrhythmic','lidocaine','procainamide','adenosine','cardiovert','shock him','defibrillate'],
+ al:['amiodarone','amio','antiarrhythmic','lidocaine','procainamide','adenosine','antiarrhythmic drug','give amiodarone'],
  std:(S)=>({base:300,kind:'mass',display:'300 mg amiodarone (standard)'}),
  dose:(S,raw,d)=>({label:d.display+' antiarrhythmic'}),
  danger:(S,raw)=>{
@@ -1519,9 +1620,172 @@ act({id:'seizure_med',label:'Benzodiazepine for seizures',cat:'RX',by:'lauren',d
  run:(S,t,raw,g)=>{S.flags.benzo=true;S.p.seizing=false;
   return g.d.display+' in. Seizure is settling.';}});
 act({id:'decon',label:'Decontaminate',cat:'CMD',by:'mitch',dur:80,
- al:['decon','decontaminate','strip and wash','wash him off','chemical decon','get the clothes off him and wash','hot zone','strip him and wash him','get those clothes off and wash','decon him','decontaminate now'],
+ al:['decon','decontaminate','strip and wash','wash him off','chemical decon','get the clothes off him and wash','hot zone','strip him and wash him','get those clothes off and wash','decon him','decontaminate now','decontamination','decontaminate him','decontaminate her'],
  run:S=>{S.flags.decon=true;
   return'Gloves and gowns on everybody, his clothes are bagged outside, skin wiped down with the RSDL and rinsed. The bay is not contaminated. Should have been the first thing we did.';}});
+act({id:'hysterotomy',label:'Resuscitative hysterotomy (perimortem caesarean)',cat:'C',by:'surgeon',dur:110,
+ al:['perimortem c section','perimortem caesarean','perimortem cesarean','perimortem section','resuscitative hysterotomy',
+  'hysterotomy','c section','caesarean','cesarean','section her','deliver the baby','cut the baby out',
+  'perimortem c-section','emergency c section','get the baby out','open her abdomen for the baby'],
+ precheck:S=>{
+  if(!S.p.pregnant)return'She is not pregnant, sir.';
+  if((S.p.gestation||0)<20)return'She is not far enough on for that to help her, sir — below twenty weeks the uterus is not obstructing anything.';
+  return null;},
+ run:S=>{
+  S.flags.hysterotomy=true;S.flags.hysterotomyT=S.t;
+  S.p.aortocaval=0;S.p.squeeze=Math.min(1,(S.p.squeeze||1)+.25);
+  S.p.periArrest=Math.max(0,(S.p.periArrest||0)-.35);
+  const late=S.t>300;
+  S.lesson('Resuscitative hysterotomy is done for the mother. Emptying the uterus removes the aortocaval compression that is defeating your compressions. The window is about four minutes from arrest, knife to skin, and it is a bedside procedure — not something to move her for.');
+  S.infant={born:S.t,attended:null,dried:false,ppv:false,effective:false,compressions:false,epi:false,
+   hr:48,resp:0,tone:0,grimace:0,colour:0,alive:true,team:null,apgar1:null,apgar5:null};
+  return'Vertical incision, uterus open, infant out. Sir — who is taking the baby? '+
+   'He is blue, floppy and not breathing, and whoever you name is off your mother from this second. '+
+   (late?'That took longer than it should have — we are well past the four minute window, and the chance of either of them coming back with it drops steeply after five. ':'Inside the window. ')+
+   'Her venous return should improve now — keep compressions going and tell me what the rhythm does.';}});
+/* ---------------- NEWBORN ----------------
+   NRP 9th edition (AAP/AHA, November 2025). Ventilation 30-60 a minute; PPV if
+   apnoeic, gasping or heart rate under 100; compressions 3:1 only after 30
+   seconds of EFFECTIVE ventilation with chest movement; epinephrine after 60
+   seconds of coordinated compressions. Apgar is recorded, not used to decide. */
+function apgar(inf){
+ const hrS=inf.hr>=100?2:inf.hr>0?1:0;
+ const respS=inf.resp>=2?2:inf.resp>=1?1:0;
+ const toneS=inf.tone>=2?2:inf.tone>=1?1:0;
+ const grimS=inf.grimace>=2?2:inf.grimace>=1?1:0;
+ const colS=inf.colour>=2?2:inf.colour>=1?1:0;
+ return {total:hrS+respS+toneS+grimS+colS,hr:hrS,resp:respS,tone:toneS,grim:grimS,col:colS};
+}
+function apgarLine(inf,at){
+ const a=apgar(inf);
+ return 'Apgar at '+at+' minute'+(at>1?'s':'')+' is '+a.total+' out of 10 — colour '+a.col+', pulse '+a.hr+
+  ', grimace '+a.grim+', tone '+a.tone+', respiration '+a.resp+'.';
+}
+act({id:'neonate',label:'Newborn resuscitation (NRP)',cat:'C',by:'majorb',dur:30,
+ al:['take the baby','resuscitate the baby','newborn resuscitation','neonatal resuscitation','dry and stimulate',
+  'dry the baby','warm the baby','work on the baby','bag the baby','ventilate the baby','nrp','start nrp',
+  'look after the baby','somebody take the baby','the infant','resuscitate the infant','warm and dry the baby',
+  'ppv on the baby','compressions on the baby','baby compressions','epi for the baby','apgar','apgars',
+  'what is the apgar','mr sopa','check the baby','baby heart rate','laryngeal mask for the baby','intubate the baby'],
+ precheck:S=>S.infant?null:'There is no baby, sir.',
+ run:(S,t,raw,g,doer)=>{
+  const inf=S.infant, r=expand(String(raw||''));
+  const since=Math.round(S.t-inf.born);
+  if(!inf.attended){inf.attended=S.t;inf.team=(doer&&doer.id)||'majorb';}
+  if(/apgar/i.test(r))return apgarLine(inf,S.t-inf.born>=300?5:1)+' Apgar records how he is doing — it does not decide anything. Nobody waits for it to start ventilating.';
+  let out='';
+  if(!inf.dried){
+   inf.dried=true;inf.tone=Math.max(inf.tone,1);inf.grimace=Math.max(inf.grimace,1);
+   out+='Initial steps: cord clamped and cut — no deferring it in this situation. Dried, wrapped, hat on, under the warmer, head in the sniffing position, mouth and nose cleared only because there is fluid there. Stimulating. '+
+    'A newborn loses heat faster than anything else in this room and a cold newborn will not resuscitate. ';
+   if(since>60)out+='That is '+since+' seconds — we are outside the golden minute already. ';
+  }
+  const needsPPV=inf.hr<100||inf.resp<1;
+  if(/bag|ventilat|ppv|positive pressure|laryngeal|lma|intubate/i.test(r)||needsPPV){
+   if(!inf.ppv){inf.ppv=true;inf.ppvAt=S.t;}
+   if(/mr sopa|seal|reposition|suction|open the mouth|pressure|alternative airway/i.test(r)){
+    inf.effective=true;
+    out+='Corrective steps — mask adjusted, head repositioned, mouth suctioned and opened, pressure increased, and an airway alternative ready. Chest is moving now. ';
+   }
+   if(!inf.effective&&S.t-inf.ppvAt>15){inf.effective=true;out+='Took a reseat and a reposition to get chest movement, but it is moving now. ';}
+   inf.hr=Math.min(150,inf.hr+(inf.effective?45:12));
+   inf.resp=inf.hr>=100?2:1;inf.colour=Math.min(2,inf.colour+1);inf.tone=Math.min(2,inf.tone+1);
+   out+='Ventilating with a mask at thirty to sixty a minute, watching for chest rise — rising heart rate is the sign it is working. '+
+    'Pulse oximeter on the right hand; the target is only sixty to sixty-five percent at one minute, climbing to eighty-five to ninety-five by ten. Do not chase a hundred. ';
+  }
+  if(inf.hr<60&&inf.ppv&&inf.effective&&S.t-inf.ppvAt>=30){
+   if(/compress/i.test(r)||inf.compressions){
+    inf.compressions=true;inf.compAt=inf.compAt||S.t;
+    out+='Compressions three to one with the breaths, two thumbs encircling, from the head of the bed, hundred percent oxygen — ninety compressions and thirty breaths a minute. ';
+    if(S.t-inf.compAt>=60&&!inf.epi&&/epi|adrenalin/i.test(r)){
+     inf.epi=true;inf.hr=Math.max(inf.hr,70);
+     out+='Adrenaline ten to thirty micrograms per kilo, umbilical vein if we can get one, intraosseous if we cannot. ';
+    } else if(S.t-inf.compAt>=60&&!inf.epi){
+     out+='Sixty seconds of compressions and he is still under sixty — that is adrenaline, ten to thirty micrograms per kilo, and think about hypovolaemia and a pneumothorax. ';
+    }
+   } else {
+    out+='Heart rate is under sixty after thirty seconds of ventilation with chest movement. That is compressions, three to one. ';
+   }
+  }
+  out+='Heart rate is '+Math.round(inf.hr)+'.';
+  return out;}});
+act({id:'defib',label:'Pads, rhythm check and defibrillation',cat:'C',by:'amy',dur:20,
+ al:['pads','put the pads on','defib pads','defibrillator','shock him','shock her','defibrillate','check the rhythm',
+  'rhythm check','what is the rhythm','pulse check and rhythm','charge to 200','shock at 200','deliver a shock',
+  'place the pads','pads on the patient','get the pads on','analyse the rhythm','analyze the rhythm',
+  'cardiovert','synchronised cardioversion','synchronized cardioversion','shock','unsynchronised shock'],
+ run:(S,t,raw)=>{
+  S.flags.pads=true;
+  const shockable=!!S.p.shockable;
+  const cold=S.p.tempC<30;
+  if(cold&&/shock|defib|charge/i.test(raw||'')){
+   S.flags.coldShocks=(S.flags.coldShocks||0)+1;
+   if(S.flags.coldShocks>3){
+    S.lesson('Below thirty degrees the myocardium will not hold a rhythm. Up to three attempts is reasonable, then you stop shocking and start rewarming — further shocks and further drugs are deferred until the core is above thirty. And nobody is dead until they are warm and dead.');
+    return'Sir, that is shock number '+S.flags.coldShocks+' on a core of '+S.p.tempC.toFixed(1)+'. This heart is not going to convert until it is warmer. We should be rewarming, not charging.';
+   }
+   return'Shock delivered. That is '+S.flags.coldShocks+' of three at this temperature, sir — below thirty degrees we get three attempts and then we stop and rewarm until the core is over thirty.';
+  }
+  const asking=/what is the rhythm|rhythm check|check the rhythm|analys|analyz/i.test(raw||'');
+  if(asking||!/shock|defib|charge/i.test(raw||'')){
+   S.flags.rhythmChecked=S.t;
+   return'Pads on, front and back. Rhythm on the screen is '+
+    (shockable?'coarse ventricular fibrillation — that is shockable.':
+     (S.sbp()<=0?'an organised narrow complex at about '+vitals(S).hr+' with no pulse. That is PEA — not shockable, and the treatment is finding the cause.':
+      'sinus at '+vitals(S).hr+' with a pulse.'))+
+    (shockable?' Say the word and I will charge.':' Compressions back on.');
+  }
+  if(!shockable){
+   S.lesson('Defibrillation does nothing for pulseless electrical activity or asystole. In a traumatic arrest the causes are hypovolaemia, tension pneumothorax and tamponade — and in a pregnant patient at term, aortocaval compression. Fix those instead.');
+   return'Charged and... sir, that rhythm is not shockable. I am not going to shock PEA. Compressions are back on — tell me what you want done about the cause.';
+  }
+  S.flags.shocks=(S.flags.shocks||0)+1;
+  return'Charged to two hundred, clear — shock delivered. That is shock '+S.flags.shocks+'. Compressions straight back on, no pause to look.';}});
+/* REBOA — JTS CPG for REBOA in Hemorrhagic Shock (v1.4, Apr 2026).
+   Zone 1 for abdominal haemorrhage or traumatic arrest, Zone 3 for pelvic and
+   junctional lower extremity. Penetrating chest arrest is a contraindication. */
+act({id:'reboa',label:'REBOA',cat:'C',by:'surgeon',lockTo:'surgeon',dur:150,
+ al:['reboa','aortic balloon','aortic occlusion','balloon occlusion','endovascular occlusion',
+  'zone 1 reboa','zone 3 reboa','zone one reboa','zone three reboa','put in a reboa','float a balloon',
+  'balloon the aorta','occlude the aorta'],
+ precheck:S=>{
+  if(!S.flags.surgeonHere&&!S.flags.surgeon)
+   return'Sir, that one is mine and nobody else in this detachment places it — and I have not been called yet.';
+  if(!S.flags.surgeonHere)
+   return'I am still next door, sir. I have to be at the bedside with my hands on him for that one — do you want me down there?';
+  if(!S.access)return'I want access before I start feeling for a femoral artery, sir.';
+  if(S.p.chestPenetrating&&S.sbp()<=0)return'Sir — penetrating chest with an arrest is a contraindication to REBOA. That is a thoracotomy, not a balloon. Say confirm if you want it anyway.';
+  return null;},
+ run:(S,t,raw)=>{
+  const z=/zone ?3|zone ?three|pelvi|junctional/i.test(expand(String(raw||'')))?3:1;
+  S.flags.reboa=z;S.flags.reboaAt=S.t;
+  if(z===1){S.p.bleedRate*=.25;if(S.p.pelvisRate)S.p.pelvisRate*=.25;}
+  else{S.p.pelvisRate=(S.p.pelvisRate||0)*.15;S.p.junctionalRate=(S.p.junctionalRate||0)*.2;S.p.bleedRate*=.6;}
+  S.p.squeeze=Math.min(1.35,(S.p.squeeze||1)+.35);
+  S.lesson('REBOA buys minutes, not hours, and it buys them at the cost of everything below the balloon. Full occlusion means definitive control within sixty minutes of inflation — thirty for zone 1 if you are being careful. Partial occlusion extends that, targeting a proximal systolic of 90 to 110 with pulsatile flow distally. The clock starts the moment it goes up, and somebody has to own it.');
+  return'Femoral access, balloon up in zone '+z+'. '+
+   (z===1?'Pressure is coming up and everything below the diaphragm is now ischaemic. ':'Pelvic and junctional bleeding is controlled and the gut and kidneys still have flow. ')+
+   'Inflation time is on the clock from now — I need definitive control inside '+(z===1?'thirty minutes, sixty at the outside':'two to three hours')+
+   '. Somebody call the time every five minutes and write it on the board. This is a bridge to my table, nothing else.';}});
+/* Non-surgical patients still need somewhere to be while they wait for a bird. */
+act({id:'icu',label:'Transfer to the FRSD ICU',cat:'CMD',by:'majorb',dur:60,
+ al:['icu','transfer to icu','to the icu','frsd icu','hand over to icu','icu bed','admit to icu',
+  'major b take over','major b has him','hand him to major b','hand her to major b','icu hold',
+  'hold him in icu','holding bed','move him to the icu','he can go to icu','she can go to icu'],
+ precheck:S=>{
+  if(S.p.bleedRate>60)return'He is still bleeding, sir. An ICU bed does not stop that — he wants a table.';
+  return null;},
+ run:S=>{
+  S.flags.icu=true;S.flags.icuAt=S.t;
+  const jobs=[];
+  if(S.airwayDevice)jobs.push('ventilator and sedation');
+  if((S.infusions||[]).some(f=>!f.done))jobs.push('the infusions running');
+  if(S.p.tempC<36)jobs.push('active warming');
+  if(S.mon.ecg)jobs.push('the monitor');
+  if(S.flags.chestTube)jobs.push('the chest drain and its output');
+  return'I have him, sir. Moving to the ICU bed — '+(jobs.length?jobs.join(', ')+', all mine now. ':'')+
+   'I will keep him stable and keep him warm until the bird comes, and I will call you if anything changes rather than waiting for you to ask. '+
+   'Your bay is clear. That frees you and it frees the trolley — but it does not free me, so if another casualty comes through that door you are a man down.';}});
 act({id:'tilt',label:'Left uterine displacement',cat:'C',by:'aust',dur:20,
  al:['left lateral tilt','uterine displacement','tilt her','displace the uterus','left tilt','wedge her','manual displacement','roll her left','get her off her back','displace it','tilt her left','wedge under the right hip'],
  precheck:S=>S.p.pregnant?null:'She is not pregnant, sir. Nothing to displace.',
@@ -1946,6 +2210,10 @@ act({id:'handoff',label:'Hand over to the surgeon or evac team',cat:'CMD',by:'su
   if(!gaps.length)gaps.push('what is the one thing you are most worried about in the next twenty minutes');
   if(toFlight){
    S.radio={id:'flight',t:S.t};S.awaiting=null;
+   say('team','Dustoff 2-1, ready to copy. Give me the MIST, then tell me — '+gaps.slice(0,3).join(', ')+'? And tell me what I am expected to manage in the back with two hands and no room.',person('flight').nm);
+   return{say:'',quiet:true};
+  }
+  if(false){
    return'Dustoff 2-1, ready to copy. Give me the MIST, then tell me — '+gaps.slice(0,3).join(', ')+'? And tell me what I am expected to manage in the back with two hands and no room.';}
   S.radio={id:'surgeon',t:S.t};S.awaiting=null;
   return'Copy your MIST. Before I take him — '+gaps.slice(0,3).join(', ')+'? Go ahead, I am listening.';}});
@@ -2205,6 +2473,7 @@ const SCN=[
   {id:'listen',by:80,label:'Auscultate and find a clear chest, which is the clue'},
   {id:'io',by:140,label:'Access',alt:['iv','central']},
   {id:'blood',by:200,label:'Blood to fill a ventricle that cannot fill itself'},
+  {id:'pericardio',by:250,label:'Pericardiocentesis if he arrests or you cannot get him to a table'},
   {id:'surgeon',by:140,label:'Surgeon immediately'},
   {id:'or',by:320,label:'Table now — pericardiotomy and repair',alt:['thoracotomy']},
   {id:'o2',by:110,label:'Oxygen'}],
@@ -2453,6 +2722,8 @@ const SCN=[
  neuro:S=>'He is in arrest. There is no neuro exam.',
  labs:S=>'pH 6.91, lactate 18, potassium 6.4, Hgb 4.8.',
  critical:[{id:'fingerthor',by:110,label:'Bilateral finger thoracostomies — tension until proven otherwise',alt:['needle']},
+  {id:'cpr',by:40,label:'Compressions, and do not stop them for anything that is not on this list'},
+  {id:'defib',by:80,label:'Pads on and a rhythm check — PEA and asystole are not shocked'},
   {id:'io',by:80,label:'Access in seconds',alt:['iv']},
   {id:'blood',by:170,label:'Blood, and a lot of it'},
   {id:'igel',by:140,label:'Oxygenate — fast and adequate beats slow and perfect',alt:['rsi','cric','bvm']},
@@ -2707,6 +2978,7 @@ const SCN=[
   {id:'glucose',by:170,label:'Glucose in every unresponsive patient'},
   {id:'ccollar',by:140,label:'Spinal precautions'},
   {id:'traction',by:330,label:'Traction splint the femur'},
+  {id:'binder',by:200,label:'Binder for the pelvis — a femur splint does not address that'},
   {id:'teleconsult',by:390,label:'Neurosurgical reachback and an evacuation plan'},
   {id:'medevac',by:400,label:'He needs a scanner you do not have'}],
  goal:'Two resuscitation targets in direct conflict. Permissive hypotension is right for the bleeding and wrong for the brain — aim over 110 systolic, keep the end-tidal 35 to 40, and every minute under 90 systolic or 90 percent saturation costs him. A blown pupil with a GCS of eight is a mass lesion until a scanner says otherwise.'
@@ -2821,6 +3093,7 @@ const SCN=[
   {id:'calcium',by:220,label:'Calcium FIRST to stabilise the myocardium'},
   {id:'k_treatment',by:310,label:'Then shift it — insulin, dextrose, bicarbonate'},
   {id:'crystalloid',by:200,label:'Aggressive crystalloid for the myoglobin load'},
+  {id:'warm',by:300,label:'Hypothermia prevention — he is already cold and cold patients do not clot'},
   {id:'io',by:200,label:'Access',alt:['iv']},{id:'analgesia',by:340,label:'Analgesia'},
   {id:'compartment_check',by:300,label:'Assess the compartments'},
   {id:'medevac',by:400,label:'Evacuate — dialysis and possibly fasciotomies'}],
@@ -2880,6 +3153,7 @@ const SCN=[
   {id:'fast',by:210,label:'eFAST for the haemothorax and the contusion'},
   {id:'iv',by:200,label:'Access',alt:['io']},
   {id:'chesttube',by:340,label:'Tube the haemothorax',alt:['fingerthor']},
+  {id:'blood',by:280,label:'Blood for the haemothorax output'},
   {id:'rsi',by:430,label:'Airway if the contusion outruns you',alt:['igel']},
   {id:'labs',by:300,label:'Serial gases — the contusion evolves'},
   {id:'surgeon',by:330,label:'Surgeon for the ongoing chest output'},
@@ -2904,6 +3178,7 @@ const SCN=[
  neuro:S=>'GCS '+S.gcs()+'. Slow, pale, answering in single words.',
  critical:[{id:'pelvis_assess',by:100,label:'Assess it once, gently, and then stop'},
   {id:'binder',by:150,label:'Bind at the trochanters, not the iliac crests'},
+  {id:'reboa',by:330,label:'Zone 3 REBOA if he is losing it faster than you can replace — a bridge to the table, not a treatment'},
   {id:'io',by:140,label:'Access above the diaphragm',alt:['iv','central']},
   {id:'blood',by:190,label:'Blood early and in volume'},{id:'txa',by:250,label:'TXA'},
   {id:'calcium',by:380,label:'Calcium with transfusion'},
@@ -2990,6 +3265,7 @@ const SCN=[
  critical:[{id:'temp',by:90,label:'Measure a real core temperature — this diagnosis is a number'},
   {id:'pulsecheck',by:110,label:'Take a full minute before declaring anything'},
   {id:'warm',by:170,label:'Wet clothes off and active rewarming'},
+  {id:'icu',by:420,label:'ICU hold — he cannot be rewarmed in your bay and he is not a surgical patient'},
   {id:'glucose',by:160,label:'Glucose — hypothermia and hypoglycaemia travel together'},
   {id:'monitor_all',by:120,label:'Monitor; the cold myocardium is irritable'},
   {id:'io',by:230,label:'Access — warmed fluids only',alt:['iv']},
@@ -3218,6 +3494,7 @@ const SCN=[
   {id:'iv',by:180,label:'Access',alt:['io']},
   {id:'document',by:150,label:'Document the last known well time — it decides what he is eligible for'},
   {id:'teleconsult',by:280,label:'Neurology reachback and an evacuation decision'},
+  {id:'icu',by:400,label:'ICU hold while the evacuation is arranged'},
   {id:'medevac',by:340,label:'Evacuate urgently — this is a thrombectomy candidate'},
   {id:'labs',by:300,label:'Coagulation status before anybody discusses lysis'}],
  goal:'The whole management here is a clock and a phone call. Last known well is the single most important piece of information you will gather, so establish it precisely and write it down. Check the glucose before anything else, because hypoglycaemia mimics a dense hemiplegia perfectly. Do not treat the blood pressure — the ischaemic penumbra depends on it. Gaze deviation with dense weakness and aphasia is a large vessel occlusion, which means thrombectomy, which means somewhere else, which means you start arranging the move now rather than after the survey.'
@@ -3304,9 +3581,11 @@ const SCN=[
   {id:'iv',by:100,label:'Two points of access',alt:['io']},
   {id:'fast',by:170,label:'eFAST — but a negative scan does not clear a transpelvic track'},
   {id:'blood',by:180,label:'Blood, not crystalloid — he is bleeding somewhere you cannot reach'},
+  {id:'reboa',by:340,label:'Zone 1 REBOA for non-compressible truncal haemorrhage if he will not hold'},
   {id:'txa',by:200,label:'TXA 2 g'},
   {id:'logroll',by:150,label:'Roll him and look, including a rectal examination'},
   {id:'calcium',by:280,label:'Calcium with the first unit'},
+  {id:'warm',by:300,label:'Hypothermia prevention — he is already cold and cold patients do not clot'},
   {id:'abx',by:300,label:'Antibiotics — blood on the glove means an open rectal injury'},
   {id:'surgeon',by:180,label:'Surgeon now; this needs a laparotomy, not a scan'},
   {id:'or',by:380,label:'Theatre'}],
@@ -3451,6 +3730,7 @@ const SCN=[
   {id:'fast',by:180,label:'eFAST for both cavities'},
   {id:'chesttube',by:260,label:'Chest tube for the haemothorax — and measure what comes out'},
   {id:'blood',by:240,label:'Blood if the output is significant'},
+  {id:'warm',by:300,label:'Hypothermia prevention — he is already cold and cold patients do not clot'},
   {id:'txa',by:220,label:'TXA 2 g'},
   {id:'abx',by:300,label:'Antibiotics; a diaphragm injury with a hollow viscus needs anaerobic cover'},
   {id:'surgeon',by:220,label:'Surgeon — a thoracoabdominal wound needs a look, not a scan'},
@@ -3542,6 +3822,7 @@ const SCN=[
   {id:'etco2',by:220,label:'End-tidal — ventilate to 35 to 40, do not hyperventilate blindly'},
   {id:'postintubation',by:300,label:'Head up 30 degrees, sedation, ventilation targets'},
   {id:'glucose',by:200,label:'Glucose; both high and low make this worse'},
+  {id:'warm',by:300,label:'Hypothermia prevention — he is already cold and cold patients do not clot'},
   {id:'abx',by:340,label:'Antibiotics for the open skull fracture'},
   {id:'teleconsult',by:330,label:'Neurosurgery by teleconsult'},
   {id:'medevac',by:380,label:'Evacuate to neurosurgery'}],
@@ -3573,9 +3854,12 @@ const SCN=[
   {id:'rsi',by:200,label:'Secure the airway; expect a difficult one',alt:['igel','cric']},
   {id:'surgeon',by:110,label:'Surgeon immediately — the decision here is hers and yours together'},
   {id:'fetal',by:170,label:'Establish the gestation; above 20 weeks the uterus must come out of the equation'},
+  {id:'defib',by:90,label:'Pads on and a rhythm check before anything else'},
+  {id:'hysterotomy',by:250,label:'Resuscitative hysterotomy — about four minutes from arrest, done here, for her'},
+  {id:'neonate',by:320,label:'Somebody named for the baby — dried, warmed and ventilated'},
   {id:'thoracotomy',by:300,label:'Resuscitative thoracotomy if the arrest was witnessed and penetrating'},
   {id:'warm',by:250,label:'Warm her'}],
- goal:'Two patients, one of whom you can only help by treating the other. Above twenty weeks the gravid uterus obstructs venous return during compressions — left uterine displacement is not optional, it is part of the CPR. If there is no return of circulation within four minutes of a witnessed arrest at term, resuscitative hysterotomy is the intervention that may save both: it is done at the bedside, for the mother\u2019s benefit as much as the infant\u2019s, and hesitating past five minutes wastes the only window there is.'
+ goal:'Two patients, one of whom you can only help by treating the other. Above twenty weeks the gravid uterus obstructs venous return during compressions — left uterine displacement is not optional, it is part of the CPR. If there is no return of circulation within four minutes of a witnessed arrest at term, resuscitative hysterotomy is the intervention that may save both: it is done at the bedside, for the mother\u2019s benefit as much as the infant\u2019s, and hesitating past five minutes wastes the only window there is. Then you have a second patient: a newborn who is blue, floppy and not breathing, who needs drying, warming and ventilation within the first minute — and naming somebody to do it costs you a quarter of your team for the rest of the case.'
 },
 {
  id:'t36',kind:'trauma',title:'Burning wounds that will not go out',
@@ -4156,6 +4440,8 @@ function watch(S){
  /* treatment is working — say so, once, so the lead knows the plan is right */
  if(S.p.dka!==undefined&&S.p.dka<.25&&S.flags.insulin&&fire('dka_ok','majorb','His breathing has settled and the ketones are clearing. The insulin and the fluid are doing what they should.'))return;
  if(S.p.hypoNa!==undefined&&S.p.hypoNa<.2&&S.flags.hypertonic&&fire('na_ok','majorb','She is making sense again, sir. The sodium is coming up. Slowly from here.'))return;
+ if(S.p.tempC<30&&!S.called.coldRules&&S.mon.temp&&fire('coldrules','majorb',
+   'Sir — core is '+S.p.tempC.toFixed(1)+'. Below thirty the rules change: handle him gently because rough movement provokes fibrillation, three shocks at most and then stop, no vasoactive drugs until he is over thirty, and a bradycardia like that is physiological so we do not pace it. And nobody is dead until they are warm and dead.'))return;
  if(S.p.rewarm&&S.p.tempC>32&&S.flags.warmer&&fire('warm_ok','lauren','Temp is up to '+v.temp.toFixed(1)+' and he has started shivering. That is a good sign.'))return;
  if(S.p.hot&&S.p.tempC<38.5&&S.flags.cooling&&fire('cool_ok','aust','Core temp is '+v.temp.toFixed(1)+' and he has stopped fighting us. The cooling has done it.'))return;
  if(S.p.malaria!==undefined&&S.p.malaria<.2&&S.flags.artesunate&&fire('mal_ok','lauren','The rigors have stopped and he is rousable. The artesunate is working.'))return;
@@ -4201,7 +4487,7 @@ function step(S,dt){
   if(p.tempC<38.5&&p.gcsBase<15)p.gcsBase=Math.min(15,p.gcsBase+.004*dt);
  }
  else { p.tempC += S.flags.warmer ? .0011*dt : -(.0016+S.crystalloid*.0004)*dt; }
- p.tempC=clamp(p.tempC,30,43.5);
+ p.tempC=clamp(p.tempC,20,43.5);
  if(S.flags.oesophageal)p.airway=clamp(p.airway+.002*dt,0,1);
  if(p.airwayClosing&&!S.airwayDevice)p.airway=clamp(p.airway+.0011*dt,0,1);
  if(p.anaphylaxis>0&&!S.flags.epi)p.anaphylaxis=clamp(p.anaphylaxis+.00035*dt,0,1);
@@ -4251,7 +4537,12 @@ function step(S,dt){
  }
  if(p.pregnant&&!S.flags.tilt)p.squeeze=Math.max(.6,(p.squeeze||1)-.00018*dt);
  if(p.blastLung)p.shunt=clamp(p.shunt+(S.flags.intubated?.00035:.0006)*dt,0,.75);
- if(p.rewarm&&S.flags.warmer)p.tempC=Math.min(36.5,p.tempC+.0065*dt);
+ /* Active external rewarming is 1 to 3 degrees an hour. You do not warm a
+    severely hypothermic patient up in a trauma bay — you protect him and move him. */
+ if(p.rewarm){
+  if(S.flags.warmer)p.tempC=Math.min(36.8,p.tempC+.00055*dt);      /* ~2 C per hour */
+  else p.tempC=Math.max(20,p.tempC-.00012*dt);                      /* still losing it */
+ }
  if(p.tamponade&&!S.flags.pericardio&&!S.flags.thoracotomy)p.tamponade=clamp(p.tamponade+.0015*dt,0,1);
  if(p.septic&&!S.flags.abx)p.septic=clamp(p.septic+.00055*dt,0,1);
  /* traumatic arrest: reversible causes, not compressions */
@@ -4275,7 +4566,7 @@ function step(S,dt){
   S.nibpPending=0;S.nibpLast=S.t;
  }
  Object.keys(S.busy).forEach(k=>{const j=S.busy[k];if(j&&S.t>=j.until){delete S.busy[k];if(j.job)finish(j);}});
- watch(S);coach(S);surgeonArrival(S);surgeonStandby(S);patientVoice(S);majorb(S);chatter(S);
+ watch(S);coach(S);surgeonArrival(S);surgeonStandby(S);infantWatch(S);patientVoice(S);majorb(S);chatter(S);
  const v=vitals(S);
  if(S.p.arrestCase&&!S.rosc){
   S.arrestClock=(S.arrestClock||0)+dt;
@@ -4333,6 +4624,13 @@ function lev(a,b,max){
 const KEEP=new Set(('percussion rales rhonchi mentation crepitus priapism peritonism posturing obtunded lucid the and for with from that this they them then than there their have has had not but you your his her him she are was were will would could should about into over under back front left right side both all any each every some more most less least much many other another same such just only also very still even well good bad worse better best deep shallow clean dirty clear cloudy open closed close cold warm hot cool wet dry hard soft tight loose fast slow high low big small large long short thick thin full empty new old young last next first second third leg legs arm arms hand hands foot feet head neck face chest belly abdomen back skin bone vein veins wound wounds blood bleeding pain injury injuries patient guy man woman kid child boy girl people team room bay floor door bed litter time minute minutes hour hours second seconds now soon later before after while during until since again once twice please thanks thank okay yeah yes no nope sure fine need needs needed want wants get gets got give gives gave take takes took put puts make makes made keep keeps kept find finds found look looks looked see sees saw tell tells told say says said ask asks asked think thinks thought know knows knew come comes came going go goes went done doing did been being can cannot cant do does don dont what when where which who whom whose why how many much bag bags box boxes kit kits tray trays glove gloves mask masks tube tubes line lines').split(' '));
 /* people type contractions; the alias list does not contain any */
 const MEDSWAP={
+ 'overseed':'versed','over seed':'versed','oversee':'versed','versaid':'versed','verset':'versed','bersed':'versed',
+ 'rocky romeo':'rocuronium','rocky rhodium':'rocuronium','rocky ronium':'rocuronium','rocky uranium':'rocuronium',
+ 'rock your own ium':'rocuronium','roc uronium':'rocuronium',
+ 'amulets':'amy lets','amy lets':'amy lets','ostlets':'aust lets','austlets':'aust lets',
+ 'propofol':'propofol','propofal':'propofol','propaful':'propofol','diprivan':'propofol',
+ 'keppra':'levetiracetam','levetiracetam':'levetiracetam','lev a tire a set am':'levetiracetam',
+ 'ativan':'lorazepam','loraz a pam':'lorazepam','midaz alam':'midazolam','mid azolam':'midazolam',
  'lost':'aust','austin':'aust','osseous':'aust','boston':'aust','ausust':'aust','oz it':'aust','arst':'aust',
  'dr moonlight':'dr moon','moonlight':'moon','dr moonlit':'dr moon','doctor moonlight':'dr moon',
  'air tap in em':'ertapenem','urta penem':'ertapenem','ertapenum':'ertapenem','erta penem':'ertapenem',
@@ -4453,7 +4751,8 @@ function phoneticRescue(raw){
  for(let n=4;n>=1;n--){
   for(let i=0;i+n<=words.length;i++){
    const phrase=words.slice(i,i+n).join(' ');
-   if(phrase.length<6||PHON_STOP.has(phrase))continue;
+   if(phrase.length<8||PHON_STOP.has(phrase))continue;
+   if(n<words.length&&phrase.length<words.join(' ').length*0.45)continue;   /* a fragment of a sentence is not a match */
    if(words.slice(i,i+n).every(w=>PHON_STOP.has(w)))continue;
    const k=phon(phrase);
    if(k.length<5)continue;
@@ -4519,10 +4818,13 @@ function matchAll(rawIn){
  if(res.length>1&&res.some(a=>a.id==='ack'))return res.filter(a=>a.id!=='ack');
  if(res.length>1&&res.some(a=>a.id==='reassess'))return res.filter(a=>a.id!=='reassess');
  if(res.some(a=>a.id==='book_or'))return [A.book_or];
+ if(/\b(baby|infant|newborn|neonate)\b/i.test(raw)&&res.some(a=>a.id==='neonate'))return [A.neonate];
 
  /* ---- asking how much of something you have must never spend any of it ---- */
  if(res.some(a=>a.id==='foot_exam'))return res.filter(a=>a.id==='foot_exam');
  if(res.some(a=>a.id==='sedation_drip'))return res.filter(a=>!['analgesia','sedate','epi_drip','im_meds'].includes(a.id));
+ if(/\b(versed|midazolam|lorazepam|ativan|diazepam|valium|benzo|benzodiazepine)\b/i.test(raw))
+  return res.filter(a=>!['analgesia','im_meds'].includes(a.id)).concat(res.some(a=>a.id==='sedate')?[]:[A.sedate]).slice(0,1);
  if(res.some(a=>a.id==='sedate'))return res.filter(a=>!['analgesia','im_meds'].includes(a.id));
  if(/\bsedat/i.test(raw)&&res.some(a=>a.id==='analgesia')&&!res.some(a=>a.id==='sedate'))return [A.sedate];
  if(res.some(a=>a.id==='rsi_meds')){
@@ -4548,7 +4850,7 @@ function matchAll(rawIn){
 const detectLat=r=>/\bleft\b/i.test(r)?'left':/\bright\b/i.test(r)?'right':null;
 /* an order to do something already done gets said, not done again */
 const REDO=/\b(again|re-?check|re-?ass?ess?|re-?peat|repeat|another|second|third|more|new|fresh|one more|update|recycle|re-?do|once more|do it again)\b/i;
-const REPEAT_OK=new Set(['book_or','surgeon_update','roles','brief','document','prep_room','checklist','anticipate','ppe','report',
+const REPEAT_OK=new Set(['neonate','defib','book_or','surgeon_update','roles','brief','document','prep_room','checklist','anticipate','ppe','report',
  'nibp','blood','crystalloid','iv','io','tq','pack','needle','fingerthor','chesttube',
  'analgesia','epi_im','epi_drip','calcium','reassess','recap','look','ack','hold','quiet','surgeon','handoff',
  'bleedcheck','pulsecheck','k_treatment','rsi_meds','cpr','pericardio','thoracotomy','suction','jawthrust','bvm','o2']);
@@ -4605,6 +4907,65 @@ function localAnswer(raw){
  const v=vitals(S),P=S.p;
  const say2=(who,txt)=>({who:person(who).nm,txt});
 
+ /* where we are in the arrest algorithm */
+ if(/\b(acls|algorithm|arrest|cycle|rhythm|shockable|epi due|next epi|how many epi|epi doses)\b/.test(q)){
+  if(S.p.arrestCase||S.sbp()<=0){
+   const since=(S.flags.lastEpi!==undefined&&S.flags.lastEpi!==null)?Math.round(S.t-S.flags.lastEpi):null;
+   const causes=[];
+   if(S.p.bleedRate>30)causes.push('hypovolaemia');
+   if(S.p.tension>.2)causes.push('tension pneumothorax');
+   if(S.p.tamponade>.2)causes.push('tamponade');
+   if(S.p.pregnant)causes.push('the uterus obstructing her venous return');
+   if(S.p.tempC<32)causes.push('hypothermia');
+   return say2('amy','Arrest running '+mmss(S.t)+'. Rhythm is '+
+    (S.p.shockable?'ventricular fibrillation, shockable':(S.flags.pads?'organised with no pulse — PEA, not shockable':'not on the pads yet'))+'. '+
+    (S.flags.epiArrest?('Epinephrine '+S.flags.epiArrest+' dose'+(S.flags.epiArrest>1?'s':'')+' in'+(since!==null?', last one '+mmss(since)+' ago':'')+'.'):'No epinephrine yet.')+
+    (S.flags.shocks?' '+S.flags.shocks+' shock'+(S.flags.shocks>1?'s':'')+' delivered.':'')+
+    (causes.length?' Causes to work through: '+causes.join(', ')+'.':''));
+  }
+  if(S.mon.ecg)return say2('amy','Rhythm is sinus at '+vitals(S).hr+' with a pulse.');
+  return say2('amy','Not on the monitor yet, sir — I have no rhythm to give you.');
+ }
+ /* has this or that been done yet */
+ if(/\b(did we|have we|has anybody|has anyone|did anyone|did anybody|was that done|do we know)\b/.test(q)){
+  const MAP=[[/roll|back|log ?roll/,'logroll','log roll'],[/secondary/,'secondary','secondary survey'],
+   [/primary/,'primary','primary survey'],[/fast|scan|probe|ultrasound/,'fast','eFAST'],
+   [/sweep|groin|axilla|skull/,'blood_sweep','blood sweep'],[/monitor|leads/,'monitor_all','monitoring'],
+   [/txa|tranexamic/,'txa','TXA'],[/calcium/,'calcium','calcium'],[/antibiotic|abx|cefazolin|ertapenem/,'abx','antibiotics'],
+   [/access|line|iv|io/,'iv','access'],[/glucose|sugar/,'glucose','a glucose'],[/temperature|temp/,'temp','a temperature'],
+   [/document|scribe|writ/,'document','documentation'],[/surgeon|moon/,'surgeon','call to the surgeon'],
+   [/evac|medevac|bird/,'medevac','evacuation request'],[/pupil/,'pupils','pupil check'],[/warm/,'warm','warming']];
+  for(const [re,id,label] of MAP){
+   if(!re.test(q))continue;
+   const hit=S.done.filter(x=>x.id===id).sort((a,b)=>a.t-b.t)[0];
+   const alt=(id==='iv'&&S.access)||(id==='monitor_all'&&S.mon.ecg);
+   const wh=person(A[id]&&A[id].by&&!['surgeon','flight'].includes(A[id].by)?A[id].by:'aust').nm;
+   if(hit)return{who:wh,txt:'Yes — '+label+', done at '+mmss(hit.t)+'.'+(hit.find?' It was: '+hit.find:'')};
+   if(alt)return{who:person('lauren').nm,txt:'Yes, that is done.'};
+   return{who:wh,txt:'No, sir. No '+label+' yet.'};
+  }
+ }
+ /* the baby */
+ if(/\b(apgar|apgars|baby|infant|newborn|neonate)\b/.test(q)&&S.infant){
+  const inf=S.infant;
+  if(/apgar/.test(q))return {who:person(inf.team||'majorb').nm,txt:apgarLine(inf,S.t-inf.born>=300?5:1)+' Apgar is a record, not an instruction — nobody waits for it before ventilating.'};
+  return {who:person(inf.team||'majorb').nm,
+   txt:(inf.attended?'Baby is with me. ':'Nobody has taken the baby, sir. ')+
+    'Heart rate '+Math.round(inf.hr)+', '+(inf.ppv?'on positive pressure ventilation'+(inf.effective?' with chest movement':' but I am not getting chest movement'):'not being ventilated')+
+    (inf.dried?', dried and under the warmer.':', not yet dried.')+
+    (inf.hr<60?' Under sixty — that is compressions three to one.':inf.hr<100?' Under a hundred, so keep ventilating.':' Over a hundred and climbing.')};
+ }
+ /* is he still fitting, and what does he look like */
+ if(/\b(seizing|seizure|fitting|convulsing|still going|jerking|postictal)\b/.test(q)){
+  const sz=(S.p.seizing||S.p.seizure||0);
+  if(sz>0.05||S.p.status)return{who:person('amy').nm,txt:'Still seizing, sir. '+(S.flags.benzo?'He has had benzodiazepine and it has not stopped him — that is refractory and it wants a second agent.':'Nothing has touched it yet.')};
+  if(S.flags.benzo)return{who:person('amy').nm,txt:'He has stopped. Flaccid and postictal now, and he is not protecting that airway.'};
+  return{who:person('amy').nm,txt:'No seizure activity at the moment.'};
+ }
+ if(/\b(how does he look|how does she look|how is he|how is she|how does the patient look|overall picture|general impression)\b/.test(q))
+  return{who:person('aust').nm,txt:S.summaryLine()};
+ if(/\b(gcs|conscious level|level of consciousness)\b/.test(q)&&/\b(what|whats|how)\b/.test(q))
+  return{who:person('amy').nm,txt:'GCS '+(S.tubed()?'3T — sedated and tubed':vitals(S).gcs)+' right now.'};
  /* what is left on the shelf, as opposed to what has gone in */
  if(/\b(left|remaining|in the fridge|on the shelf|in the bank|spare)\b/.test(q)&&/\b(blood|unit|units|product|bank)\b/.test(q)){
   return{who:person('lauren').nm,txt:S.bank+' unit'+(S.bank===1?'':'s')+' of low titre O negative left in the fridge'+
@@ -4699,7 +5060,8 @@ function localAnswer(raw){
   const busy=TEAM.filter(pp=>S.busy[pp.id]).map(pp=>pp.nm+' on the '+S.busy[pp.id].label.toLowerCase());
   return {who:person('aust').nm,txt:(free.length?free.join(' and ')+(free.length>1?' are':' is')+' free. ':'Nobody is free. ')+(busy.length?busy.join('. ')+'.':'')};
  }
- if(/\b(where are we|status|how are we doing|sitrep|the picture|overall)\b/.test(q))
+ if(/\b(where are we|status|how are we doing|sitrep|the picture|overall)\b/.test(q)
+     &&!/\b(acls|algorithm|arrest|cycle|rhythm|shockable|epi due|next epi)\b/.test(q))
   return say2('aust',S.summaryLine());
  return null;
 }
@@ -4733,7 +5095,7 @@ function splitByPerson(raw){
  });
  return segs;
 }
-const INQUIRY_RE=/\b(how many|how much|do we have|have we got|do we still have|what do we have|what have we got|any left|how many are|what is left|how much is left|is there any|are there any|what is on board|what has he had|what has she had)\b/i;
+const INQUIRY_RE=/\b(how many|how much|do we have|have we got|do we still have|what do we have|what have we got|any left|how many are|what is left|how much is left|is there any|are there any|what is on board|what has he had|what has she had|did we|have we|has anybody|has anyone|was that done|did anyone|did anybody|do we know|is he still|is she still|how does he look|how does she look|how is he|how is she)\b/i;
 const isQuestion=r=>/\?\s*$/.test(r.trim())||/^(what|where|how|why|who|when|is |are |does |do |did |can |any |tell me|show me)/i.test(r.trim());
 
 async function submitOrder(raw){
@@ -5531,6 +5893,37 @@ function surgeonArrival(S){
  say('team','I am in the room, gloved, standing on your left. Give me the picture from the top — what he is, what you have found and what you have done. Then I will stay out of your way until you want me.',person('surgeon').nm);
 }
 /* She does not chatter. She speaks when she is spoken to, or when it matters. */
+/* A baby nobody has been assigned to is a baby nobody is resuscitating. */
+function infantWatch(S){
+ const inf=S.infant;
+ if(!inf||S.over)return;
+ const since=S.t-inf.born;
+ /* a baby who is not being ventilated does not hold his rate */
+ if(inf.alive&&!inf.ppv&&since>20)inf.hr=Math.max(0,inf.hr-0.25);
+ inf.hr=Math.round(inf.hr*100)/100;
+ if(inf.alive&&inf.ppv&&inf.effective)inf.hr=Math.min(150,inf.hr+0.2);
+ if(since>=60&&!inf.apgar1){
+  inf.apgar1=apgar(inf).total;
+  say('team',apgarLine(inf,1)+(inf.apgar1<7?' That is low — and the Apgar is a record, not an instruction. Keep going on the algorithm.':''),person(inf.team||'majorb').nm);
+  return;
+ }
+ if(since>=300&&!inf.apgar5){
+  inf.apgar5=apgar(inf).total;
+  say('team',apgarLine(inf,5)+(inf.apgar5<7?' Still under seven, so we repeat it every five minutes up to twenty.':''),person(inf.team||'majorb').nm);
+  return;
+ }
+ if(!inf.attended){
+  if(since>25&&!S.called.babyNag1){S.called.babyNag1=true;
+   say('crit','The baby is on the trolley, blue and not breathing, and nobody has been told to take him.');return;}
+  if(since>70&&!S.called.babyNag2){S.called.babyNag2=true;
+   say('team','Sir, I will take the baby unless you want somebody else — but that is me off your mother, and you need to know that.',person('majorb').nm);return;}
+  if(since>150&&inf.alive){inf.alive=false;inf.hr=0;
+   S.lesson('The infant was delivered and then left. A newborn who is not breathing needs drying, warming and ventilation within the first minute — ventilation is the resuscitation in a newborn, and nothing else works until it is happening.');
+   say('crit','The baby has not moved since he came out. Nobody ever took him.');return;}
+ }
+ if(inf.attended&&!inf.ppv&&S.t-inf.attended>45&&!S.called.babyPPV){S.called.babyPPV=true;
+  say('team','Baby is warm and dry but he is still not breathing. He needs the bag, sir — drying alone will not do it.',person(inf.team||'majorb').nm);}
+}
 function surgeonStandby(S){
  if(!S.flags.surgeonHere||S.over)return;
  if(S.flags.awaitUpdate&&S.t-(S.flags.surgeonHereT||S.flags.surgeonComing||0)>75&&!S.called.sgNag){
@@ -5625,6 +6018,7 @@ const OGROUPS=[
  ['Breathing',['o2','seal','needle','fingerthor','chesttube','albuterol']],
  ['Haemorrhage control',['tq','junctional_tq','pack','binder','pelvis_assess','traction','impaled','evisceration']],
  ['Access',['iv','io','ej','central']],
+ ['Cardiac arrest',['cpr','defib','tilt','hysterotomy','thoracotomy','pericardio']],
  ['Resuscitation',['blood','crystalloid','txa','calcium','warm','cooling','blood_bank','burnfluid','hypertonic','epi_drip']],
  ['Sweeps and exposure',['blood_sweep','groin_sweep','skull_sweep','axilla_sweep','logroll','secondary','compartment_check','foot_exam']],
  ['Imaging and labs',['fast','labs','glucose','fetal']],
@@ -5863,6 +6257,20 @@ function buildDebrief(reason){
  if(S.p.femur&&!S.flags.traction)viol.push('A femur fracture went unsplinted. Traction restores length, cuts the bleeding into the thigh and takes the pain down.');
  if(!S.done.some(d=>d.by==='mitch')&&S.t>150)viol.push('Mitch stood there the whole case without a job. He is cross-trained into every role in this bay — an unused set of hands is a resource you chose not to use.');
  if(S.ivFails>=2&&!S.flags.io)viol.push('Two failed IV attempts and you never went to the bone. In a clamped-down patient the IO is the first choice, not the fallback.');
+ if(S.infant){
+  const inf=S.infant;
+  if(!inf.attended)viol.push('A baby was delivered and nobody was ever named to take him. In a newborn, ventilation is the resuscitation, and it has to start inside the first minute.');
+  else{
+   const delay=Math.round(inf.attended-inf.born);
+   viol.push('Infant delivered at '+mmss(inf.born)+', attended at '+mmss(inf.attended)+' by '+person(inf.team||'majorb').nm+
+    ' — '+delay+' seconds'+(delay>60?', outside the golden minute':', inside the golden minute')+'. '+
+    (inf.ppv?('Ventilated'+(inf.effective?' with chest movement achieved':' but chest movement was never confirmed')+
+      (inf.compressions?', compressions three to one':'')+(inf.epi?', adrenaline given':'')+'. '):
+     'Dried and warmed but never ventilated — in a newborn who is not breathing, ventilation is the resuscitation and nothing else works until it is happening. ')+
+    (inf.apgar1!==null?'Apgar '+inf.apgar1+' at one minute'+(inf.apgar5!==null?', '+inf.apgar5+' at five':'')+'. ':'')+
+    'And that was one of your four pairs of hands off the mother for the rest of the case.');
+  }
+ }
  if(S.bankUsed>=8&&!S.wbbAt)viol.push('You transfused '+S.bankUsed+' units without ever calling the walking blood bank. Twenty units is the whole shelf, and fresh blood is thirty minutes from the call — by the time you need it, it is too late to ask.');
  if(S.units>=4&&!S.flags.calcium)viol.push('Four or more units of product without calcium.');
  if(S.p.tempC<35&&scn.kind==='trauma')viol.push('Core temperature ended at '+S.p.tempC.toFixed(1)+'°C.');
@@ -6114,6 +6522,12 @@ const REFS=[
    {t:'2025 AHA Guidelines for CPR and Emergency Cardiovascular Care — Executive Summary',
     d:'The current cycle. Overview of what changed across BLS, ALS and paediatrics.',
     u:'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001372'},
+   {t:'JTS CPG: REBOA for Hemorrhagic Shock (v1.4, 4 Apr 2026)',
+    d:'Zone 1 for abdominal haemorrhage or traumatic arrest, zone 3 for pelvic and junctional. Indications mirror resuscitative thoracotomy except that penetrating chest arrest is a contraindication. Full occlusion demands definitive control inside sixty minutes of inflation; partial occlusion extends that, targeting a proximal systolic of 90 to 110 with pulsatile distal flow.',
+    u:'https://jts.health.mil/assets/docs/cpgs/REBOA_for_Hemorrhagic_Shock_4.3.2026_ID38_v1.4.pdf'},
+   {t:'Neonatal Resuscitation Program (NRP), 9th edition — AAP and AHA, November 2025',
+    d:'The newborn content is written against this. Ventilation 30 to 60 a minute, positive pressure if apnoeic or under 100, compressions 3:1 only after 30 seconds of effective ventilation, adrenaline 10 to 30 micrograms per kilo after 60 seconds of compressions, preductal saturation targets by minute of life. A laryngeal mask may now be a primary device.',
+    u:'https://cpr.heart.org/-/media/CPR-Files/CPR-Guidelines-Files/2025-Algorithms/1-2-Algorithm-Neonatal-Resuscitation-250129.pdf'},
    {t:'2025 AHA Guidelines, Part 9: Adult Advanced Life Support',
     d:'Intravenous access attempted first with intraosseous if that fails, epinephrine 1 mg every three to five minutes, given early in non-shockable rhythms and after failed defibrillation in shockable ones, and no substitution of vasopressin.',
     u:'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001376'}]},
@@ -6132,6 +6546,9 @@ const REFS=[
  {group:'Standard courses and references',
   note:'Not linked because they are not freely available, but they are what the survey structure and the general approach are built on. These were not re-verified line by line for this build.',
   items:[
+   {t:'Wilderness Medical Society: out-of-hospital evaluation and treatment of accidental hypothermia',
+    d:'The source for what changes below thirty degrees — limited defibrillation attempts, withholding vasoactive drugs until the core is above thirty, doubled dosing intervals from thirty to thirty-five, gentle handling, and glucose rather than insulin.',
+    u:'https://www.guidelinecentral.com/guideline/40553/'},
    {t:'ATLS, American College of Surgeons',d:'The primary survey sequence, the adjuncts, and the trauma examination structure the scoring uses.',u:''},
    {t:'Tactical Combat Casualty Care (TCCC) guidelines, Committee on TCCC',d:'Point-of-injury care, the MARCH sequence, and tourniquet and junctional haemorrhage doctrine. Published at deployedmedicine.com.',u:''},
    {t:'Emergency War Surgery, 5th edition',d:'Surgical management of the injury patterns in the trauma cases.',u:''}]},

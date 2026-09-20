@@ -1,5 +1,5 @@
 /* Caches the whole trainer on first visit so it runs with no network afterwards. */
-const CACHE='frsd-trainer-v9';
+const CACHE='frsd-trainer-v16';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-180.png','./icon-512.png'];
 
 self.addEventListener('install',e=>{
