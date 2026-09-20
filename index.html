@@ -475,8 +475,36 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.24';
+const VERSION='1.28';
 const CHANGELOG=[
+ {v:'1.28',name:'Asking the patient',
+  top:['"Does he remember what happened" or "ask her what happened" now gets an answer in the patient\'s own words.',
+       'What they cannot remember is the finding. A gap in the story with a repeated question is a head injury until proven otherwise, and the team says so.',
+       'Ask before you paralyse somebody — once he is tubed, the answer is that you have lost it.'],
+  detail:['The account fits the patient in front of you: a frightened child wants her mother, a man in withdrawal sees things on the wall, the post-ictal patient does not know he bit his tongue, the overdose denies everything, the woman at term asks only about the baby.',
+          'A hypoglycaemic patient will not give you a history until the sugar is fixed, and the team names that as the answer rather than the obstacle.',
+          'Sixty mechanism-specific replies, checked case by case — a contractor with chest pain no longer asks for his mother.']},
+ {v:'1.27',name:'AMPLE, one piece at a time',
+  top:['Ask for any single part of the history and you get that part: "does she take any medications", "any allergies", "when did he last eat", "what happened".',
+       'Ask for three of the five and the history is credited — you took it, you just took it in pieces.'],
+  detail:['Each part is written per case. The asthmatic is going through a rescue inhaler faster every day; the diabetic\'s insulin pen has been in a hot vehicle for a week; the epileptic ran out a week ago; the dialysis patient has missed three sessions.',
+          'Last meal is always unknown and always says to assume a full stomach — with the extra line for a patient at term.',
+          'A bare noun works too: "allergies", "medications", "PMH", "last meal", "events".',
+          'Asking never starts a task, so none of these pull somebody off the patient.']},
+ {v:'1.26',name:'AMPLE is scored',
+  top:['The AMPLE history is now on the scored spine in 55 of the 60 cases — it existed but nothing asked for it.',
+       'It is left out of the five where there is nobody to ask and no time to ask: the arrests, the two unconscious head injuries, and the man found in the mountains.'],
+  detail:['Target is seven minutes, which is late in the case by design — it belongs with the secondary survey, not the primary.',
+          'Every case gives a real answer: the asthmatic\'s escalating inhaler use, the diabetic\'s insulin left in a hot vehicle, the epileptic who ran out a week ago, the dialysis patient\'s missed sessions.',
+          'Last meal is always "nobody knows, assume a full stomach", which is the part that matters before you intubate.']},
+ {v:'1.25',name:'She is a she',
+  top:['Seven of the sixty cases are women, and the team was calling every one of them "he". Fixed — the patient\'s pronouns now follow the case.',
+       'AMPLE history exists. Allergies, medications, past history, last meal, events — and it was missing entirely.',
+       '"Check again" on its own repeats the last assessment, by the person who did it.'],
+  detail:['Solu-Medrol was being given as hydrocortisone. Methylprednisolone and prednisolone now have their own names and dose ranges — 60 to 125 milligrams for an asthma exacerbation.',
+          'Steroids, antibiotics and tetanus were never written on the drug chart, so asking how something was given got nothing. They are logged now, with the route.',
+          '"How is her work of breathing" and "is she still using accessory muscles" are answered — including the warning that a quiet chest is worse than a noisy one.',
+          'The disposition prompt now offers the ICU alongside theatre and the bird.']},
  {v:'1.24',name:'REBOA, the ICU, and the rules that change when he is cold',
   top:['REBOA is in — zone 1 for abdominal or traumatic arrest, zone 3 for pelvis and junctional. Penetrating chest arrest is a contraindication and Dr. Moon says so.',
        'Non-surgical patients waiting for a bird can go to the FRSD ICU with Major B. Your bay clears — but you are then a man down if another casualty comes through the door.',
@@ -705,6 +733,127 @@ const A={};
 const act=o=>{A[o.id]=o;return o;};
 
 /* handoff in — the ONLY way to learn the story */
+act({id:'repeat_last',instant:true,label:'Repeat the last assessment',cat:'D',by:'aust',dur:0,
+ al:['check again','again','do that again','repeat that','say that again please','one more time','recheck that',
+  'have another look','look again','and again','repeat it','re check','check that again'],
+ run:S=>{
+  const last=(S.done||[]).filter(d=>A[d.id]&&A[d.id].assess).sort((a,b)=>b.t-a.t)[0];
+  if(!last)return{say:'Nothing has been checked yet to check again, sir.',nocredit:true};
+  const a=A[last.id];
+  const doer=person(last.by&&!['surgeon','flight'].includes(last.by)?last.by:(a.by||'aust'));
+  try{dispatch(a,'again',doer);}catch(e){}
+  return{say:'',quiet:true,nocredit:true};}});
+/* The five parts of an AMPLE history, so each can be asked for on its own. */
+function ampleParts(S){
+ const sc=S.scn, t=(sc.mist||'')+' '+(sc.arrival||'')+' '+(sc.title||'');
+ const allerg=/anaphyla|antibiotic|medication/i.test(t)
+  ?'The family say she reacted to something once before — they cannot tell you what, only that it was given for an infection.'
+  :/local national|family say|no formal/i.test(t)
+  ?'The family do not know of any allergies. Take that as unknown rather than none.'
+  :'No known allergies on his tags or from anybody with him.';
+ const meds=/asthma/i.test(t)?'A rescue inhaler, and she has been going through it faster every day for a week.':
+  /diabet|insulin|ketoacid/i.test(t)?'Insulin, and the pen has been sitting in a hot vehicle for a week — which may be the whole story.':
+  /epilep|seizure|fitting/i.test(t)?'Anticonvulsants, and he ran out about a week ago according to his roommate.':
+  /dialysis|kidney|missed three/i.test(t)?'Nothing regular, but he has dialysis three times a week and has missed three sessions.':
+  /thyroid/i.test(t)?'Thyroid tablets she stopped taking months ago.':
+  /joint|adrenal|shocked, and fluid/i.test(t)?'Tablets for a joint condition, daily for years. Worth finding out exactly what they are.':
+  /alcohol|custody|drink/i.test(t)?'Nothing prescribed. Alcohol daily until four days ago.':
+  /sickle/i.test(t)?'Known sickle cell disease, on folate, managed at the local clinic.':
+  'Nothing regular that anybody here can tell you about.';
+ const pmh=/asthma/i.test(t)?'Asthma, with at least one previous admission the family remember as frightening.':
+  /epilep/i.test(t)?'Epilepsy since childhood.':
+  /diabet/i.test(t)?'Type one diabetes.':
+  /dialysis/i.test(t)?'End stage renal failure on dialysis.':
+  /sickle/i.test(t)?'Sickle cell disease with recurrent crises.':
+  /smoker|chest pain|contractor/i.test(t)?'Smoker, high blood pressure, and no cardiac history he admits to.':
+  'Nothing known beyond what the crew handed over.';
+ const last=S.p.pregnant?'Nobody knows. Assume a full stomach — and at term she is high risk for aspiration whatever the answer.'
+  :'Nobody knows. Assume a full stomach, which matters if you are about to put a tube in.';
+ const events=(sc.mist||'as handed over').replace(/^Crew report: /,'').replace(/^No formal report\. /,'No formal handover. ');
+ return{allerg,meds,pmh,last,events};
+}
+/* What the patient himself says happened — which is not always what the crew said. */
+function patientAccount(S){
+ const sc=S.scn, t=((sc.mist||'')+' '+(sc.arrival||'')+' '+(sc.title||'')).toLowerCase();
+ const v=vitals(S);
+ if(S.tubed())
+  return{quote:null,note:'He is tubed and sedated. Whatever he could have told you, you have lost — which is the argument for asking before you paralyse somebody.'};
+ if(S.p.seizing)
+  return{quote:null,note:'Still fitting. You will get nothing until that stops.'};
+ if(v.gcs<9)
+  return{quote:null,note:'Not rousable enough to tell you anything.'};
+ /* order matters: the most specific picture first */
+ if(/\bchild\b|\bboy\b|\bgirl\b|carried her in from a market/.test(t))
+  return{quote:'"I want my mother. I want to go home."',
+   note:'She is a child and she is frightened. You will get nothing useful and pressing her is not kind — the family member who carried her in knows more than she does.'};
+ if(/custody|last drink|four days ago|withdraw/.test(t))
+  return{quote:'"There are things on the wall. Can you not see them? They are on the wall."',
+   note:'Not oriented and not reliable. He is frightened and he is seeing things, and that is the diagnosis rather than an obstacle to it.'};
+ if(S.p.glucose<60)
+  return{quote:'"What? What do you want? Where is this?"',
+   note:'Confused and irritable. You will not get a history until the sugar is fixed — and that is the answer, not the problem.'};
+ if(S.p.tbi||S.p.herniation||(v.gcs<15&&/rollover|ejected|tower|hard landing|helmet|thrown|struck|collision/.test(t)))
+  return{quote:'"I remember it starting. Then there is a gap. How did I get here? ... Sorry — how did I get here?"',
+   note:'There is a gap, and he is asking the same question twice. Retrograde amnesia is a head injury until proven otherwise — document exactly what he does and does not remember, now, before four other people have asked him.'};
+ if(/seizure|fitting|epilep|post ?ictal/.test(t))
+  return{quote:'"I was walking back to the tent. That is all I have."',
+   note:'No memory of the event itself, which is what you would expect. He does not know he has bitten his tongue.'};
+ if(/overdose|detainee|unresponsive in the holding|nobody knows what he took/.test(t))
+  return{quote:'"I did not take anything. I am fine. Leave me alone."',
+   note:'He denies it. Take that for what it is worth and treat what is in front of you.'};
+ if(S.p.pregnant)
+  return{quote:'"Is the baby alright? Please — just tell me about the baby."',
+   note:'That is the only question she has. Worth answering honestly rather than deflecting.'};
+ /* otherwise, something a patient would actually say about that mechanism */
+ const line=
+  /* medical pictures first, then trauma mechanisms — a keyword in the wrong
+     category was putting a contractor with chest pain in a child's mouth */
+  (sc.kind==='med'?(
+   /asthma|wheeze|inhaler/.test(t)?'"I cannot... get enough... in."':
+   /chest pain|crushing central|radiating/.test(t)?'"It is like somebody is sitting on my chest. It started when I was walking."':
+   /vomiting blood|latrine|variceal/.test(t)?'"I was sick and there was blood in it. A lot of blood."':
+   /diabet|insulin|vomiting|stomach bug/.test(t)?'"I could not keep anything down. Then I stopped being able to think straight."':
+   /generator|same tent|three from one/.test(t)?'"We all woke up with headaches. All three of us."':
+   /ruck|march|full kit|ambient|collapsed at the end/.test(t)?'"I was fine. I was fine and then I was on the floor."':
+   /fever|malaria|meningo|rash|purpuric/.test(t)?'"I have been hot for days and my head has not stopped."':
+   /breath|pulmonary|flew in|ramp/.test(t)?'"It came on all at once. I could not get my breath."':
+   /sickle|crisis|bone pain/.test(t)?'"It is in my arms and my legs and now my chest. It is worse than the usual ones."':
+   /thirst|passing|urine|dry/.test(t)?'"I have not been able to stop drinking. And I have not been able to think."':
+   /wound|cut|nail|five days|twelve days/.test(t)?'"It was just a cut. I cleaned it myself. Then my jaw started sticking."':
+   '"I have not been right for a while. It got worse today."'
+  ):(
+   /fire|burn|phosphor|smoke/.test(t)?'"I could not get the door. I could not get it open."':
+   /collapse|slab|trapped|crush|generator belt/.test(t)?'"It came down on me. I could not move and nobody could hear me."':
+   /stab|bayonet|knife/.test(t)?'"Somebody came at me. I never even saw it."':
+   /round|shot|gunshot|rifle|shotgun/.test(t)?'"I heard it and then I was on the ground. I did not feel it at first."':
+   /\bied\b|blast|mortar|\brpg\b|grenade|explos/.test(t)?'"There was a bang. That is all there was. Then people were pulling at me."':
+   /fell|fall|scaffold|guard tower|rebar|hard landing/.test(t)?'"I lost my footing. I remember hitting the ground."':
+   /rollover|motorcycle|vehicle|pedestrian|collision|struck|truck/.test(t)?'"I saw it coming. I could not do anything about it."':
+   /electric|overhead line|voltage/.test(t)?'"It went through my hands. I could not let go of it."':
+   /cold|mountain|freezing|overnight/.test(t)?'"I could not... I could not get warm. I stopped being able to walk."':
+   '"It happened, and then I was here. That is honestly all I have."'
+  ));
+ return{quote:line,
+  note:'His account fits the handover. Ask anyway — the patient sometimes has a detail the crew never had, and what he cannot remember is a finding in itself.'};
+}
+act({id:'ask_patient',label:'Ask the patient what happened',cat:'D',by:'aust',dur:14,assess:true,
+ al:['ask the patient what happened','ask him what happened','ask her what happened','what happened to you',
+  'can you tell me what happened','do you remember what happened','does he remember','does she remember',
+  'ask the patient','talk to the patient','ask him','ask her','patient account','what does he remember',
+  'what does she remember','can you remember anything','tell me what happened','ask the casualty'],
+ run:S=>{
+  const a=patientAccount(S);
+  S.flags.askedPatient=true;
+  if(!a.quote)return a.note;
+  return a.quote+' '+a.note;}});
+act({id:'history',label:'AMPLE history',cat:'D',by:'mitch',dur:25,assess:true,
+ al:['ample history','ample','take a history','get a history','detailed history','history please',
+  'get the ample','full history','collateral history','ask the family for a history'],
+ run:S=>{
+  S.flags.ample=true;
+  const a=ampleParts(S);
+  return'AMPLE, as far as anyone here can give it. Allergies — '+a.allerg+' Medications — '+a.meds+
+   ' Past history — '+a.pmh+' Last meal — '+a.last+' Events — '+a.events;}});
 act({id:'report',label:'Ask the crew for a report',cat:'CMD',by:'aust',dur:15,assess:true,
  al:['report','what happened','mist','what do we know','story','tell me about','handoff from','give me a report','what is the mechanism','mechanism','what happened to him','what happened to her','prehospital','from the field','brief me'],
  run:S=>({find:S.scn.mist})});
@@ -1952,9 +2101,21 @@ act({id:'traction',label:'Traction splint',cat:'C',by:'mitch',dur:70,
   return'Traction splint on the left femur, tension applied, thigh is out to length. That was a lot of shortening.';}});
 act({id:'steroid',label:'Corticosteroid',cat:'RX',by:'lauren',dur:20,
  al:['hydrocortisone','steroid','steroids','solu cortef','dexamethasone','methylprednisolone','solu medrol',
-  'stress dose steroid','stress dose steroids','give steroid','corticosteroid'],
+  'solumedrol','solu-medrol','medrol','prednisolone','prednisone','stress dose steroid','stress dose steroids',
+  'give steroid','corticosteroid','steroid for the asthma'],
  dose:(S,raw,d)=>{
   const kg=S.p.kg||80;
+  raw=expand(String(raw||''));
+  if(/methylprednisolone|solu ?medrol|medrol/i.test(raw)){
+   if(!d)return{ask:'What dose of methylprednisolone? For an asthma exacerbation it is 60 to 125 milligrams intravenously.'};
+   const mg=d.base>=1?d.base:d.base*1000;
+   return (mg<40||mg>250)?{bad:'That is '+d.text+' of methylprednisolone. Sixty to a hundred and twenty-five milligrams is the usual range. Confirm?'}:{label:d.display+' methylprednisolone'};
+  }
+  if(/prednisolone|prednisone/i.test(raw)){
+   if(!d)return{ask:'What dose of prednisolone? Forty to fifty milligrams by mouth.'};
+   const mg=d.base>=1?d.base:d.base*1000;
+   return (mg<20||mg>60)?{bad:'That is '+d.text+' of prednisolone. Forty to fifty milligrams is the usual. Confirm?'}:{label:d.display+' prednisolone'};
+  }
   if(/dexamethasone/i.test(raw)){
    if(!d)return{ask:'What dose of dexamethasone?'};
    const mg=d.base>=1?d.base:d.base*1000;
@@ -1965,7 +2126,10 @@ act({id:'steroid',label:'Corticosteroid',cat:'RX',by:'lauren',dur:20,
   return (mg<50||mg>200)?{bad:'That is '+d.text+' of hydrocortisone. The stress dose is 100 milligrams intravenously. Confirm?'}:{label:d.display+' hydrocortisone'};},
  std:S=>({base:100,display:'100 mg',text:'100 mg hydrocortisone'}),
  run:(S,t,raw,g)=>{
-  S.flags.steroid=true;
+  S.flags.steroid=true;raw=expand(String(raw||''));
+  S.meds.push({name:((g&&g.label)?g.label:'Steroid'),dose:(g&&g.d&&g.d.display)||'',t:S.t,by:'Lauren',
+   route:/\bim\b|intramuscular/i.test(raw)?'intramuscular':'intravenous'});
+  if(S.p.bronchospasm!==undefined)S.p.steroidAt=S.t;
   if(S.p.adrenal){S.p.squeeze=Math.min(1.05,(S.p.squeeze||1)+.3);S.p.adrenalTreated=true;}
   if(S.p.thyroid)S.p.thyroid=Math.max(0,S.p.thyroid-.15);
   return ((g&&g.label)?g.label:'Hydrocortisone 100 mg')+' in.'+
@@ -1975,6 +2139,7 @@ act({id:'tetanus',label:'Tetanus immunisation',cat:'RX',by:'lauren',dur:12,
   'tetanus immunisation','tetanus immunization','tetanus cover','tetanus booster','check his tetanus','tetanus status',
   'tig','tetanus immunoglobulin','immunoglobulin'],
  run:S=>{S.flags.tetanus=true;
+  S.meds.push({name:'Tetanus toxoid',dose:'0.5 mL',t:S.t,by:'Lauren',route:'intramuscular'});
   return'Tetanus toxoid 0.5 millilitres intramuscular, and it is on the chart.'+
   (S.p.tetanus?' For an established case the toxoid alone will not touch what is already bound — we want immunoglobulin as well if it can be found.':' If the wound is dirty and his cover is out of date or unknown, immunoglobulin goes with it.');}});
 act({id:'abx',label:'Antibiotics',cat:'RX',by:'lauren',dur:15,
@@ -2015,6 +2180,8 @@ act({id:'abx',label:'Antibiotics',cat:'RX',by:'lauren',dur:15,
   return{base:want,display:want+' g',text:want+' g cefazolin'};},
  run:(S,t,raw,g)=>{
   S.flags.abx=true;raw=expand(String(raw||''));
+  S.meds.push({name:((g&&g.label)?g.label:'Antibiotic'),dose:(g&&g.d&&g.d.display)||'',t:S.t,by:'Lauren',
+   route:/\bim\b|intramuscular/i.test(raw)?'intramuscular':'intravenous'});
   const nm=(g&&g.label)?g.label:'antibiotic';
   const abdo=S.p.hollowViscus||/abdom|eviscer|bowel/i.test(raw||'');
   return nm+' in.'+
@@ -2154,7 +2321,7 @@ act({id:'end_case',instant:true,label:'Hand over and finish the case',cat:'CMD',
   'go now','finish the case','end it','we are out','moving now','hand him over and go'],
  run:S=>{
   const where=S.flags.or?'the operating room':S.flags.medevac?'the pad':null;
-  if(!where)return{say:'Where to, sir? Nobody has opened an OR and there is no bird called. Say the word and I will do either.',nocredit:true};
+  if(!where)return{say:'Where to, sir? Nobody has opened an OR, there is no bird called, and nobody has taken him to the ICU. Say the word and I will do any of the three.',nocredit:true};
   S.flags.moved=true;
   setTimeout(()=>{if(S&&!S.over)endSim('dispo');},80);
   return{say:'Moving. He is off to '+where+' — monitor and product going with him.',nocredit:true};}});
@@ -2425,6 +2592,8 @@ const SPINE=[
  {id:'axilla_sweep',by:210, label:'Axillary sweep for penetrating injury',alt:['blood_sweep']},
  {id:'logroll',     by:270, label:'Log roll and inspect the back'},
  {id:'secondary',   by:390, label:'Secondary survey'},
+ {id:'history',     by:420, label:'AMPLE history — allergies, medications, past history, last meal, events',
+  if:(S)=>!S.p.arrestCase&&(S.scn.kind==='med'||(S.p.gcsBase||15)>=13)},
 ];
 
 /* ---------------- SCENARIOS (blind) ---------------- */
@@ -4186,6 +4355,9 @@ function newState(scn,shared){
    if(this.mon.temp)bits.push('temp '+v.temp.toFixed(1));
    return bits.join(', ')+'. On board: '+this.interventions()+'.';}};
  scn.init(st);
+ /* Several cases are women. The dialogue is written with male pronouns, so the
+    patient's pronouns are corrected on the way out rather than in 60 case files. */
+ if(/\bshe\b|\bher\b|\bwoman\b|\bfemale\b/i.test((scn.arrival||'')+' '+(scn.mist||'')))st.p.female=true;
  if(shared){
   Object.defineProperty(st,'busy',{get:()=>shared.busy});
   Object.defineProperty(st,'queue',{get:()=>shared.queue});
@@ -4580,7 +4752,14 @@ function step(S,dt){
 }
 
 /* ---------------- LOG ---------------- */
+const SHE={he:'she',He:'She',HE:'SHE',him:'her',Him:'Her',HIM:'HER',
+ his:'her',His:'Her',HIS:'HER',himself:'herself',Himself:'Herself'};
+function pronouns(t){
+ if(!S||!S.p||!S.p.female)return t;
+ return String(t).replace(/\b(he|him|his|himself|He|Him|His|Himself|HE|HIM|HIS)\b/g,m=>SHE[m]||m);
+}
 function say(kind,text,who){
+ text=pronouns(text);
  const el=document.createElement('p');
  const off=MULTI&&S&&S!==PT[ACT];
  el.className='line '+kind+(off?' offpt':'');
@@ -4903,7 +5082,8 @@ function localAnswer(raw){
  let q=expand(String(raw)).toLowerCase().trim();
  /* strip a leading name so "Lauren, how many lines" is still a question */
  q=q.replace(/^(amy|aust|lauren|mitch|major b|majorb|everyone|team|somebody|someone)\s*[,:]?\s*/,'');
- if(!/\?\s*$|^(are|is|do|does|did|has|have|how|what|which|who|where|when|am i|tell me how|remind me how)\b/.test(q))return null;
+ if(!/\?\s*$|^(are|is|do|does|did|has|have|how|what|which|who|where|when|any|am i|tell me how|remind me how)\b/.test(q)
+     &&!/^(allerg|medication|meds\b|past medical|past histor|pmh\b|last meal|last ate|events\b)/.test(q))return null;
  const v=vitals(S),P=S.p;
  const say2=(who,txt)=>({who:person(who).nm,txt});
 
@@ -4954,6 +5134,45 @@ function localAnswer(raw){
     'Heart rate '+Math.round(inf.hr)+', '+(inf.ppv?'on positive pressure ventilation'+(inf.effective?' with chest movement':' but I am not getting chest movement'):'not being ventilated')+
     (inf.dried?', dried and under the warmer.':', not yet dried.')+
     (inf.hr<60?' Under sixty — that is compressions three to one.':inf.hr<100?' Under a hundred, so keep ventilating.':' Over a hundred and climbing.')};
+ }
+ /* what the patient himself remembers */
+ if(/\b(remember|recall|what happened to (him|her|you)|tell (me|us) what happened|his account|her account|what does (he|she) say)\b/.test(q)){
+  const a=patientAccount(S);
+  S.flags.askedPatient=true;
+  return{who:person('aust').nm,txt:(a.quote?a.quote+' ':'')+a.note};
+ }
+ /* the parts of an AMPLE history, asked one at a time */
+ {
+  const A5=[[/\ballerg/,'allerg','Allergies'],
+   [/\b(medication|medicine|tablet|prescribed|inhaler|on any med|take any med|what meds|any meds)/,'meds','Medications'],
+   [/\b(past medical|past histor|\bpmh\b|previous|known problem|known condition|medical histor|any condition)/,'pmh','Past history'],
+   [/\b(last meal|last ate|last eaten|last eat|nil by mouth|full stomach|last drink|when did (he|she|the patient) (last )?eat)/,'last','Last meal'],
+   [/\b(what happened|events|how did (this|it) happen|leading up|mechanism|circumstance)/,'events','Events']];
+  for(const [re,key,label] of A5){
+   if(!re.test(q))continue;
+   const a=ampleParts(S);
+   S.ampleAsked=S.ampleAsked||{};S.ampleAsked[key]=1;
+   /* three of the five and you have effectively taken the history */
+   if(Object.keys(S.ampleAsked).length>=3&&!S.done.some(d=>d.id==='history'))
+    S.done.push({id:'history',t:S.t,label:'AMPLE history',by:'mitch',lead:true,find:'Taken piece by piece.'});
+   return{who:person('mitch').nm,txt:label+' — '+a[key]};
+  }
+ }
+ /* work of breathing, and how a drug was given */
+ if(/\b(work of breathing|accessory muscle|accessory muscles|tiring|exhausted|breathing look|effort)\b/.test(q)){
+  const v=vitals(S);
+  const hard=(S.p.bronchospasm||0)>.3||(S.p.airway||0)>.25||v.rr>26;
+  return{who:person('aust').nm,txt:hard?
+   'Still working hard — accessory muscles going, sitting forward, rate '+v.rr+' and short sentences. '+((S.p.bronchospasm||0)>.5?'And a quiet chest is worse than a noisy one, so watch for the wheeze disappearing.':'')
+   :'Work of breathing has settled. Rate '+v.rr+', talking in longer sentences, accessory muscles quieter.'};
+ }
+ if(/\b(how was|what route|which route|route was|given by|was that iv|was that im)\b/.test(q)){
+  const words=q.split(/\s+/).filter(w=>w.length>4&&!['given','route','which','was','that'].includes(w));
+  const m=(S.meds||[]).slice().reverse().find(x=>words.some(w=>x.name.toLowerCase().includes(w)||w.includes(x.name.toLowerCase().split(' ')[0])));
+  const last=(S.meds||[])[S.meds.length-1];
+  const use=m||last;
+  if(!use)return{who:person('lauren').nm,txt:'Nothing has been given yet, sir.'};
+  return{who:person('lauren').nm,txt:use.name+', '+use.dose+', at '+mmss(use.t)+(use.route?', '+use.route:'')+'.'};
  }
  /* is he still fitting, and what does he look like */
  if(/\b(seizing|seizure|fitting|convulsing|still going|jerking|postictal)\b/.test(q)){
@@ -6013,6 +6232,7 @@ function renderQuick(){
 const OGROUPS=[
  ['Before he arrives',['roles','brief','anticipate','prep_room','checklist','ppe','document','report','weight']],
  ['Primary survey',['primary','bleedcheck','airway_assess','listen','pulsecheck','gcs','pupils','expose']],
+ ['History',['history','ask_patient','report']],
  ['Monitoring',['monitor_all','leads','spo2','nibp','etco2','temp','ecg12']],
  ['Airway',['airway_plan','jawthrust','suction','npa','opa','bvm','igel','rsi','rsi_meds','cric','tubefix','postintubation','ccollar']],
  ['Breathing',['o2','seal','needle','fingerthor','chesttube','albuterol']],
