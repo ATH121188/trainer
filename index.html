@@ -371,6 +371,38 @@ body.pre .trace,body.pre .num{opacity:.5}
 /* the on-screen keyboard steals half the screen; shrink to what is actually visible */
 body.running{height:calc(var(--vvh,100dvh) - env(safe-area-inset-top,0px))}
 .hidden{display:none!important}
+/* ---- interactive tutorial ---- */
+.tutcall{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 16px;padding:12px 14px;
+ border:1px solid #c9a13a;border-radius:10px;background:rgba(232,197,106,.08)}
+.tutcall strong{display:block;font-size:15px;color:var(--sand)}
+.tutcall span{display:block;font-size:13px;color:var(--sand-dim);margin-top:2px}
+.tutcall .tutgo{flex:none;font:inherit;font-weight:700;font-size:14px;padding:9px 14px;border-radius:8px;cursor:pointer;
+ background:#e8c56a;color:#1d211c;border:1px solid #e8c56a}
+.tutcall .tutgo:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
+@media (max-width:540px){.tutcall{flex-direction:column;align-items:stretch}.tutcall .tutgo{width:100%}}
+#tutHole{position:fixed;z-index:9000;pointer-events:none;border-radius:10px;
+ box-shadow:0 0 0 3px #e8c56a,0 0 0 9999px rgba(4,9,7,.74);transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease}
+#tutHole.none{box-shadow:0 0 0 9999px rgba(4,9,7,.74);width:0!important;height:0!important;left:50%!important;top:40%!important}
+#tutCard{position:fixed;z-index:9001;width:min(360px,calc(100vw - 24px));background:#eadfc6;color:#1d211c;border-radius:12px;
+ padding:14px 16px 12px;box-shadow:0 14px 44px rgba(0,0,0,.55);font-size:14.5px;line-height:1.45}
+#tutCard .tut-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:12px;color:#5d5442}
+#tutCard .tut-ticks{display:flex;gap:3px}
+#tutCard .tut-ticks i{display:block;width:10px;height:4px;border-radius:2px;background:#cfc1a2}
+#tutCard .tut-ticks i.done{background:#2f7d4a}
+#tutCard .tut-ticks i.now{background:#1d211c}
+#tutCard h3{font-family:"Avenir Next Condensed","Roboto Condensed","Segoe UI Semibold",system-ui,sans-serif;font-size:21px;line-height:1.15;margin:0 0 6px;font-weight:700;letter-spacing:.01em}
+#tutCard p{margin:0 0 6px}
+#tutCard .tut-try{margin:8px 0 4px;padding:8px 10px;border-left:3px solid #2f7d4a;background:rgba(47,125,74,.1);border-radius:0 6px 6px 0}
+#tutCard .tut-try b{font-weight:700}
+#tutCard .tut-wait{font-size:12.5px;color:#5d5442;margin-top:6px}
+#tutCard .tut-wait.ok{color:#2f7d4a;font-weight:700}
+#tutCard .tut-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
+#tutCard button{font:inherit;font-size:13.5px;font-weight:600;border-radius:8px;padding:7px 12px;cursor:pointer;border:1px solid #1d211c}
+#tutCard button.go{background:#1d211c;color:#eadfc6}
+#tutCard button.plain{background:transparent;color:#1d211c;border-color:#b9ab8b}
+#tutCard button:focus-visible{outline:2px solid #2f7d4a;outline-offset:2px}
+#tutCard .tut-skip{background:none!important;border:none!important;padding:0!important;color:#5d5442!important;text-decoration:underline;font-size:12.5px!important}
+@media (prefers-reduced-motion:reduce){#tutHole{transition:none}}
 </style>
 </head>
 <body>
@@ -514,8 +546,17 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.44';
+const VERSION='1.46';
 const CHANGELOG=[
+ {v:'1.46',name:'The tutorial is easier to find',
+  top:['The interactive tutorial now sits at the top of the Setup page, above every setting: "New to the trainer? A guided case that shows you every control."'],
+  detail:[]},
+ {v:'1.45',name:'An interactive tutorial',
+  top:['Setup → Interactive tutorial walks a new user through a real case — a gunshot wound to the thigh with the bleeding slowed down. Everything except the control being taught is darkened, and a card explains it. The clock stops while you read and runs while you act.',
+       'Steps that ask you to do something wait until you have actually done it: prepare the bay, assign roles, stop the bleeding, connect the monitor, run the primary survey, get access, give a drug, call the surgeon.',
+       'Once he is on the monitor, it walks you round it — the waveforms, each number, the pulse tone falling with the saturation, and a live demonstration of amber and red alarms with their sounds.'],
+  detail:['Twenty-three steps, with Back, Skip and Exit on every card, and Escape to leave. The sound demonstrations can be replayed.',
+          'On a phone the card sits at the top or bottom of the screen, away from what it is pointing at.']},
  {v:'1.44',name:'Consults that manage the problem, a hospital monitor, and a clinical review',
   top:['Teleconsults now give simple management for whatever is actually wrong with the patient — hyperkalaemia, rhabdo, compartments, PE, sepsis, adrenal crisis and a dozen more — and every recommendation has been checked against current guidelines by an external review. The sources are kept in a verification record.',
        'The monitor sounds like a monitor: the pulse tone falls in pitch as the saturation falls, and alarms come in two levels — red and fast for high priority, amber and slower for medium — with a message in the header and a two-minute silence.',
@@ -7149,17 +7190,20 @@ function renderMonitor(){
  setNum('#nTemp',S.mon.temp,v.temp.toFixed(1),AL.temp);
  /* the message line and the silence button */
  const at=$('#alarmTxt'),bs=$('#btnSilence');
- if(at){const hi=AL.msgs.filter(m=>m.lvl==='hi').map(m=>m.txt),md=AL.msgs.filter(m=>m.lvl==='med').map(m=>m.txt);
+ const demoOn=typeof TUT!=='undefined'&&TUT.demo&&TUT.demo.msg&&performance.now()<TUT.demo.until;
+ if(at&&demoOn){at.className='alarmtxt '+TUT.demo.lvl;at.textContent=TUT.demo.msg;if(bs){bs.classList.remove('hidden');bs.textContent='🔕 Silence';}}
+ else if(at){const hi=AL.msgs.filter(m=>m.lvl==='hi').map(m=>m.txt),md=AL.msgs.filter(m=>m.lvl==='med').map(m=>m.txt);
   at.className='alarmtxt'+(AL.top?' '+AL.top:'');
   at.textContent=AL.top?(hi.length?'!!! '+hi.join(' · '):'')+(hi.length&&md.length?'   ':'')+(md.length?'! '+md.join(' · '):''):'';}
- if(bs){const left=Math.max(0,Math.ceil((ALARM.silencedUntil-performance.now())/1000));
+ if(bs&&!demoOn){const left=Math.max(0,Math.ceil((ALARM.silencedUntil-performance.now())/1000));
   bs.classList.toggle('hidden',!AL.top&&!left);bs.classList.toggle('on',left>0);
   bs.textContent=left>0?'🔕 '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'):'🔕 Silence';}
 }
 function setNum(sel,on,val,alarm){
  const el=$(sel);el.classList.toggle('dead',!on);
  el.querySelector('.v').textContent=on?val:'- -';
- const lvl=on?(alarm==='med'?'med':alarm?'hi':null):null;
+ let lvl=on?(alarm==='med'?'med':alarm?'hi':null):null;
+ if(typeof TUT!=='undefined'&&TUT.demo&&TUT.demo.sel===sel&&performance.now()<TUT.demo.until&&TUT.demo.lvl)lvl=TUT.demo.lvl;
  el.classList.toggle('alarm',lvl==='hi');el.classList.toggle('warn',lvl==='med');
 }
 /* Adult alarm limits, two priorities, on the lines of IEC 60601-1-8. Only what is connected can alarm. */
@@ -8200,6 +8244,175 @@ function openRefs(){
  h+='<div class="btns"><button class="ghost" data-close="1">Close</button></div>';
  showSheet(h);
 }
+/* ================= INTERACTIVE TUTORIAL =================
+   A real case with a slow bleeder. The clock stops while you read and runs while
+   you do. Steps that ask you to do something wait until you have actually done it. */
+const TUT={on:false,i:0,poll:null,place:null,advancing:false};
+const tutVisible=el=>!!(el&&el.getClientRects().length&&el.offsetWidth>0&&el.offsetHeight>0&&getComputedStyle(el).visibility!=='hidden');
+function tutFind(sels){for(const q of [].concat(sels||[])){const el=document.querySelector(q);if(tutVisible(el))return el;}return null;}
+const TUT_STEPS=[
+ {title:'You are the team lead',
+  body:'Your team does exactly what you tell them, and nothing you do not. This tutorial runs a real case — a gunshot wound to the thigh — with the bleeding slowed down. The clock stops while you read these cards and runs while you act.'},
+ {title:'Give orders here',target:['#orderInput','#btnSpeak','#orderbar'],
+  body:'Everything happens by giving orders in plain words — typed here, or spoken. Before he arrives, get the bay ready.',
+  tryit:'prep the room',done:S=>Object.keys(S.prepped||{}).length>3},
+ {title:'Assign roles',target:['#orderInput','#btnSpeak','#orderbar'],
+  body:'Tell the team who does what. Each person has a job, and you can change it by saying so.',
+  tryit:'assign roles',done:S=>!!S.flags.roles},
+ {title:'Bring him in',target:['#btnStart','#barCtl .go'],
+  body:'Until you press this, the clock is stopped and nobody is bleeding. That time is yours — prep, roles, PPE, the checklist. When you are ready, start the case.',
+  wantRun:true,done:S=>S.phase==='run'},
+ {title:'Everything appears here',target:['#log'],
+  body:'What the team says, what they find, what the patient says and what comes over the radio all appear in this panel. Read what came through the door — his leg is bleeding.'},
+ {title:'Stop the bleeding',target:['#orderInput','#btnSpeak','#orderbar'],
+  body:'Say the name of the person you want. Dorian works procedures on the right side of the bed. If you leave a name out, whoever owns that job picks it up.',
+  tryit:'Dorian, tourniquet on the leg',done:S=>!!(S.flags.tq||(S.done||[]).some(d=>d.id==='tq'))},
+ {title:'Put him on the monitor',target:['.monitor'],
+  body:'The monitor is blank until somebody connects it. Amy runs the head of the bed and the monitoring.',
+  tryit:'Amy, put him on the monitor',done:S=>!!S.mon.ecg},
+ {title:'The waveforms',target:['.traces'],
+  body:'Three live traces. The green one is the ECG — it shows six seconds across, so count the complexes and multiply by ten. The blue one is the pleth from the finger probe: a good wave means the saturation number is real. The pale yellow one is the CO₂ trace, one hump per breath — a flat line means he is not breathing or not being ventilated.'},
+ {title:'Heart rate',target:['#nHr'],
+  body:'From the ECG leads. The word underneath is the rhythm — sinus, tachy, brady, or wide complex, which in this sim usually means potassium.'},
+ {title:'Saturation',target:['#nSpo2'],demo:'tones',
+  body:'From the finger probe. Listen — the pulse beep drops in pitch as the saturation falls, so you can hear him desaturating without looking. That was 99, then 90, then 82.'},
+ {title:'Blood pressure',target:['#nBp'],
+  body:'The cuff cycles on its own every five minutes; the last reading stays up, with the MAP and how long ago it was taken underneath. Say "recycle the cuff" for a fresh one, or "cycle every two minutes" in a sick patient.'},
+ {title:'End-tidal CO₂',target:['#nCo2'],
+  body:'Through a nasal sampling line, with the respiratory rate underneath. Once he is intubated, this is how you know the tube is in the trachea — and the first thing to fall if it slips out.'},
+ {title:'Temperature',target:['#nTemp'],
+  body:'Blank until somebody takes one — say "get a temperature". Cold trauma patients stop clotting, so it matters early.'},
+ {title:'Alarms',target:['.monitor'],demo:'alarms',
+  body:'Amber is medium priority — a slow flash and a three-note chime. Red is high priority — a fast flash and a five-pulse burst that repeats. The header spells out what is alarming. Silence mutes the sound for two minutes; the numbers keep flashing.'},
+ {title:'Primary survey',target:['#orderInput','#btnSpeak','#orderbar'],
+  body:'Examinations come back as findings in the conversation — short and in order. You can give several people orders in one breath: "Dorian primary survey, Lauren IV access."',
+  tryit:'Dorian, primary survey',done:S=>(S.done||[]).some(d=>d.id==='primary')},
+ {title:'Get access',target:['#orderInput','#btnSpeak','#orderbar'],
+  body:'Lauren owns lines, drugs and blood. Nothing goes into him until there is a way in.',
+  tryit:'Lauren, IV access',done:S=>(S.access||0)>=1},
+ {title:'Give a drug',target:['#orderInput','#btnSpeak','#orderbar'],
+  body:'Say the drug and the dose, or say "standard dose" for the book number. If you leave something out, Lauren asks. If a dose is dangerous, she will challenge it — say confirm to override.',
+  tryit:'Lauren, TXA standard dose',done:S=>!!S.flags.txa},
+ {title:'Ask anything',target:['#orderInput','#btnSpeak','#orderbar'],live:true,
+  body:'Questions are answered, not acted on: "how many lines do we have", "what have we given", "how is his pain", "is he still bleeding". Try one if you like.'},
+ {title:'Talking',target:['#btnMic','#btnSpeak'],
+  body:'Tap to speak, then tap again to send — or pause and it sends itself. On a computer you can hold left Alt to talk. Anything the system mishears is kept in Setup, under the session log.'},
+ {title:'Call the surgeon',target:['#commsMain .surgeonbtn','#commsBar .surgeonbtn'],
+  body:'Dr. Moon is next door. Call her and she walks in about forty-five seconds later, asks for a handover, and does the operations — fasciotomy, chest tube, thoracotomy, theatre.',
+  tryit:'call the surgeon — or press this button',done:S=>!!S.flags.surgeon},
+ {title:'Call for evac',target:['#commsMain .radio','#commsBar .radio'],
+  body:'This requests the helicopter. Once Dustoff answers, the same button keys the radio: while it glows amber, everything you say goes to the aircrew and the team cannot hear you. Press it again to come back.'},
+ {title:'Stop, pause, finish',target:['#btnPause','#barCtl [data-act="pause"]','#btnEnd'],
+  body:'"Lauren stop" halts whatever she is doing. Pause freezes the clock. End case takes you to the debrief, which scores what you did and when.'},
+ {title:'He is yours',
+  body:'That is everything you need to start. Carry on with this patient — he still needs blood and a surgeon — then end the case for your debrief. You can run this tutorial again from Setup.'}
+];
+function tutBuild(){
+ if($('#tutHole'))return;
+ const h=document.createElement('div');h.id='tutHole';document.body.appendChild(h);
+ const c=document.createElement('div');c.id='tutCard';c.setAttribute('role','dialog');c.setAttribute('aria-live','polite');document.body.appendChild(c);
+ addEventListener('resize',tutPlace);addEventListener('scroll',tutPlace,true);
+ addEventListener('keydown',tutKey);
+}
+function tutKey(e){if(!TUT.on)return;if(e.key==='Escape')tutEnd();}
+function tutPlace(){
+ if(!TUT.on)return;
+ const st=TUT_STEPS[TUT.i],hole=$('#tutHole'),card=$('#tutCard');if(!hole||!card)return;
+ const el=st.target?tutFind(st.target):null;
+ const vw=innerWidth,vh=innerHeight,phone=vw<=540;
+ if(!el){hole.classList.add('none');
+  card.style.left=Math.max(12,(vw-card.offsetWidth)/2)+'px';card.style.top=Math.max(12,vh*.28)+'px';return;}
+ hole.classList.remove('none');
+ const r=el.getBoundingClientRect(),pad=6;
+ hole.style.left=(r.left-pad)+'px';hole.style.top=(r.top-pad)+'px';hole.style.width=(r.width+pad*2)+'px';hole.style.height=(r.height+pad*2)+'px';
+ const ch=card.offsetHeight,cw=card.offsetWidth;
+ let top,left;
+ if(phone){top=(r.top+r.height/2>vh*.5)?12:Math.min(vh-ch-12,r.bottom+14);left=(vw-cw)/2;}
+ else{
+  top=(r.bottom+14+ch<vh)?r.bottom+14:(r.top-14-ch>0?r.top-14-ch:Math.max(12,(vh-ch)/2));
+  left=Math.min(vw-cw-12,Math.max(12,r.left+r.width/2-cw/2));
+  if(top<r.bottom&&top+ch>r.top){left=(r.left>cw+30)?r.left-cw-18:Math.min(vw-cw-12,r.right+18);}
+ }
+ card.style.top=Math.round(top)+'px';card.style.left=Math.round(left)+'px';
+}
+function tutRender(){
+ const st=TUT_STEPS[TUT.i],card=$('#tutCard');if(!card||!S)return;
+ const n=TUT_STEPS.length;
+ const ticks=TUT_STEPS.map((_,k)=>'<i class="'+(k<TUT.i?'done':k===TUT.i?'now':'')+'"></i>').join('');
+ const waits=!!st.done;
+ card.innerHTML='<div class="tut-meta"><span>Step '+(TUT.i+1)+' of '+n+'</span><span class="tut-ticks" aria-hidden="true">'+ticks+'</span></div>'+
+  '<h3>'+st.title+'</h3><p>'+st.body+'</p>'+
+  (st.tryit?'<div class="tut-try">Try it: <b>“'+st.tryit+'”</b></div>':'')+
+  (waits?'<div class="tut-wait" id="tutWait">Waiting for you… <button class="tut-skip" id="tutSkip">skip this step</button></div>':'')+
+  '<div class="tut-btns">'+(TUT.i>0?'<button class="plain" id="tutBack">Back</button>':'')+
+  '<button class="plain" id="tutExit">'+(TUT.i===n-1?'Close':'Exit tutorial')+'</button>'+
+  (st.demo?'<button class="plain" id="tutReplay">'+(st.demo==='tones'?'Play again':'Show again')+'</button>':'')+
+  (waits?'':'<button class="go" id="tutNext">'+(TUT.i===n-1?'Finish':'Next')+'</button>')+'</div>'+
+  (st.demo&&(!CFG.sound)?'<div class="tut-wait">Sound is off — turn it on in the header to hear this.</div>':'');
+ if($('#tutNext'))$('#tutNext').onclick=()=>tutGo(TUT.i+1);
+ if($('#tutBack'))$('#tutBack').onclick=()=>tutGo(TUT.i-1);
+ if($('#tutSkip'))$('#tutSkip').onclick=()=>tutGo(TUT.i+1);
+ $('#tutExit').onclick=tutEnd;
+ if($('#tutReplay'))$('#tutReplay').onclick=()=>tutDemo(st.demo);
+ if(st.demo)setTimeout(()=>tutDemo(st.demo),450);
+ /* reading stops the clock; doing runs it */
+ if(S.phase==='run'&&!S.over)setPaused(!(waits||st.live));
+ requestAnimationFrame(tutPlace);
+ if(!waits&&$('#tutNext'))$('#tutNext').focus({preventScroll:true});
+ else if($('#orderInput')&&st.tryit)$('#orderInput').focus({preventScroll:true});
+}
+/* show, and play, what the monitor does — without touching the patient */
+function tutDemo(kind){
+ try{initAudio();}catch(e){}
+ const canPlay=CFG.sound&&typeof AC!=='undefined'&&AC;
+ if(kind==='tones'){
+  if(canPlay)[99,90,82].forEach((sat,k)=>setTimeout(()=>monTone(880*Math.pow(2,(sat-100)/12),0,.09,.05),k*650));
+  TUT.demo={sel:'#nSpo2',lvl:null,until:performance.now()+2200};
+ }
+ if(kind==='alarms'){
+  TUT.demo={sel:'#nHr',lvl:'med',msg:'! HR 124',until:performance.now()+2600};
+  if(canPlay)alarmMed();
+  setTimeout(()=>{if(!TUT.on)return;
+   TUT.demo={sel:'#nSpo2',lvl:'hi',msg:'!!! SpO₂ 81',until:performance.now()+3400};
+   if(CFG.sound&&AC)alarmHigh();try{renderMonitor();}catch(e){}},2700);
+ }
+ try{renderMonitor();}catch(e){}
+}
+function tutGo(k){
+ if(k>=TUT_STEPS.length)return tutEnd();
+ TUT.i=Math.max(0,k);TUT.advancing=false;tutRender();
+}
+function tutTick(){
+ if(!TUT.on||!S)return;
+ if(S.over){tutEnd();return;}
+ tutPlace();
+ if(TUT.demo&&performance.now()<TUT.demo.until+400){try{renderMonitor();}catch(e){}}
+ const st=TUT_STEPS[TUT.i];
+ if(!st.done||TUT.advancing)return;
+ let d=false;try{d=st.done(S);}catch(e){}
+ if(d){TUT.advancing=true;const w=$('#tutWait');if(w){w.className='tut-wait ok';w.textContent='Done.';}
+  /* the walk-through that follows describes the cuff, so give it its first reading now */
+  if(st.title==='Put him on the monitor'&&S.mon.nibp&&!S.lastBp){const v=vitals(S);if(v.perfused){S.lastBp={sbp:v.sbp,dbp:v.dbp,t:S.t};if(S.firstBpT===null)S.firstBpT=S.t;S.nibpPending=0;S.nibpLast=S.t;}}
+  setTimeout(()=>{if(TUT.on)tutGo(TUT.i+1);},900);}
+}
+function startTutorial(){
+ closeSheet();
+ const sc=SCN.find(x=>x.id==='t07');if(!sc)return;
+ startScenario(sc);
+ S.tutorial=true;
+ /* a slow bleeder, so nobody learns the controls in a panic */
+ S.p.bleedRate=Math.round((S.p.bleedRate||0)*.25);
+ if(S.p.extremityBleedRate)S.p.extremityBleedRate=Math.round(S.p.extremityBleedRate*.25);
+ TUT.on=true;TUT.i=0;tutBuild();
+ $('#tutHole').style.display='';$('#tutCard').style.display='';
+ clearInterval(TUT.poll);TUT.poll=setInterval(tutTick,300);
+ tutRender();
+}
+function tutEnd(){
+ TUT.on=false;clearInterval(TUT.poll);
+ const h=$('#tutHole'),c=$('#tutCard');if(h)h.style.display='none';if(c)c.style.display='none';
+ if(S&&S.phase==='run'&&!S.over)setPaused(false);
+}
 function openChangelog(){
  let h='<h2 class="cond">What has changed</h2>'+
   '<p>Version '+VERSION+'. Newest first. The bullets at the top of each are the ones worth knowing before you run a case; the rest is detail.</p>';
@@ -8261,6 +8474,8 @@ function openDiag(){
 }
 function openSettings(){
  let h='<h2 class="cond">Setup</h2>';
+ h+='<div class="tutcall"><div><strong>New to the trainer?</strong><span>A guided case that shows you every control — about ten minutes.</span></div>'+
+    '<button class="tutgo" id="btnTutorial">Start the tutorial</button></div>';
  h+='<label class="opt"><input type="checkbox" id="oStrict" '+(CFG.strictComms?'checked':'')+'><span>Push back on undirected orders<div class="hint">The team asks "who do you want on that?" the first time an order names nobody, and it costs him ten seconds.</div></span></label>';
  h+='<label class="opt"><input type="checkbox" id="oInstr" '+(CFG.instructor?'checked':'')+'><span>Instructor panel<div class="hint">Inject complications while he runs the case. Use it when you are sitting next to him.</div></span></label>';
  h+='<h3 class="cond">Procedural complications</h3>';
@@ -8300,6 +8515,7 @@ function openSettings(){
  cmpSet(CFG.compRate);
  $('#cmp0').onclick=()=>cmpSet(0);$('#cmp1').onclick=()=>cmpSet(1);$('#cmp2').onclick=()=>cmpSet(2);
  $('#btnChangelog').onclick=openChangelog;
+ if($('#btnTutorial'))$('#btnTutorial').onclick=startTutorial;
  $('#btnRefs').onclick=openRefs;
  $('#btnDiag').onclick=openDiag;
  $('#btnClearDone').onclick=()=>{DONE={};saveDone();renderMenu();closeSheet();};
