@@ -252,6 +252,10 @@ body.pre .trace,body.pre .num{opacity:.5}
 .refitem .reft{color:var(--sand);font-size:14.5px;line-height:1.4}
 .refd{color:var(--sand-dim);font-size:13.5px;line-height:1.45;margin-top:4px}
 .refu{color:var(--sand-faint);font-size:11.5px;margin-top:5px;word-break:break-all;font-family:ui-monospace,monospace}
+.archnote{grid-column:1/-1;border:1px solid var(--edge);border-left:3px solid var(--nibp);
+ background:rgba(255,255,255,.02);padding:12px 14px;border-radius:6px;color:var(--sand-dim);
+ font-size:13.5px;line-height:1.5;margin-bottom:4px}
+.archnote b{color:var(--sand);font-weight:600}
 .clog-top{margin-bottom:2px}
 .clog-line{display:flex;gap:8px;align-items:flex-start;margin-bottom:7px;font-size:14.5px;line-height:1.45;color:var(--sand)}
 .clog-line .mk{color:var(--ecg);font-size:12px;line-height:1.7;flex:none}
@@ -475,8 +479,33 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.32';
+const VERSION='1.35';
 const CHANGELOG=[
+ {v:'1.35',name:'Medical cases back in',
+  top:['All twenty-four medical cases are back in the menu after the first round of external review. Sixty cases again.',
+       'Thirteen of them were changed: two clinical errors, six monitors that disagreed with their own narratives, and a set of labelling and face-validity fixes.',
+       'Eleven cases came through review unchanged.'],
+  detail:['The review is not finished. These have had one pass against a structured checklist — internal consistency, physiologic plausibility, epidemiologic fit, units and reference ranges — and more rounds are planned.',
+          'Treat the medical library as the better-checked half now, and the trauma library as the one still largely resting on my judgement.']},
+ {v:'1.34',name:'First round of medical case corrections',
+  top:['Antihistamines removed from the asthma case. They have no role in acute severe asthma, and the rationale text was a copy of the steroid line, so it was wrong twice over.',
+       'TXA in the variceal bleed now carries what HALT-IT found — no mortality benefit in gastrointestinal bleeding, with more clots and more seizures. The antibiotic is the adjunct that changes outcome there.',
+       'Six cases showed a monitor that disagreed with their own narrative. All six were missing physiology rather than carrying a wrong number.'],
+  detail:['Status epilepticus now produces a tachycardia; the seizing patient was showing a heart rate of 72 while the team described a carotid of 140.',
+          'Carbon monoxide now reads a saturation of 99 on the probe, which is the entire lesson of that case. The saturation was being computed honestly, which made the trap invisible.',
+          'Opioid hypoventilation now retains carbon dioxide — a respiratory rate of 4 was showing a normal end-tidal alongside a stated respiratory acidosis.',
+          'A large shunt now drives respiratory rate, so the pulmonary embolism is no longer gasping at 18 a minute with a saturation of 81.',
+          'Hyperkalaemia and thyroid storm now present at the rate their own twelve leads report — 44 and 168 — rather than 28 and 195.',
+          'Six cases shared an identical set of normal vitals. Varied.',
+          'Insulin is relabelled in the specification as harmful only if sequenced before fluid and a potassium, rather than harmful in itself.']},
+ {v:'1.33',name:'Medical cases held back for verification',
+  top:['The twenty-four medical cases are out of the menu until each has been checked against a primary source rather than recall. The thirty-six trauma cases remain.',
+       'Nothing has been deleted. Every medical case is intact in the file and returns as it is verified.',
+       'The hyperosmolar case was the one that prompted this: it was running insulin at twice the correct rate.'],
+  detail:['Checked against the Joint British Diabetes Societies 2023 guideline: insulin in a hyperosmolar state is 0.05 units per kilo per hour, half the ketoacidosis rate, and only once the osmolality stops falling on fluid alone. The simulator was giving 0.1.',
+          'That case also reported only a corrected sodium of 158 with no measured value, which invites the exact error it was meant to teach. It now gives 146 measured and the correction alongside it, with a potassium, urea and creatinine.',
+          'And it never said that the measured sodium rises as the glucose falls — expected, and not a reason to reach for hypotonic fluid. It does now, with the rate limits.',
+          'ADA and JBDS disagree on the insulin rate and the osmolality target. The references sheet says so rather than presenting one as settled.']},
  {v:'1.32',name:'The examination now describes the patient',
   top:['Pulse checks were fixed text in all sixty cases. The team could call out "I have lost his radial" while the examination still reported strong radials and the monitor showed a normal pressure. The examination now reads from the patient.',
        'Intubating a hypotensive patient lost the tube. Amy said it was in, the simulator believed there was no airway, and nothing could be ventilated afterwards.',
@@ -2069,7 +2098,9 @@ act({id:'insulin_inf',label:'Insulin infusion',cat:'RX',by:'majorb',dur:30,
    return'This is hyperosmolar rather than ketoacidosis — fluid does most of the work here, and insulin goes in late and slow or his osmolality falls too fast.';
   return null;},
  al:['insulin infusion','insulin drip','start insulin','insulin for the dka','0.1 units','begin insulin','actrapid','novorapid','regular insulin','insulin at 0.1'],
- std:(S)=>{const kg=S.p.kg||80;return{base:kg*.1,kind:'units',display:(kg*.1).toFixed(1)+' units an hour, 0.1 per kilo (standard)'};},
+ std:(S)=>{const kg=S.p.kg||80;
+  if(S.p.hhs)return{base:kg*.05,kind:'units',display:(kg*.05).toFixed(1)+' units an hour, 0.05 per kilo — half the ketoacidosis rate, for a hyperosmolar state'};
+  return{base:kg*.1,kind:'units',display:(kg*.1).toFixed(1)+' units an hour, 0.1 per kilo (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
   if(d.base>kg*.25)return{bad:'That is '+d.text+' an hour. Standard is 0.1 units per kilo, about '+(kg*.1).toFixed(1)+' an hour, and no bolus. Confirm?'};
   return{label:d.display+' insulin'};},
@@ -2510,7 +2541,7 @@ act({id:'teleconsult',label:'Teleconsult a specialty',cat:'CMD',by:'mitch',dur:7
    cards:'Cardiology. Inferior infarct with right ventricular involvement is the one to get right — they want right-sided leads if you have not done them, and no nitrates and no opiate-heavy loading, because that ventricle is preload dependent and you will drop him. Fluid rather than vasodilators. Aspirin and an anticoagulant, then lysis if the transfer time to a catheter laboratory is over two hours, and they want the time of onset and the contraindication checklist read back to them.',
    neurol:'Neurology. For status, benzodiazepine adequately dosed first — most failures are underdosing rather than the wrong drug — then a second agent, levetiracetam or valproate, and they want to know the glucose and the sodium before anything else. If it does not stop, that is refractory and it needs anaesthesia and a ventilator.',
    renal:'Nephrology. Calcium to protect the myocardium, then insulin with dextrose and salbutamol to shift it, and they are blunt that none of it removes a single milligram — only dialysis does. They want the potassium, the QRS width and how long since his last session, and they are arranging a bed.',
-   endo:'Endocrinology. For a crisis, hydrocortisone now and do not wait for a cortisol. For thyroid storm, beta blockade first, then antithyroid drugs, and iodine only after those — never before. For hyperosmolar states, fluid first and insulin late and slow, with the potassium known before any insulin goes in.',
+   endo:'Endocrinology. For an adrenal crisis, hydrocortisone now and do not wait for a cortisol. For thyroid storm, beta blockade first, then antithyroid drugs, and iodine only after those — never before. For a hyperosmolar state: nought point nine percent saline as the main fluid, a litre in the first hour and faster if he is hypotensive; insulin at nought point nought five units per kilo per hour and only once the osmolality stops falling on fluid alone; potassium known first; and the sodium will rise as the glucose falls, which is expected rather than a reason for hypotonic fluid. Osmolality down three to eight an hour, sodium no more than ten in twenty-four.',
    haem:'Haematology. Judge the haemoglobin against his own baseline rather than a normal range. Oxygen, warmth, hydration and proper analgesia all reduce further sickling, and they are asking whether exchange transfusion is available where he is going, because in acute chest syndrome that is the intervention that changes it.',
    eye:'Ophthalmology. Rigid shield, never a pad and never pressure. Nothing by mouth, antiemetics so he does not strain, and systemic antibiotics. They want the visual acuity you recorded at arrival, not the one taken after four people have handled him, and they want him moving now — vision is time.',
    resp:'Respiratory. Continuous nebulised bronchodilator rather than intermittent, magnesium, and steroids early. They warn that a quiet chest is deterioration rather than improvement, and that intubating a severe asthmatic is dangerous — if you must, expect to ventilate slowly with long expiratory times and watch for breath stacking.',
@@ -3184,7 +3215,7 @@ const SCN=[
  arrival:'Three people carry him in mid-seizure, rigid and jerking, with froth at the mouth and blood on his chin where he has bitten his tongue. Somebody says this has been going for fifteen minutes and it has not stopped once.',
  mist:'Crew report: witnessed seizure fifteen minutes ago, has not stopped. Known epileptic according to his roommate, ran out of his medication about a week ago. No trauma, nothing given.',
  massive:S=>'No bleeding except his tongue. No injuries I can find while he is moving like this.',
- init:S=>{Object.assign(S.p,{bleedRate:0,seizing:true,airway:.35,pain:0,lost:0,tempC:38.4,coag:1,shunt:.18,gcsBase:8,glucose:64,kg:74});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{sbpBase:126,bleedRate:0,seizing:true,airway:.35,pain:0,lost:0,tempC:38.4,coag:1,shunt:.18,gcsBase:8,glucose:64,kg:74,hrBase:95});S.o2=.21;},
  knownAtArrival:['front','airway'],
  pulses:(S,b)=>'Hard to feel anything while he is convulsing. Carotid is there and fast, about 140. I cannot give you a reliable radial until he stops.',
  airwayFind:S=>S.airwayDevice?'Secured.':'Clenched, frothing, and I cannot get anything in his mouth. Jaw thrust and a nasal airway is all I can offer while he is seizing.',
@@ -3239,7 +3270,7 @@ const SCN=[
  arrival:'She is carried in confused and vomiting, and somebody hands you a clipboard with her name on it. She looks well-hydrated, which is the first thing that does not fit. Her squad tell you she has been drinking water constantly for six hours because she was worried about the heat.',
  mist:'Crew report: twenty-five year old, collapsed at the end of an eighteen-mile march, roughly thirty minutes ago. Ambient thirty-two degrees. She was drinking at every halt and at several points in between. She had a brief seizure in the vehicle.',
  massive:S=>'No bleeding, no trauma.',
- init:S=>{Object.assign(S.p,{bleedRate:0,hypoNa:.55,pain:2,lost:0,tempC:37.8,coag:1,gcsBase:13,glucose:92,kg:59});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{sbpBase:118,bleedRate:0,hypoNa:.55,pain:2,lost:0,tempC:37.8,coag:1,gcsBase:13,glucose:92,kg:59});S.o2=.21;},
  knownAtArrival:['front'],
  pulses:(S,b)=>'Radials strong and equal, pedal pulses good. Her perfusion is completely normal, sir. That is the point.',
  airwayFind:S=>'Patent, but she has vomited twice and she is not fully with us.',
@@ -3704,7 +3735,7 @@ const SCN=[
  arrival:'She is sitting forward on the edge of the litter with both hands braced on her knees, using every muscle in her neck to breathe. She gets two words out at a time. Somebody hands you an inhaler that she has emptied.',
  mist:'Crew report: known asthmatic, got progressively worse over six hours in heavy dust, used a whole rescue inhaler with no effect. Twenty minutes ago she stopped being able to talk properly.',
  massive:S=>'No bleeding. Not a trauma patient.',
- init:S=>{Object.assign(S.p,{bleedRate:0,bronchospasm:.7,shunt:.2,pain:2,lost:0,tempC:37,coag:1,hrBase:118,gcsBase:14,glucose:118,kg:58});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{sbpBase:132,bleedRate:0,bronchospasm:.7,shunt:.2,pain:2,lost:0,tempC:37,coag:1,hrBase:118,gcsBase:14,glucose:118,kg:58});S.o2=.21;},
  knownAtArrival:['front','airway'],
  pulses:(S,b)=>'Radials fast, and they weaken noticeably when she breathes in. Pedal pulses present.',
  airwayFind:S=>'Patent, she is protecting it, but she is exhausted and that will not last.',
@@ -3717,8 +3748,7 @@ const SCN=[
  labs:S=>'pH 7.31 with a CO2 of 46 — a normal or rising CO2 in an asthmatic breathing that hard means she is tiring, not improving. Lactate 3.4.',
  critical:[{id:'albuterol',by:90,label:'Continuous nebulised bronchodilator'},
   {id:'steroid',by:300,label:'Steroids early — they do nothing for an hour, which is why they go in now'},
-  {id:'o2',by:90,label:'Oxygen'},{id:'antihistamine',by:200,label:'Steroids early — they take hours to work'},
-  {id:'iv',by:180,label:'Access',alt:['io']},
+  {id:'o2',by:90,label:'Oxygen'},{id:'iv',by:180,label:'Access',alt:['io']},
   {id:'epi_im',by:260,label:'IM epinephrine for a patient who is not moving enough air to inhale a neb'},
   {id:'monitor_all',by:110,label:'Full monitoring'},
   {id:'labs',by:280,label:'A gas — the CO2 is the number that matters'},
@@ -3775,7 +3805,7 @@ const SCN=[
   {id:'suction',by:100,label:'Suction at the head, continuously'},
   {id:'io',by:150,label:'Two large-bore access points',alt:['iv','central']},
   {id:'blood',by:200,label:'Blood — and in liver disease, plasma and platelets alongside it'},
-  {id:'txa',by:280,label:'TXA'},{id:'abx',by:320,label:'Antibiotics — they reduce mortality in variceal bleeding'},
+  {id:'txa',by:300,label:'TXA — and know that HALT-IT found no mortality benefit in gastrointestinal bleeding, with more clots and more seizures. The antibiotic is the adjunct that changes outcome here'},{id:'abx',by:320,label:'Antibiotics — they reduce mortality in variceal bleeding'},
   {id:'warm',by:300,label:'Hypothermia prevention; he cannot clot as it is'},
   {id:'rsi',by:360,label:'Airway before transport',alt:['cric','igel']},
   {id:'teleconsult',by:380,label:'Reachback for a plan — this needs endoscopy'},
@@ -3787,7 +3817,7 @@ const SCN=[
  arrival:'He is drenched in sweat, tremulous from head to foot, and his eyes track things across the room that are not there. He is hot to touch, his heart is racing, and he keeps trying to climb off the litter to get away from something.',
  mist:'Crew report: in custody four days, last drink four days ago according to his file. Shaky since yesterday, agitated overnight, and had a witnessed seizure two hours ago. Nothing given.',
  massive:S=>'No bleeding. He has knocked himself about a bit but nothing is bleeding.',
- init:S=>{Object.assign(S.p,{bleedRate:0,pain:3,lost:0,tempC:38.9,coag:1,dehydration:.35,hrBase:126,gcsBase:13,glucose:62,kg:70});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{sbpBase:136,bleedRate:0,pain:3,lost:0,tempC:38.9,coag:1,dehydration:.35,hrBase:126,gcsBase:13,glucose:62,kg:70});S.o2=.21;},
  knownAtArrival:['front'],
  pulses:(S,b)=>'Radials fast and bounding, pedal pulses strong. He is hyperdynamic — warm, wet, and wide open.',
  airwayFind:S=>'Patent now, but he had a seizure two hours ago and he will have another one.',
@@ -3815,7 +3845,7 @@ const SCN=[
  arrival:'A staff sergeant helped in by two colleagues, sitting lopsided on the litter. The right side of his face is not moving, his right arm is dead weight in his lap, and when he tries to answer you what comes out is fluent nonsense. He was completely normal at breakfast.',
  mist:'Crew report: forty-seven, noticed at 0740 that he could not hold his coffee cup, and his speech went at the same time. He was well at 0700. That is a firm last known well.',
  massive:S=>'No bleeding, no trauma.',
- init:S=>{Object.assign(S.p,{bleedRate:0,stroke:true,pain:0,lost:0,tempC:36.9,coag:1,hrBase:96,gcsBase:14,glucose:144,kg:90});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{sbpBase:148,bleedRate:0,stroke:true,pain:0,lost:0,tempC:36.9,coag:1,hrBase:96,gcsBase:14,glucose:144,kg:90});S.o2=.21;},
  knownAtArrival:['front'],
  pulses:(S,b)=>'Radials present both sides but the rhythm is irregularly irregular — no two beats the same. Pedal pulses present.',
  airwayFind:S=>'Patent, but he is not managing his own secretions well on the right side of his mouth.',
@@ -3845,7 +3875,7 @@ const SCN=[
  arrival:'Three soldiers from the same tent are brought in together. Two are walking and complaining of headache and nausea. The third is being carried and is barely responding to anything. It has been a cold night and somebody mentions the generator was running inside.',
  mist:'Crew report: three from one tent, all unwell on waking. Headache, nausea, dizziness in two, the third would not wake up. Petrol generator running inside the tent overnight with the flaps down.',
  massive:S=>'No bleeding, no trauma in any of them.',
- init:S=>{Object.assign(S.p,{bleedRate:0,coMask:28,shunt:.12,pain:4,lost:0,tempC:36.2,coag:1,gcsBase:9,glucose:102,kg:74});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{sbpBase:121,bleedRate:0,coMask:28,shunt:.12,pain:4,lost:0,tempC:36.2,coag:1,gcsBase:9,glucose:102,kg:74});S.o2=.21;},
  knownAtArrival:['front'],
  pulses:(S,b)=>'Radials present and strong, pedal pulses fine. His perfusion looks completely normal, which is part of the trap.',
  airwayFind:S=>'Patent but he is not fully protecting it.',
@@ -4267,7 +4297,7 @@ const SCN=[
  arrival:'A local national in his fifties, brought in weak and breathless. His forearm has an old fistula with a thrill. He can barely lift his arms and his monitor trace looks wrong from across the room.',
  mist:'No formal report. Family say he has kidney failure and has dialysis three times a week, and the road to the clinic has been closed for over a week. He has become weaker each day.',
  massive:S=>'No bleeding.',
- init:S=>{Object.assign(S.p,{bleedRate:0,pain:2,lost:0,tempC:36.5,coag:1,gcsBase:14,glucose:118,kg:70,hyperK:true,kSev:.72,hrBase:44,squeeze:.9,shunt:.14});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:2,lost:0,tempC:36.5,coag:1,gcsBase:14,glucose:118,kg:70,hyperK:true,kSev:.72,hrBase:97,squeeze:.9,shunt:.14});S.o2=.21;},
  knownAtArrival:['front'],
  pulses:(S,b)=>'Radial is slow and regular, about forty-four. Peripheries are warm. There is a palpable thrill over the left forearm fistula.',
  airwayFind:S=>'Patent.',
@@ -4296,7 +4326,7 @@ const SCN=[
  arrival:'A woman in her thirties, brought in agitated and confused, soaked in sweat and burning hot. Her heart rate is 168 and irregular. Her eyes are prominent and there is a swelling at the front of her neck.',
  mist:'Crew report: unwell for a week with palpitations and weight loss, deteriorated today after a chest infection. Confused since this morning. The family mention thyroid tablets she stopped taking months ago.',
  massive:S=>'No bleeding.',
- init:S=>{Object.assign(S.p,{bleedRate:0,pain:2,lost:0,tempC:40.2,coag:1,gcsBase:13,glucose:142,kg:62,hot:true,coolRate:.03,hrBase:168,afib:true,squeeze:.88,thyroid:.8});S.o2=.21;},
+ init:S=>{Object.assign(S.p,{bleedRate:0,pain:2,lost:0,tempC:40.2,coag:1,gcsBase:13,glucose:142,kg:62,hot:true,coolRate:.03,hrBase:134,afib:true,squeeze:.88,thyroid:.8});S.o2=.21;},
  knownAtArrival:['front'],
  pulses:(S,b)=>'Radial is fast and completely irregular — I cannot count it by hand. Peripheries are warm and wet.',
  airwayFind:S=>'Patent but she is thrashing.',
@@ -4422,7 +4452,7 @@ const SCN=[
  secondary:S=>'No focal neurology. Profound dehydration. Estimated deficit is eight to ten litres in a man this size.',
  fast:S=>'Completely collapsed inferior vena cava. No free fluid.',
  neuro:S=>'GCS '+S.gcs()+'. Drowsy, confused, no focal deficit.',
- labs:S=>'Glucose '+Math.round(S.p.glucose)+'. Sodium 158 corrected. Osmolality above 340. pH 7.33 with a bicarbonate of 20 and only trace ketones — this is not ketoacidosis.',
+ labs:S=>'Glucose '+Math.round(S.p.glucose)+'. Sodium 146 measured, which corrects to about 158 once you allow for the glucose. Potassium 4.9, urea high, creatinine up. Calculated osmolality about 350. pH 7.33 with a bicarbonate of 20 and only trace ketones — this is not ketoacidosis.',
  critical:[{id:'glucose',by:90,label:'Glucose; the number is the diagnosis'},
   {id:'iv',by:110,label:'Two points of access',alt:['io']},
   {id:'crystalloid',by:170,label:'Fluid is the treatment — most of the deficit is water, and it is enormous'},
@@ -4433,7 +4463,7 @@ const SCN=[
   {id:'abx',by:320,label:'Look for the precipitant; it is usually infection'},
   {id:'teleconsult',by:340,label:'Critical care by teleconsult'},
   {id:'medevac',by:400,label:'Evacuate'}],
- goal:'Hyperosmolar state is not ketoacidosis with bigger numbers. There is no significant acidosis and no ketones, the deficit is water more than salt, and it has built over days rather than hours. Fluid does most of the work, insulin comes later and slower, and dropping the osmolality too fast is what causes cerebral oedema. Check the potassium before any insulin goes in.'
+ goal:'Hyperosmolar state is not ketoacidosis with bigger numbers. No significant acidosis, no ketones, the deficit is water more than salt, and it has built over days rather than hours. Fluid does most of the work and brings the glucose down on its own; insulin comes later and at half the ketoacidosis rate. Expect the measured sodium to RISE as the glucose falls — that is water moving back into the cells, and it is not a reason to reach for hypotonic fluid. Nought point nine percent saline stays the main fluid. Watch the rates: osmolality down no faster than three to eight an hour, sodium no more than ten in twenty-four hours, glucose no faster than five millimoles an hour. Dropping the osmolality too fast causes cerebral oedema. And know the potassium before any insulin goes in.'
 },
 {
  id:'m24',kind:'med',title:'A cut he treated at home',
@@ -4546,6 +4576,7 @@ function vitals(S){
  const eff=clamp(deficit+p.tension*.30+(p.tamponade||0)*.34+(p.anaphylaxis||0)*.28+(p.septic||0)*.20+(p.dehydration||0)*.15,0,1);
  let hr=(p.hrBase||72)-(p.nerve?p.nerve*46-(S.flags.atropine||0)*16:0)+eff*135+p.pain*2.4+(p.hot?(p.tempC-37)*9:0)+(S.flags.pressor?12:0);
  if(p.periArrest)hr-=p.periArrest*40;
+ if(p.seizing)hr+=45;
  if(p.kSev)hr-=p.kSev*80;
  if(p.dka)hr+=p.dka*34;
  if(p.malaria)hr+=p.malaria*30;
@@ -4565,12 +4596,16 @@ function vitals(S){
  if(S.flags.bvm||S.airwayDevice)spo2+=4;
  if(S.flags.oesophageal)spo2-=45;
  if(S.flags.mainstem)spo2-=12;
+ /* A pulse oximeter cannot tell carboxyhaemoglobin from oxyhaemoglobin. It reads
+    falsely normal and goes on reading falsely normal — that is the trap. */
+ if(p.coMask&&!S.flags.coOx)spo2=99;
  spo2=clamp(Math.round(spo2),40,100);
- let rr=14+eff*30+p.pain*.8+p.tension*14+(p.bronchospasm||0)*10+(p.hot?8:0)+(p.dka?14:0)+(p.malaria?6:0);
+ let rr=14+eff*30+p.pain*.8+p.tension*14+(p.bronchospasm||0)*10+(p.hot?8:0)+(p.dka?14:0)+(p.malaria?6:0)+(p.shunt||0)*30;
  if(p.opioid&&!S.flags.naloxone)rr=Math.max(3,6-Math.round(p.opioid*4));
  if(S.airwayDevice==='ett'||S.airwayDevice==='cric'||S.flags.bvm)rr=12;
  rr=clamp(Math.round(rr),4,48);
- let etco2=clamp(Math.round(38-eff*22-p.tension*10+(p.bronchospasm||0)*6),8,60);
+ let etco2=clamp(Math.round(38-eff*22-p.tension*10+(p.bronchospasm||0)*6
+   +(p.opioid&&!S.flags.naloxone?p.opioid*32:0)+(p.bronchospasm||0)*8),8,75);
  if(S.flags.oesophageal)etco2=Math.max(2,Math.round(etco2*.1));
  const map=Math.round((sbp+2*dbp)/3);
  let gcs=p.gcsBase;
@@ -6830,7 +6865,7 @@ function toMenu(){
  document.body.classList.remove('pre');$('#start').classList.remove('hidden');
  renderMenu();
 }
-function undoneCases(){return SCN.filter(s=>!DONE[s.id]);}
+function undoneCases(){return liveCases().filter(s=>!DONE[s.id]);}
 const MCI_PAIRS=[
  ['t09','t01'],['t03','t07'],['t12','t02'],['t05','t04'],['t20','t22'],['t16','t15'],['t06','t10'],['t13','t14'],
 ];
@@ -6840,18 +6875,28 @@ function startMCI(){
  if(!a||!b)return;
  startScenarioPair(a,b);
 }
+/* ---- ARCHIVED CASES ----
+   Held back from the menu pending clinical verification. The case content is
+   untouched; set ARCHIVE_MED to false to bring them all back. */
+const ARCHIVE_MED=false;
+const isArchived=sc=>ARCHIVE_MED&&sc.kind==='med';
+const liveCases=()=>SCN.filter(x=>!isArchived(x));
 let MENUFILTER='all';
-function filteredCases(){return MENUFILTER==='all'?SCN:SCN.filter(x=>x.kind===MENUFILTER);}
+function filteredCases(){const L=liveCases();return MENUFILTER==='all'?L:L.filter(x=>x.kind===MENUFILTER);}
 function renderFilter(){
  const f=$('#scnFilter');if(!f)return;
- const n={all:SCN.length,trauma:SCN.filter(x=>x.kind==='trauma').length,med:SCN.filter(x=>x.kind==='med').length};
- f.innerHTML=[['all','Everything',n.all],['trauma','Trauma',n.trauma],['med','Medical',n.med]]
+ const L=liveCases();
+ const n={all:L.length,trauma:L.filter(x=>x.kind==='trauma').length,med:L.filter(x=>x.kind==='med').length};
+ const tabs=ARCHIVE_MED?[['all','Everything',n.all],['trauma','Trauma',n.trauma]]
+  :[['all','Everything',n.all],['trauma','Trauma',n.trauma],['med','Medical',n.med]];
+ f.innerHTML=tabs
   .map(([k,lbl,c])=>'<button class="fbtn'+(MENUFILTER===k?' on':'')+'" data-f="'+k+'">'+lbl+' <span>'+c+'</span></button>').join('');
  let fb=[];try{fb=f.querySelectorAll('[data-f]')||[];}catch(e){fb=[];}
  Array.prototype.forEach.call(fb,b=>{b.onclick=()=>{MENUFILTER=b.dataset.f;renderMenu();};});
 }
 function renderMenu(){
  const g=$('#scnGrid');g.innerHTML='';
+ if(ARCHIVE_MED&&MENUFILTER==='med')MENUFILTER='all';
  renderFilter();
  const pool=filteredCases();
  const left=pool.filter(x=>!DONE[x.id]).length;
@@ -6866,6 +6911,13 @@ function renderMenu(){
   b.onclick=()=>startScenario(s);
   g.appendChild(b);
  });
+ if(ARCHIVE_MED){
+  const note=document.createElement('div');
+  note.className='archnote';
+  const nMed=SCN.filter(x=>x.kind==='med').length;
+  note.innerHTML='<b>The '+nMed+' medical cases are held back.</b> They are being verified line by line against primary sources — guidelines, not recall — after one was found to carry an insulin rate at twice the correct figure. Nothing has been deleted; they return as each is checked. The '+liveCases().length+' trauma cases are available.';
+  g.appendChild(note);
+ }
  const mci=document.createElement('button');mci.className='scn mci';
  mci.innerHTML='<div class="meta cond">TWO CASUALTIES</div><h3 class="cond">2</h3><p>two beds, one team</p>';
  mci.onclick=startMCI;
@@ -6952,6 +7004,9 @@ const REFS=[
    {t:'2025 AHA Guidelines for CPR and Emergency Cardiovascular Care — Executive Summary',
     d:'The current cycle. Overview of what changed across BLS, ALS and paediatrics.',
     u:'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001372'},
+   {t:'JBDS: Management of the Hyperosmolar Hyperglycaemic State in Adults (Diabetic Medicine, 2023)',
+    d:'The source for the hyperosmolar case. Osmolality ≥320 by 2×Na + glucose + urea, glucose ≥30 mmol/L, ketones ≤3.0, pH >7.3, bicarbonate ≥15. 0.9% saline as the principal fluid; insulin at 0.05 units/kg/h and only once the osmolality stops falling on fluid alone, unless there is ketonaemia; osmolality down 3 to 8 mOsm/kg/h, sodium no more than 10 mmol/L in 24 hours, glucose no faster than 5 mmol/L/h. The ADA differs — 0.1 units/kg/h and a slower osmolality target — and the guidelines are consensus rather than trial evidence.',
+    u:'https://onlinelibrary.wiley.com/doi/10.1111/dme.15005'},
    {t:'JTS CPG: Burn Care',
     d:'Rule of Tens to start the fluid — percentage burn times ten is millilitres an hour for an adult of 40 to 80 kilos — then titrate to urine output of 30 to 50 mL/hour in an adult, half to one per kilo in a child, adjusting by 20 to 25 percent an hour. Escharotomy for circumferential full-thickness burns that impair breathing or perfusion.',
     u:'https://jts.health.mil/assets/docs/cpgs/Burn_Management_PFC_13_Jan_2017_ID57.pdf'},
