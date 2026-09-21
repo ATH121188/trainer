@@ -203,6 +203,23 @@ label.opt input{margin-top:3px;flex:none;width:17px;height:17px;accent-color:var
 .chip.start{background:var(--ecg);border-color:var(--ecg);color:#0b1a10;font-weight:700}
 body.pre .trace,body.pre .num{opacity:.5}
 .barctl{display:none;gap:6px;margin-bottom:6px}
+.bayhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.comms{display:none;gap:6px}
+.comms.on{display:flex}
+.comms button{border:1px solid var(--edge-hot);background:var(--panel-2);color:var(--sand);font:inherit;
+ font-weight:600;letter-spacing:.02em;border-radius:999px;cursor:pointer;white-space:nowrap;text-transform:none}
+.commsmain button{font-size:12px;padding:4px 11px;line-height:1.3}
+.commsbar{margin-top:6px}
+.commsbar button{flex:1 1 0;font-size:13px;padding:7px 8px;min-height:34px;border-radius:8px}
+.comms button.radio{border-color:#c9a13a;color:#e8c56a}
+.comms button.radio.waiting{opacity:.6}
+.comms button.radio.live{background:#5a4512;color:#fff4d6;border-color:#e8c56a;animation:radiolive 1.6s ease-in-out infinite}
+.comms button.surgeonbtn{border-color:#6f9fd8;color:#a9c8f0}
+.comms button.surgeonbtn.waiting{opacity:.65}
+.comms button.surgeonbtn.present{background:#1d3350;color:#dbe9fb}
+/* one place at a time: the bay header on larger screens, under Tap to Speak on a phone */
+@media (min-width:541px){.commsbar,.commsbar.on{display:none}}
+@media (max-width:540px){.commsmain,.commsmain.on{display:none}}
 .barctl button.radio{border-color:#c9a13a;color:#e8c56a}
 .barctl button.surgeonbtn{border-color:#6f9fd8;color:#a9c8f0}
 .barctl button.surgeonbtn.waiting{opacity:.65}
@@ -408,7 +425,7 @@ body.running{height:calc(var(--vvh,100dvh) - env(safe-area-inset-top,0px))}
     <div class="card" id="medsCard"><h4 class="cond">INFUSIONS &amp; MEDS</h4><div id="meds"></div></div>
     </div>
     <div class="cols">
-      <div class="card"><h4 class="cond"><span id="strip">TRAUMA BAY</span></h4><div id="log"></div></div>
+      <div class="card"><h4 class="cond bayhead"><span id="strip">TRAUMA BAY</span><span class="comms commsmain" id="commsMain"></span></h4><div id="log"></div></div>
     </div>
     <div class="hidden"><div id="roster"></div><div id="instrBtns"></div><div id="instrCard"></div></div>
   </section>
@@ -418,6 +435,7 @@ body.running{height:calc(var(--vvh,100dvh) - env(safe-area-inset-top,0px))}
   <div class="inner">
     <div class="barctl" id="barCtl"></div>
     <button class="speakbar" id="btnSpeak"><span class="dot"></span><span id="speakLbl">TAP TO SPEAK</span></button>
+    <div class="comms commsbar" id="commsBar"></div>
     <button class="orderbtn hidden" id="btnOrders">☰ &nbsp;ORDERS</button>
     <div class="quick" id="quick"></div>
     <div class="entry">
@@ -487,8 +505,15 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.40';
+const VERSION='1.42';
 const CHANGELOG=[
+ {v:'1.42',name:'Surgeon and evac buttons on the main page',
+  top:['On a laptop or tablet the Call surgeon and Call for evac buttons now sit on the right of the Trauma Bay header — small, and always in view. On a phone they sit just below Tap to Speak.',
+       'They appear once the patient is through the door, not during preparation.'],
+  detail:[]},
+ {v:'1.41',name:'The surgeon and evac buttons are visible everywhere',
+  top:['In 1.40 the Call surgeon and Call for evac buttons sat in a control bar that only appears on phone-sized screens, so on a laptop or tablet they could not be seen. They now have their own row above the order box on every screen, and stay visible while you are typing.'],
+  detail:['The evac button reads Call for evac first, then Evac requested, then Talk to Dustoff once the aircrew answers. Press it again to come back to the room.']},
  {v:'1.40',name:'Buttons for the surgeon and the bird, and a lot learned from live runs',
   top:['Two new buttons in the bottom bar. Call surgeon brings Dr. Moon into the room — no radio phase. Call for evac requests the bird; once Dustoff answers, the same button keys the radio, and nothing you say reaches them unless it is keyed.',
        'The medical library is ten cases: the nine reviewed in live runs plus exertional heat stroke. Nothing names a laboratory result or a blood sugar before somebody has checked it.',
@@ -6802,6 +6827,7 @@ function renderStrip(){
  el.innerHTML='TRAUMA BAY &nbsp;·&nbsp; '+parts.join(' &nbsp;·&nbsp; ');
 }
 function renderRoster(){
+ try{syncComms();}catch(e){}
  renderStrip();
  const r=$('#roster');if(!r)return;r.innerHTML='';
  TEAM.forEach(p=>{
@@ -6832,14 +6858,40 @@ function setRadioMode(on){
  say('sys',on?'Radio keyed. You are talking to Dustoff 2-1 — the team cannot hear you. Press the radio button again to come back to the room.':'Back in the room. The team can hear you again.');
  syncBarCtl();renderRoster();
 }
+function syncComms(){
+ const places=[$('#commsMain'),$('#commsBar')].filter(Boolean);
+ if(!places.length)return;
+ /* nothing until the patient is through the door */
+ if(!S||S.over||S.phase!=='run'){places.forEach(c=>{c.innerHTML='';c.dataset.last='';c.classList.remove('on');});return;}
+ const html='<button class="surgeonbtn'+(S.flags.surgeonHere?' present':S.flags.surgeon?' waiting':'')+'" data-act="surgeon">'+
+   (S.flags.surgeonHere?'🩺 Dr. Moon is here':S.flags.surgeon?'🩺 Dr. Moon on her way…':'🩺 Call surgeon')+'</button>'+
+  '<button class="radio'+(S.radioMode==='flight'?' live':'')+(S.flags.medevac&&!S.evacAnswered?' waiting':'')+'" data-act="radio">'+evacLabel()+'</button>';
+ places.forEach(c=>{
+ c.classList.add('on');
+ if(c.dataset.last===html)return;   /* only redraw when something changed, so a press is never interrupted */
+ c.dataset.last=html;c.innerHTML=html;
+ c.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+  const a=b.dataset.act;
+  if(a==='surgeon'){
+   if(!S.flags.surgeon)submitOrder('call the surgeon');
+   else if(!S.flags.surgeonHere)say('sys','Dr. Moon is on her way.');
+   else say('sys','Dr. Moon is in the room. Speak to her by name — "Dr. Moon, fasciotomy" — or give her the picture.');
+  }else if(a==='radio'){
+   if(!S.flags.medevac)submitOrder('request medevac');
+   else if(!S.evacAnswered)say('sys','Dustoff 2-1 has not answered yet.');
+   else setRadioMode(S.radioMode!=='flight');
+  }
+  setTimeout(syncComms,0);
+ });
+ });
+}
 function syncBarCtl(){
+ syncComms();
  const c=$('#barCtl');if(!c)return;
  const bits=[];
  if(S&&!S.over&&S.phase==='pre')bits.push('<button class="go" data-act="start">▶ START CASE</button>');
  if(S&&!S.over&&S.phase==='run'){
-  bits.push('<button class="surgeonbtn'+(S.flags.surgeonHere?' present':S.flags.surgeon?' waiting':'')+'" data-act="surgeon">'+
-   (S.flags.surgeonHere?'🩺 Dr. Moon is here':S.flags.surgeon?'🩺 Dr. Moon on her way…':'🩺 Call surgeon')+'</button>');
-  bits.push('<button class="radio'+(S.radioMode==='flight'?' live':'')+(S.flags.medevac&&!S.evacAnswered?' waiting':'')+'" data-act="radio">'+evacLabel()+'</button>');
+
   bits.push('<button data-act="pause">'+(S.running?'Pause':'Resume')+'</button>');
   bits.push('<button class="warn" data-act="end">End case</button>');
  }
