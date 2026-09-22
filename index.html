@@ -38,6 +38,37 @@ body.running{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 body.running .wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding-bottom:6px}
 body.running header.top{flex:none}
 body.running #sim{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+body.running .simmain{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+#bayCard{padding:0 0 6px;flex:none}
+#bayCard h4{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+#bayCard .bayhint{font-size:11px;color:var(--sand-faint);letter-spacing:.04em}
+#bayCard .baybody{padding:0 8px 4px}
+#bayCard svg{display:block;width:100%;height:auto}
+@media (min-width:901px){
+ body.running #sim{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:10px;align-items:stretch}
+ #bayCard .bayhint{display:none}
+ #bayCard h4{cursor:default}
+}
+@media (max-width:900px){
+ #bayCard .baybody{display:none}
+ #bayCard.open{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+  z-index:850;background:var(--panel);border-color:var(--edge-hot);display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+ #bayCard.open h4{flex:none}
+ #bayCard.open .baybody{display:flex;flex:1 1 auto;min-height:0;align-items:center;justify-content:center;padding:4px 8px 8px}
+ #bayCard.open svg{width:auto;height:100%;max-width:100%;max-height:100%}
+ #bayCard.open .bayhint{display:inline}
+ body.typing #bayCard{display:none}
+}
+.bay-t{font-family:"Avenir Next Condensed","Roboto Condensed","Segoe UI Semibold",system-ui,sans-serif;font-size:11px;fill:var(--sand-dim)}
+.bay-n{font-family:"Avenir Next Condensed","Roboto Condensed","Segoe UI Semibold",system-ui,sans-serif;font-size:12px;font-weight:700;fill:var(--sand)}
+.bay-l{font-family:"Avenir Next Condensed","Roboto Condensed","Segoe UI Semibold",system-ui,sans-serif;font-size:10.5px;fill:var(--sand-dim)}
+.bay-pill{fill:#1d3350;stroke:#6f9fd8;stroke-width:.6}
+.bay-pill.red{fill:#4a1b1b;stroke:#d85a4f}
+.bay-pill.amber{fill:#4a3a10;stroke:#e8c56a}
+.bay-pill text{fill:#dbe9fb}
+.bay-prog{animation:baypulse 1.3s ease-in-out infinite}
+@keyframes baypulse{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.bay-prog{animation:none;opacity:.7}}
 body.running .cols{flex:1 1 auto;min-height:0}
 body.running .cols{display:flex;flex-direction:column;min-height:0}
 body.running .cols>.card{flex:1 1 auto;height:100%;display:flex;flex-direction:column;min-height:0}
@@ -440,6 +471,7 @@ body.running{height:calc(var(--vvh,100dvh) - env(safe-area-inset-top,0px))}
   </section>
 
   <section id="sim" class="hidden">
+   <div class="simmain">
     <div class="topline">
     <div class="monitor">
       <div class="mon-head cond">
@@ -468,6 +500,8 @@ body.running{height:calc(var(--vvh,100dvh) - env(safe-area-inset-top,0px))}
     <div class="cols">
       <div class="card"><h4 class="cond bayhead"><span id="strip">TRAUMA BAY</span><span class="comms commsmain" id="commsMain"></span></h4><div id="log"></div></div>
     </div>
+   </div>
+   <aside class="card" id="bayCard"><h4 class="cond" id="bayHead">BAY <span class="bayhint">tap to open</span></h4><div class="baybody" id="bayBody"></div></aside>
     <div class="hidden"><div id="roster"></div><div id="instrBtns"></div><div id="instrCard"></div></div>
   </section>
 </div>
@@ -546,8 +580,20 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.46';
+const VERSION='1.48';
 const CHANGELOG=[
+ {v:'1.48',name:'Bay map fixes from the first phone run',
+  top:['On a phone the bay now opens as a full-screen sheet over everything, instead of being squeezed under the monitor. Tap BAY again to close it.',
+       'An impaled object is on the map from the moment the patient arrives — "Impaled — bar in" — and becomes "Bar secured" once it is packed.',
+       'The team dots now glide to where they are working and back. They were jumping, because browsers do not animate an SVG position set the way I had set it.'],
+  detail:[]},
+ {v:'1.47',name:'A map of the bay',
+  top:['On a wide screen, a Bay panel now sits to the right of everything else: a top-down view of the bed with the patient, what has been done to him, and where the team is. On a phone it is a strip under the conversation — tap BAY to open it.',
+       'Finished interventions are solid markers where they are — a tourniquet with its running time, packing, binder, chest tube on the correct side, IO at its site, IV count, tube, collar, pads, Foley. Things in progress pulse until they are done.',
+       'The team moves. Each person sits at their station until they pick up a task, then slides to where the work is and back. Busy dots say what they are doing; free ones say free. Dr. Moon is dashed next door, then on her way, then solid in the room.'],
+  detail:['Drugs with no place on the body go in a row of chips under the bed, most recent first. A tourniquet marker turns amber at two hours.',
+          'Nobody quotes a number of seconds any more. "Give me 23 seconds" is now "give me a minute", "a few more seconds", "nearly there", scaled to what is actually left.',
+          'The injury layer — wounds drawn on the body as they are found, and the back greyed out until the log roll — is the next step.']},
  {v:'1.46',name:'The tutorial is easier to find',
   top:['The interactive tutorial now sits at the top of the Setup page, above every setting: "New to the trainer? A guided case that shows you every control."'],
   detail:[]},
@@ -1470,7 +1516,7 @@ act({id:'readback_req',instant:true,label:'Ask for a read-back',cat:'CMD',by:'do
  al:['read it back','read that back','read back','say it back','what did i just order','confirm my last','repeat my order','what are you doing','what is everybody doing','who is doing what','check in','status of tasks','what is in progress','what is everyone doing','what everyone doing','who is doing what right now','what is everybody on','where is everybody'],
  run:S=>{
   const lines=[];
-  TEAM.forEach(pp=>{const b=S.busy[pp.id];if(b)lines.push(pp.nm+' is on '+b.label.toLowerCase()+', '+Math.max(0,Math.round(b.until-S.t))+' seconds out');});
+  TEAM.forEach(pp=>{const b=S.busy[pp.id];if(b)lines.push(pp.nm+' is on '+b.label.toLowerCase()+', '+roughly(Math.max(0,Math.round(b.until-S.t))));});
   S.queue.forEach(q=>lines.push(q.doer.nm+' has '+q.a.label.toLowerCase()+' queued'));
   if(!lines.length)return{say:'Nobody has a task, sir. We are all standing here waiting on you.',nocredit:true};
   return{say:lines.join('. ')+'. That is everything running.',nocredit:true};}});
@@ -1579,7 +1625,7 @@ act({id:'howlong',instant:true,label:'Ask how long something will take',cat:'CMD
  run:S=>{
   const busy=TEAM.filter(pp=>S.busy[pp.id]);
   if(!busy.length)return{say:'Nothing running, sir. We are waiting on you.',nocredit:true};
-  return{say:busy.map(pp=>pp.nm+': '+Math.max(0,Math.round(S.busy[pp.id].until-S.t))+' seconds on the '+S.busy[pp.id].label.toLowerCase()).join('. ')+'.',nocredit:true};}});
+  return{say:busy.map(pp=>pp.nm+': '+S.busy[pp.id].label.toLowerCase()+', '+roughly(Math.max(0,Math.round(S.busy[pp.id].until-S.t)))).join('. ')+'.',nocredit:true};}});
 act({id:'canyou',instant:true,label:'Check whether something is possible',cat:'CMD',by:'dorian',dur:0,
  al:['can you do that','are you able','is that possible','have we got that','do we have that','have we got one',
   'do we have any','is there any left','what have we got','what is in the cooler','how much blood do we have','what is available'],
@@ -5669,6 +5715,12 @@ function escalateRepeat(text,who){
     ' Tell me what you actually want and I will do it.');
  return strip(first).replace(/[.!?]+$/,'')+'. As before.';
 }
+function roughly(secs){
+ if(secs<=5)return rnd(['nearly there','just finishing','almost done']);
+ if(secs<=20)return rnd(['a few more seconds','nearly there','give me a moment']);
+ if(secs<=60)return rnd(['give me a minute','a minute or so','still working on it']);
+ return rnd(['a couple of minutes','this takes a while','still on it']);
+}
 function say(kind,text,who){
  text=pronouns(text);
  if(kind==='team'&&who&&S&&String(text).length>40&&!/^(copy|roger|on it|moving|same answer)/i.test(text)){
@@ -6501,7 +6553,7 @@ async function submitOrder(raw){
  if(S.radio&&S.radio.id==='surgeon')S.radio=null;   /* the surgeon is a person in the room, not a radio */
  if(S.flags.surgeon&&/\b(are you here|where are you|where is (dr\.? )?moon|is the surgeon here|how long( until| till)? (she|the surgeon|moon))\b/i.test(raw)){
   if(S.flags.surgeonHere)say('team','Right beside you, sir.',person('surgeon').nm);
-  else say('team','About '+Math.max(5,Math.round(45-(S.t-(S.flags.surgeonComing||S.t))))+' seconds out, sir.',person('mitch').nm);
+  else say('team',(45-(S.t-(S.flags.surgeonComing||S.t)))<15?'Any second now, sir.':'Not long, sir — she is coming down the corridor.',person('mitch').nm);
   return;
  }
  if(S.flags.surgeonHere&&/\b(let me (tell|brief) you|here is the story|here's the story|let me give you the picture|let me update you)\b/i.test(raw)){
@@ -6686,7 +6738,7 @@ function dispatch(a,raw,who){
  if(S.phase==='run'&&forMoon&&S.flags.surgeon&&!S.flags.surgeonHere&&!['surgeon','surgeon_update','book_or','or'].includes(a.id)){
   S.pendingForMoon=(S.pendingForMoon||[]).concat({id:a.id,raw});
   const left=Math.max(5,Math.round(45-(S.t-(S.flags.surgeonComing||S.t))));
-  say('team','She is still on her way, sir — about '+left+' seconds. I will have the kit open for her.',person('mitch').nm);
+  say('team','She is still on her way, sir — '+(left<15?'any second now':'not long')+'. I will have the kit open for her.',person('mitch').nm);
   return;
  }
  if(S.phase==='run'&&forMoon&&!S.flags.surgeon&&!['surgeon','surgeon_update','book_or','or','reboa'].includes(a.id)&&(who&&who.id==='surgeon')){
@@ -6741,9 +6793,8 @@ function dispatch(a,raw,who){
    const parallel=['iv','io','ej'].includes(a.id)&&who&&who.id!==pid&&!['surgeon','flight'].includes(who.id);
    if(!parallel&&j&&j.job&&j.job.a&&j.job.a.id===a.id&&!j.job.isPrep&&(!MULTI||j.job.pt===S)){
     diag('duplicate',raw,a.id);
-    say('team',rnd(['I am doing that now, sir — '+Math.max(0,Math.round(j.until-S.t))+' seconds.',
-      'Already on it. '+Math.max(0,Math.round(j.until-S.t))+' seconds out.',
-      'In progress, sir. Give me '+Math.max(0,Math.round(j.until-S.t))+' seconds.']),person(pid).nm);
+    const r=roughly(Math.max(0,Math.round(j.until-S.t))),R=r.charAt(0).toUpperCase()+r.slice(1);
+    say('team',rnd(['I am on it, sir — '+r+'.','Already doing that. '+R+'.','Working on it, sir. '+R+'.','Same order, sir — I have it. '+R+'.']),person(pid).nm);
     return;
    }
   }
@@ -6970,6 +7021,7 @@ function finishInner(j,a,raw,doer,isPrep){
  if(!out.nocredit){
   S.done.push({id:a.id,t:S.t,label:a.label,by:doer.id,lead:(!MULTI||S===PT[ACT])&&!SILENT,
    find:out.find?String(out.find).slice(0,240):null});
+  try{const l=detectLat(clean);if(l){S.sides=S.sides||{};S.sides[a.id]=l;}}catch(e){}
   const MED={txa:'TXA',calcium:'Calcium',analgesia:'Analgesia',im_meds:'Ketamine IM',epi_im:'Epinephrine IM',
    epi_drip:'Pressor infusion',hypertonic:'Hypertonic saline',k_treatment:'Potassium shift',
    antihistamine:'Antihistamine / steroid',albuterol:'Bronchodilator',abx:'Antibiotics',
@@ -7163,7 +7215,135 @@ function drawTraces(dt){
 }
 
 /* ---------------- RENDER ---------------- */
+/* ================= THE BAY: a top-down map of the bed ================= */
+const BAY_W=296,BAY_H=470,BAY_CX=150;
+const BAY_ANCH={airway:[150,92],neck:[150,105],chestR:[130,132],chestL:[170,132],humR:[106,118],humL:[194,118],
+ armR:[106,158],armL:[194,158],abdomen:[150,172],torso:[150,150],pelvis:[150,196],groinR:[139,208],groinL:[161,208],
+ thighR:[131,236],thighL:[169,236],kneeR:[131,262],kneeL:[169,262],tibiaR:[131,290],tibiaL:[169,290],foot:[150,318]};
+const BAY_HOME={amy:[150,26],dorian:[44,118],lauren:[256,118],mitch:[44,258],majorb:[256,258],surgeon:[44,330]};
+/* where a job happens on the body; patient's right is the viewer's left */
+function bayAnchor(job){
+ if(!job||!job.a)return null;
+ const id=job.a.id,raw=String(job.raw||'');
+ let lat=null;try{lat=job.a.lat?detectLat(raw):null;}catch(e){}
+ if(!lat)lat=(S.sides&&S.sides[id])||bayDefaultSide(id);
+ const R=lat==='left'?'L':'R';
+ const A=/^(airway_assess|jawthrust|npa|opa|bvm|rsi|timeout|suction|o2|airway_plan|postintubation|sedate|rsi_meds|gcs|pupils|neonate)$/;
+ if(A.test(id))return 'airway';
+ if(/^(cric|collar)$/.test(id))return 'neck';
+ if(/^(listen|chesttube|needle|fingerthor|thoracotomy|pericardio|defib|pads|cpr|leads|spo2|nibp|monitor_all|etco2|temp|ecg12|window)$/.test(id))return 'chest'+R;
+ if(/^io$/.test(id))return /stern/i.test(raw)?'chestL':/tibia|shin/i.test(raw)?'tibia'+R:'hum'+R;
+ if(/^(central|reboa)$/.test(id))return 'groin'+R;
+ if(/^(fast|echo)$/.test(id))return 'abdomen';
+ if(/^(primary|expose|secondary|logroll|bleedcheck|decon|look)$/.test(id))return 'torso';
+ if(/^(pelvis_assess|binder|foley)$/.test(id))return 'pelvis';
+ if(/^(pack|junctional_tq)$/.test(id))return 'groin'+R;
+ if(/^(tq|traction|splint|fasciotomy)$/.test(id))return 'thigh'+R;
+ if(/^(impaled|surgery_here|laparotomy|hysterotomy)$/.test(id))return 'abdomen';
+ if(job.a.cat==='RX'||job.a.cat==='C'||/^(iv|ej|labs|glucose|blood|txa|calcium|abx|analgesia|crystalloid)$/.test(id))return job.doer&&job.doer.id==='dorian'?'armR':'armL';
+ return null;
+}
+function bayDefaultSide(id){
+ const t=((S.scn.title||'')+' '+(S.scn.mist||'')+' '+(S.scn.arrival||'')).toLowerCase();
+ if(/^(tq|traction|splint|fasciotomy|pack|junctional_tq)$/.test(id)){const m=t.match(/\b(left|right)\b[^.]{0,20}\b(thigh|leg|groin|arm|forearm|knee|calf)\b/);if(m)return m[1];}
+ if(/^(chesttube|needle|fingerthor)$/.test(id)&&S.p.tensionSide)return S.p.tensionSide;
+ return 'right';
+}
+function bayDotPos(pid,anchorKey){
+ const home=BAY_HOME[pid];
+ if(!anchorKey)return home;
+ const a=BAY_ANCH[anchorKey];if(!a)return home;
+ if(pid==='amy'&&(anchorKey==='airway'||anchorKey==='neck'))return home;
+ const dx=a[0]<BAY_CX?-44:a[0]>BAY_CX?44:(home[0]<BAY_CX?-44:44);
+ return [a[0]+dx,Math.max(60,Math.min(310,a[1]))];
+}
+function bayInit(){
+ const b=$('#bayBody');if(!b||b.dataset.built)return;
+ b.dataset.built='1';
+ const dots=Object.keys(BAY_HOME).map(pid=>{const h=BAY_HOME[pid];
+  return '<g class="bay-dot" id="bd_'+pid+'" transform="translate('+h[0]+','+h[1]+')"><circle r="11" fill="#1f2b25" stroke="#6b7a70" stroke-width=".8"/><text class="bay-n" text-anchor="middle" dominant-baseline="central" y="0.5"></text><text class="bay-l" text-anchor="middle" y="24"></text><text class="bay-l" text-anchor="middle" y="35"></text></g>';}).join('');
+ b.innerHTML='<svg viewBox="0 0 '+BAY_W+' '+BAY_H+'" role="img" aria-label="Map of the bay: the patient, what has been done, and where the team is">'+
+  '<rect x="80" y="48" width="140" height="272" rx="10" fill="#0f1613" stroke="#3a4a42" stroke-width=".8"/>'+
+  '<text class="bay-t" x="88" y="62">R</text><text class="bay-t" x="206" y="62">L</text>'+
+  '<g fill="#233129" stroke="#5c6d64" stroke-width=".8"><circle cx="150" cy="80" r="14"/><rect x="130" y="97" width="40" height="88" rx="8"/><rect x="106" y="99" width="17" height="68" rx="7"/><rect x="177" y="99" width="17" height="68" rx="7"/><rect x="131" y="189" width="16" height="118" rx="7"/><rect x="153" y="189" width="16" height="118" rx="7"/></g>'+
+  '<g id="bayMarks"></g><g id="bayChips"></g><text class="bay-l" id="bayNote" x="8" y="14"></text>'+dots+'</svg>';
+ const card=$('#bayCard');
+ if(card&&!card.dataset.wired){card.dataset.wired='1';$('#bayHead').onclick=()=>{if(window.matchMedia('(max-width:900px)').matches){card.classList.toggle('open');
+   const h=card.querySelector('.bayhint');if(h)h.textContent=card.classList.contains('open')?'tap to close':'tap to open';}};}
+}
+function bayPill(x,y,txt,cls,prog){
+ const w=Math.max(30,Math.round(txt.length*5.6)+12);
+ return '<g class="'+(prog?'bay-prog':'')+'" transform="translate('+Math.round(x-w/2)+','+Math.round(y-8)+')">'+
+  '<rect class="bay-pill '+(cls||'')+'" width="'+w+'" height="16" rx="8"'+(prog?' fill="none" stroke-dasharray="3 2"':'')+'/>'+
+  '<text class="bay-t" x="'+(w/2)+'" y="8.5" text-anchor="middle" dominant-baseline="central" style="fill:#dbe9fb">'+esc(txt)+'</text></g>';
+}
+const BAY_TGT={},BAY_CUR={};let BAY_RAF=null;
+function bayAnimate(){
+ if(BAY_RAF)return;
+ const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+ const stepFn=()=>{
+  BAY_RAF=null;let moving=false;
+  Object.keys(BAY_TGT).forEach(pid=>{const t=BAY_TGT[pid],c=BAY_CUR[pid],g=$('#bd_'+pid);if(!t||!c||!g)return;
+   const dx=t[0]-c[0],dy=t[1]-c[1];
+   if(Math.abs(dx)<.5&&Math.abs(dy)<.5){c[0]=t[0];c[1]=t[1];}
+   else{const k=reduce?1:.12;c[0]+=dx*k;c[1]+=dy*k;moving=true;}
+   g.setAttribute('transform','translate('+c[0].toFixed(1)+','+c[1].toFixed(1)+')');});
+  if(moving)BAY_RAF=requestAnimationFrame(stepFn);
+ };
+ BAY_RAF=requestAnimationFrame(stepFn);
+}
+function renderBay(){
+ if(!S||!$('#bayBody'))return;
+ bayInit();
+ const marks=[],used={};
+ const at=(key,txt,cls,prog)=>{const a=BAY_ANCH[key];if(!a)return;used[key]=(used[key]||0)+1;marks.push(bayPill(a[0],a[1]+(used[key]-1)*15,txt,cls,prog));};
+ const F=S.flags,side=(id,d)=>((S.sides&&S.sides[id])||bayDefaultSide(id)||d)==='left'?'L':'R';
+ const tqD=(S.done||[]).find(d=>d.id==='tq');
+ if(F.tq){const el=tqD?S.t-tqD.t:0;at('thigh'+side('tq'),'TQ'+(F.tq>1?' ×'+F.tq:'')+' '+mmss(el),el>7200?'amber':'red');}
+ if(F.packed)at('groin'+side('pack'),'Packed','red');
+ if(F.binder)at('pelvis','Binder','red');
+ if(S.p.impaled||F.impaledSecured)at('abdomen',F.impaledSecured?'Bar secured':'Impaled — bar in','red');
+ if(F.chestTube)at('chest'+side('chesttube'),'Chest tube');
+ else if(F.decompressed)at('chest'+side('needle'),'Needle');
+ if(F.thoracotomy)at('chestL','Thoracotomy','red');
+ if(F.pericardio)at('chestL','Pericardio');
+ if(F.reboa)at('groin'+side('reboa'),'REBOA','red');
+ if(F.fasciotomy)at('thigh'+side('fasciotomy'),'Fasciotomy');
+ if(F.traction)at('knee'+side('traction'),'Traction');
+ if(F.io)at(/stern/.test(F.ioSite||'')?'chestL':/tibia/.test(F.ioSite||'')?'tibia'+(/other/.test(F.ioSite||'')?'L':'R'):'hum'+(/other/.test(F.ioSite||'')?'L':'R'),'IO');
+ if(S.access>=1)at('armL','IV'+(S.access>1?' ×'+S.access:''));
+ if(S.airwayDevice)at('airway',S.airwayDevice==='ett'?'ETT'+(S.flags.vent?' · vent':''):S.airwayDevice==='igel'?'i-gel':S.airwayDevice==='cric'?'Cric':'Airway');
+ else if(F.bvm)at('airway','BVM');else if(F.npa)at('airway','NPA'+(S.o2>=.9?' · O₂':''));else if(S.o2>=.9)at('airway','O₂ 15 L');
+ if(F.collar)at('neck','Collar');
+ if(F.pads)at('chestR','Pads');
+ if(F.foley)at('pelvis','Foley');
+ /* in progress: pulsing, with the seconds left */
+ const prog={};
+ Object.keys(S.busy||{}).forEach(pid=>{const j=S.busy[pid];if(!j||!j.job||j.job.isPrep)return;
+  const key=bayAnchor(j.job);prog[pid]={key,left:Math.max(0,Math.round(j.until-S.t)),label:String(j.job.a.label||'').split(/[(\/—,]/)[0].trim()};
+  if(key&&!/^(torso|abdomen)$/.test(key)||/^(fast|echo|primary|secondary|logroll)$/.test(j.job.a.id))at(key,prog[pid].label.slice(0,14)+' '+prog[pid].left+'s',null,true);});
+ $('#bayMarks').innerHTML=marks.join('');
+ /* the team */
+ Object.keys(BAY_HOME).forEach(pid=>{const g=$('#bd_'+pid);if(!g)return;
+  const pp=person(pid),job=prog[pid],c=g.querySelector('circle'),tx=g.querySelectorAll('text');
+  if(pid==='surgeon'){const here=F.surgeonHere,coming=F.surgeon&&!here;
+   c.setAttribute('stroke-dasharray',here?'':'3 3');c.setAttribute('fill',here?'#1d3350':'none');c.setAttribute('stroke',here?'#6f9fd8':'#6b7a70');
+   tx[0].textContent='M';tx[1].textContent='Dr. Moon';tx[2].textContent=here?(job?job.label.slice(0,14)+' '+job.left+'s':'in the room'):coming?'on her way':'next door';}
+  else{const busy=!!job;c.setAttribute('fill',busy?'#1d3350':'#1f2b25');c.setAttribute('stroke',busy?'#6f9fd8':'#6b7a70');
+   tx[0].textContent=pp.nm.charAt(0);tx[1].textContent=pp.nm;tx[2].textContent=busy?job.label.slice(0,16)+' '+job.left+'s':'free';}
+  const pos=bayDotPos(pid,job?job.key:null);BAY_TGT[pid]=pos;
+  if(!BAY_CUR[pid]){BAY_CUR[pid]=[pos[0],pos[1]];g.setAttribute('transform','translate('+pos[0]+','+pos[1]+')');}});
+ bayAnimate();
+ /* drugs with no place on the body */
+ const meds=(S.meds||[]).slice(-6).reverse();let x=8,y=372,chips='';
+ meds.forEach(m=>{const txt=(m.name||'').replace(/\s*\(.*\)$/,'').slice(0,14)+(m.dose?' '+String(m.dose).replace(/ \(standard.*\)/,'').slice(0,10):'')+' '+mmss(m.t);
+  const w=Math.round(txt.length*5.6)+12;if(x+w>BAY_W-8){x=8;y+=20;}if(y>BAY_H-16)return;
+  chips+='<g transform="translate('+x+','+y+')"><rect width="'+w+'" height="16" rx="8" fill="#1a231e" stroke="#4a5a52" stroke-width=".6"/><text class="bay-t" x="'+(w/2)+'" y="8.5" text-anchor="middle" dominant-baseline="central">'+esc(txt)+'</text></g>';x+=w+6;});
+ $('#bayChips').innerHTML=chips;
+ $('#bayNote').textContent=F.medevac?('Dustoff 2-1: '+(S.radioMode==='flight'?'on the radio':S.evacAnswered?'on the net':'requested')):'';
+}
 function renderMonitor(){
+ try{renderBay();}catch(e){}
  if(!S)return;const v=vitals(S);
  $('#clock').textContent=S.phase==='pre'?'--:--':mmss(S.t);
  $('#monPt').innerHTML=MULTI?((S.running?'':'<span class="paused-tag">PAUSED</span> · ')+'<span class="ptag'+(ACT===1?' off':'')+'">'+tag(S)+'</span> BED '+tag(S)+' — '+(S.mon.ecg||S.mon.spo2?'CONNECTED':'NOT CONNECTED')+' &nbsp;·&nbsp; <span style="color:var(--nibp)">BED '+tag(other())+' unattended</span>')
