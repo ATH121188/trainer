@@ -45,7 +45,12 @@ body.running .simmain{flex:1 1 auto;min-height:0;display:flex;flex-direction:col
 #bayCard .baybody{padding:0 8px 4px}
 #bayCard svg{display:block;width:100%;height:auto}
 @media (min-width:901px){
- body.running #sim{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:10px;align-items:stretch}
+ body.running #sim{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:10px;align-items:stretch}
+ .topline{grid-template-columns:minmax(0,1fr)}
+ #side{display:flex;flex-direction:column;gap:8px;min-height:0}
+ #bayCard{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+ #bayCard .baybody{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
+ #bayCard svg{max-height:100%;width:auto;max-width:100%}
  #bayCard .bayhint{display:none}
  #bayCard h4{cursor:default}
 }
@@ -495,13 +500,15 @@ body.running{height:calc(var(--vvh,100dvh) - env(safe-area-inset-top,0px))}
         </div>
       </div>
     </div>
-    <div class="card" id="medsCard"><h4 class="cond">INFUSIONS &amp; MEDS</h4><div id="meds"></div></div>
     </div>
     <div class="cols">
       <div class="card"><h4 class="cond bayhead"><span id="strip">TRAUMA BAY</span><span class="comms commsmain" id="commsMain"></span></h4><div id="log"></div></div>
     </div>
    </div>
-   <aside class="card" id="bayCard"><h4 class="cond" id="bayHead">BAY <span class="bayhint">tap to open</span></h4><div class="baybody" id="bayBody"></div></aside>
+   <aside id="side">
+   <div class="card" id="medsCard"><h4 class="cond">INFUSIONS &amp; MEDS</h4><div id="meds"></div></div>
+   <div class="card" id="bayCard"><h4 class="cond" id="bayHead">BAY <span class="bayhint">tap to open</span></h4><div class="baybody" id="bayBody"></div></div>
+   </aside>
     <div class="hidden"><div id="roster"></div><div id="instrBtns"></div><div id="instrCard"></div></div>
   </section>
 </div>
@@ -580,8 +587,13 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.48';
+const VERSION='1.49';
 const CHANGELOG=[
+ {v:'1.49',name:'Injuries on the map, and the intubation drugs sorted out',
+  top:['Injuries now show on the bay map as hatched coral marks with a one-word label — wound, fracture, burn, haematoma, amputation, impaled. Only what is obvious from the foot of the bed shows on arrival. The rest appears as the examination that would find it is done: exposure, the sweeps, the log roll, the secondary. A "not seen yet" box lists what has not been looked at.',
+       'Intubation drugs: "draw up the intubation meds" now draws the standard pair without asking for a dose; ketamine named with a paralytic is an induction, not analgesia; and once the drugs are drawn, Amy never asks for them again. If Lauren is busy, Major B volunteers. After Amy asks what you want, "standard dose" is enough.',
+       'Wide screens: the monitor now runs the full width of the left column, and the meds card sits above a larger bay map on the right, centred in the space.'],
+  detail:['"Rocky running" and "rocky rhodium" are rocuronium; "Dr. Mean" is Dr. Moon.']},
  {v:'1.48',name:'Bay map fixes from the first phone run',
   top:['On a phone the bay now opens as a full-screen sheet over everything, instead of being squeezed under the monitor. Tap BAY again to close it.',
        'An impaled object is on the map from the moment the patient arrives — "Impaled — bar in" — and becomes "Bar secured" once it is packed.',
@@ -1143,6 +1155,8 @@ function medlogFor(S){
 function doseGate(spec,S,raw,std,askText){
  if(STD_RE.test(raw)&&std){const d=std(S,raw);return{ok:true,d,label:d.display,standard:true};}
  const d=parseDose(normaliseMicro(expand(String(raw||""))),S.p.kg);
+ /* induction drugs asked for as a set: the standard pair, no dose question */
+ if(!d&&std&&std===(A.rsi_meds&&A.rsi_meds.std)&&!/\b\d/.test(String(raw||''))){const sd=std(S,raw);return{ok:true,d:sd,label:sd.display,standard:true};}
  if(!d){
   try{const q=spec(S,raw,null);
    if(q&&q.nodose)return{ok:true,d:{display:q.label||'',base:0,kind:'none'},label:q.label};
@@ -1775,7 +1789,7 @@ act({id:'quiet',instant:true,label:'Tell the team to focus',cat:'CMD',by:'dorian
   }
   return'Roger, sir. Mouth shut, eyes on the patient.';}});
 act({id:'rsi_meds',label:'Induction and paralysis',cat:'RX',by:'lauren',dur:20,
- al:['induction','induction drugs','paralytic','rocuronium','roc','succinylcholine','sux','etomidate','push the drugs','rsi drugs','induction and paralysis','paralyze him','paralyse him','intubation meds','intubation drugs','intubation medications','airway meds','airway drugs','meds for intubation','drugs for intubation','drugs for the tube','meds for the tube','induction meds','induction drugs','induction and paralytic','standard induction','standard rsi','usual induction','draw the intubation meds','draw intubation meds','draw up the induction','tube drugs','knock him out drug','knock him down','induction drugs','the induction drugs','tube drugs','the tube drugs','put him under','put her under'],
+ al:['induction','induction drugs','paralytic','rocuronium','roc','succinylcholine','sux','etomidate','push the drugs','rsi drugs','induction and paralysis','paralyze him','paralyse him','intubation meds','intubation drugs','intubation medications','airway meds','airway drugs','meds for intubation','drugs for intubation','drugs for the tube','meds for the tube','induction meds','induction drugs','induction and paralytic','standard induction','standard rsi','usual induction','draw the intubation meds','draw intubation meds','draw up the induction','tube drugs','knock him out drug','knock him down','induction drugs','the induction drugs','tube drugs','the tube drugs','put him under','put her under','intubation meds','intubation drugs','drop intubation meds','draw up intubation meds','draw up the intubation meds','rsi meds','meds for the tube','drugs for the tube','draw up ketamine and roc','ketamine and rocuronium','ketamine and roc'],
  std:(S)=>{const kg=S.p.kg||80;return{base:kg,kind:'mass',display:Math.round(kg)+' mg ketamine and '+Math.round(1.2*kg)+' mg rocuronium (standard)'};},
  dose:(S,raw,d)=>{const kg=S.p.kg||80;
   if(/etomidate/i.test(raw)){if(d.base<.15*kg||d.base>.6*kg)return{bad:'That is '+d.text+' of etomidate. For '+kg+' kilos I would expect around '+Math.round(.3*kg)+' milligrams. Confirm?'};return{label:d.display+' etomidate'};}
@@ -1913,14 +1927,14 @@ act({id:'rsi',label:'Intubate (RSI)',cat:'A',by:'amy',lockTo:'amy',dur:50,al:['i
  precheck:(S,raw)=>{
   if(S.airwayDevice)return'He already has a tube in, sir.';
   if(!S.access&&!S.flags.imMeds)return'I have the drugs and nowhere to put them — no line. Intramuscular, or do you want access first?';
-  if(!S.flags.rsiDrugs&&!S.flags.imMeds&&!/ketamine|etomidate|roc|sux|succinyl|paralytic|induction|awake|no drugs/i.test(raw||''))
-   {const kg=S.p.kg||80;
+  if(!S.flags.rsiDrugs&&!S.flags.imMeds&&!/ketamine|etomidate|roc|sux|succinyl|paralytic|induction|awake|no drugs|standard/i.test(raw||''))
+   {const kg=S.p.kg||80;S.awaitInduction=S.t;
     return'Standing by at the head. What do you want for induction and paralysis, and at what dose? '+
      'Or say "standard induction" and I will use ketamine '+Math.round(kg)+' milligrams and rocuronium '+Math.round(1.2*kg)+'.';}
   return null;},
  run:(S,t,raw)=>{
-  if(/ketamine|etomidate|roc|sux|succinyl|paralytic|induction/i.test(raw||''))S.flags.rsiDrugs=true;
-  S.flags.intubated=true;
+  if(/ketamine|etomidate|roc|sux|succinyl|paralytic|induction|standard/i.test(raw||''))S.flags.rsiDrugs=true;
+  S.awaitInduction=undefined;S.flags.intubated=true;
   if(S.p.tension>.45&&!S.flags.decompressed){S.p.tension=Math.min(1,S.p.tension+.3);S.lesson('Positive pressure ventilation on an undecompressed tension pneumothorax converts a sick patient into an arrest. Decompress first.');return'Tube is through the cords. I am losing his pressure and he is getting hard to bag.';}
   if(S.sbp()<80&&!S.flags.bloodGiven){
    /* the tube still goes in — record it before returning, or the room believes
@@ -5777,6 +5791,8 @@ function lev(a,b,max){
 const KEEP=new Set(('percussion rales rhonchi mentation crepitus priapism peritonism posturing obtunded lucid the and for with from that this they them then than there their have has had not but you your his her him she are was were will would could should about into over under back front left right side both all any each every some more most less least much many other another same such just only also very still even well good bad worse better best deep shallow clean dirty clear cloudy open closed close cold warm hot cool wet dry hard soft tight loose fast slow high low big small large long short thick thin full empty new old young last next first second third leg legs arm arms hand hands foot feet head neck face chest belly abdomen back skin bone vein veins wound wounds blood bleeding pain injury injuries patient guy man woman kid child boy girl people team room bay floor door bed litter time minute minutes hour hours second seconds now soon later before after while during until since again once twice please thanks thank okay yeah yes no nope sure fine need needs needed want wants get gets got give gives gave take takes took put puts make makes made keep keeps kept find finds found look looks looked see sees saw tell tells told say says said ask asks asked think thinks thought know knows knew come comes came going go goes went done doing did been being can cannot cant do does don dont what when where which who whom whose why how many much bag bags box boxes kit kits tray trays glove gloves mask masks tube tubes line lines').split(' '));
 /* people type contractions; the alias list does not contain any */
 const MEDSWAP={
+ 'rocky running':'rocuronium','rocky rhodium':'rocuronium','rocky ronium':'rocuronium','rock uranium':'rocuronium','dr mean':'dr moon','doctor mean':'doctor moon',
+
  'console':'consult','consoles':'consult','mitchell':'mitch','12 l dcg':'12 lead ecg','12 l ecg':'12 lead ecg','12 l ekg':'12 lead ecg','get a 12':'get a 12 lead',
 
  'xvix':'ex fix','x fix':'ex fix','xfix':'ex fix','ex fixed':'ex fix','x-fix':'ex fix',
@@ -6026,7 +6042,9 @@ function matchAll(rawIn){
   return [A.end_case];
  if(res.some(a=>a.id==='neonate')&&!/\b(baby|newborn|infant|neonat|deliver|apgar|nrp|mr ?sopa|dry and stimulate|stimulate|cord)/i.test(raw)){const keep=res.filter(a=>a.id!=='neonate');res.length=0;keep.forEach(a=>res.push(a));}
  /* drawing up induction drugs is Lauren's job, not the laryngoscopy */
- if(res.some(a=>a.id==='rsi')&&/\b(draw up|draw the|prepare|prep the|get the (drugs|meds)|medications for intubation|meds for intubation|drugs for intubation)\b/i.test(raw)&&A.rsi_meds)return [A.rsi_meds];
+ if(res.some(a=>a.id==='rsi')&&/\b(draw up|draw the|prepare|prep the|get the (drugs|meds)|medications for intubation|meds for intubation|drugs for intubation|intubation meds|intubation drugs|rsi meds)\b/i.test(raw)&&A.rsi_meds)return [A.rsi_meds];
+ /* ketamine named together with a paralytic is an induction, not analgesia */
+ if(res.some(a=>a.id==='analgesia')&&/\b(roc|rocuronium|rocky|sux|succinyl|paralytic|paralyse|paralyze|induction)\b/i.test(raw)&&A.rsi_meds)return [A.rsi_meds];
  if(/\bpost ?-?intubation\b|\bvent settings\b|\bon the vent\b|\bventilator settings\b/i.test(raw)&&A.postintubation)return [A.postintubation];
  if(res.some(a=>a.id==='surgeon')&&res.some(a=>a.id!=='surgeon'&&a.id!=='surgeon_update')){const keep=res.filter(a=>a.id!=='surgeon');res.length=0;keep.forEach(a=>res.push(a));}
  if(/\b(hand ?off|handover|hand over|give (the |my )?mist|report to (the )?(bird|dustoff|evac|flight|crew))\b/i.test(raw)&&!/\b(from|icu|to icu|major b)\b/i.test(raw)&&A.handoff)return [A.handoff];
@@ -6638,6 +6656,9 @@ async function submitOrder(raw){
   const la=localAnswer('how much pain is he in');
   if(la){const asked=detectPersons(raw).find(pp=>!['surgeon','flight'].includes(pp.id));say('team',la.txt,asked?asked.nm:la.who);return;}
  }
+ if(S.awaitInduction!==undefined&&S.t-S.awaitInduction<120&&!S.airwayDevice&&/^\s*(?:amy[,\s]*)?(standard(?: dose| doses| induction)?|the book|book (dose|figure)|yes|go|go ahead|do it)\s*[.!]?\s*$/i.test(raw)){
+  S.awaitInduction=undefined;dispatch(A.rsi,'intubate with standard induction',person('amy'));return;
+ }
  if(S.awaitGo&&!S.airwayDevice&&/^\s*(?:amy[,\s]*)?(go|go ahead|proceed|let'?s go|do it|you are clear|clear to go|intubate|tube him|tube her|all good|green|yes)\b/i.test(raw)){
   const pr=(S.pendingRsi&&S.pendingRsi.raw)||'intubate';S.pendingRsi=null;
   dispatch(A.rsi,pr,person('amy'));return;
@@ -6724,6 +6745,7 @@ function needsDecon(S){return !!(S&&S.p&&(S.p.nerve||S.p.wp||S.scn.needsDecon)&&
 function dispatch(a,raw,who){
  const REMOTE=['surgeon','flight'];
  if(S.phase==='run'&&a.id==='rsi'&&!S.airwayDevice){
+  if(S.busy.amy&&S.busy.amy.job&&S.busy.amy.job.a.id==='timeout')return;   /* already running the timeout */
   if(!S.flags.timeoutDone){
    S.pendingRsi={raw};
    say('team','Before I pick up the blade, sir — timeout.',person('amy').nm);
@@ -6849,6 +6871,11 @@ function dispatch(a,raw,who){
   say('team','Dropping what I am doing.',doer.nm);
   if(j&&j.job)S.queue.push(j.job);
  }
+ /* induction drugs: whoever is free draws them up rather than queueing */
+ if(a.id==='rsi_meds'&&S.busy[doer.id]&&(!who||who.id===doer.id)){
+  const alt=['majorb','lauren','dorian'].find(id=>id!==doer.id&&!S.busy[id]);
+  if(alt){say('team','I have the drugs, sir — '+doer.nm+' is tied up.',person(alt).nm);doer=person(alt);}
+ }
  if(S.busy[doer.id]){
   S._said=S._said||{};
   if(S.phase!=='pre'&&S._said[doer.id]!==S.t){S._said[doer.id]=S.t;say('team',rnd(['Still on the last thing — I will get to it.','Copy, it is in the queue.','Hands are full, sir. Next.']),doer.nm);}
@@ -6949,7 +6976,9 @@ function finishInner(j,a,raw,doer,isPrep){
  const ag=S.phase==='run'?S.agit():0;
  if(isPrep){
   S.prepped=S.prepped||{};S.prepped[a.id]=S.t+1;
-  say('team',PREPS[a.id][1],doer.nm);
+  if(a.id==='rsi_meds'){const kg=S.p.kg||80;S.flags.rsiDrugs=true;
+   say('team','Induction and paralytic drawn up and labelled — ketamine '+Math.round(kg)+' and rocuronium '+Math.round(1.2*kg)+' at standard doses. They go in on Amy\'s count; say a different dose if you want one.',doer.nm);}
+  else say('team',PREPS[a.id][1],doer.nm);
   renderRoster();nextInQueue(doer);return;
  }
  let clean=raw,g=null;
@@ -7217,7 +7246,7 @@ function drawTraces(dt){
 /* ---------------- RENDER ---------------- */
 /* ================= THE BAY: a top-down map of the bed ================= */
 const BAY_W=296,BAY_H=470,BAY_CX=150;
-const BAY_ANCH={airway:[150,92],neck:[150,105],chestR:[130,132],chestL:[170,132],humR:[106,118],humL:[194,118],
+const BAY_ANCH={head:[150,72],back:[150,150],neck:[150,105],chestR:[130,132],chestL:[170,132],humR:[106,118],humL:[194,118],
  armR:[106,158],armL:[194,158],abdomen:[150,172],torso:[150,150],pelvis:[150,196],groinR:[139,208],groinL:[161,208],
  thighR:[131,236],thighL:[169,236],kneeR:[131,262],kneeL:[169,262],tibiaR:[131,290],tibiaL:[169,290],foot:[150,318]};
 const BAY_HOME={amy:[150,26],dorian:[44,118],lauren:[256,118],mitch:[44,258],majorb:[256,258],surgeon:[44,330]};
@@ -7263,6 +7292,7 @@ function bayInit(){
  const dots=Object.keys(BAY_HOME).map(pid=>{const h=BAY_HOME[pid];
   return '<g class="bay-dot" id="bd_'+pid+'" transform="translate('+h[0]+','+h[1]+')"><circle r="11" fill="#1f2b25" stroke="#6b7a70" stroke-width=".8"/><text class="bay-n" text-anchor="middle" dominant-baseline="central" y="0.5"></text><text class="bay-l" text-anchor="middle" y="24"></text><text class="bay-l" text-anchor="middle" y="35"></text></g>';}).join('');
  b.innerHTML='<svg viewBox="0 0 '+BAY_W+' '+BAY_H+'" role="img" aria-label="Map of the bay: the patient, what has been done, and where the team is">'+
+  '<defs><pattern id="bayInj" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 5L5 0" stroke="#e8735f" stroke-width=".9"/></pattern><pattern id="bayUnk" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 5L5 0" stroke="#5c6d64" stroke-width=".6"/></pattern></defs>'+
   '<rect x="80" y="48" width="140" height="272" rx="10" fill="#0f1613" stroke="#3a4a42" stroke-width=".8"/>'+
   '<text class="bay-t" x="88" y="62">R</text><text class="bay-t" x="206" y="62">L</text>'+
   '<g fill="#233129" stroke="#5c6d64" stroke-width=".8"><circle cx="150" cy="80" r="14"/><rect x="130" y="97" width="40" height="88" rx="8"/><rect x="106" y="99" width="17" height="68" rx="7"/><rect x="177" y="99" width="17" height="68" rx="7"/><rect x="131" y="189" width="16" height="118" rx="7"/><rect x="153" y="189" width="16" height="118" rx="7"/></g>'+
@@ -7276,6 +7306,44 @@ function bayPill(x,y,txt,cls,prog){
  return '<g class="'+(prog?'bay-prog':'')+'" transform="translate('+Math.round(x-w/2)+','+Math.round(y-8)+')">'+
   '<rect class="bay-pill '+(cls||'')+'" width="'+w+'" height="16" rx="8"'+(prog?' fill="none" stroke-dasharray="3 2"':'')+'/>'+
   '<text class="bay-t" x="'+(w/2)+'" y="8.5" text-anchor="middle" dominant-baseline="central" style="fill:#dbe9fb">'+esc(txt)+'</text></g>';
+}
+/* Injuries on the map. Only what is obvious from the foot of the bed shows on arrival; the rest
+   appears as the examination that would find it is done — exposure, sweeps, the roll, the secondary. */
+const INJ_WORD=/\b(wound|lacerat|fracture|burn|amputat|swell|swollen|haematoma|hematoma|deform|angulat|bruis|abrasion|entry|exit|impale|rebar|mangled|shredded|missing|bleeding|soaked|open|crush|stab|step\b|tender|rigid|crepitus|blister|char|ends below|gone below)/i;
+const INJ_KIND=[[/amputat|missing|ends below|gone below/i,'amputation'],[/impale|rebar|\bbar\b/i,'impaled'],[/burn|char|blister/i,'burn'],[/fracture|angulat|deform|step/i,'fracture'],[/haematoma|hematoma|swell|swollen/i,'haematoma'],[/crush|mangled/i,'crush'],[/tender|rigid|guarding/i,'tender'],[/bruis|abrasion|road rash/i,'bruising'],[/lacerat|wound|entry|exit|stab|bleeding|open/i,'wound']];
+const INJ_REGION=[['head',/scalp|skull|crown|temporal|parietal|occipit|forehead|\bhead\b|eardrum|\bear\b/],['face',/face|facial|mandible|\bjaw\b|orbit|\bnose\b|mouth|maxill|cheek/],
+ ['neck',/\bneck\b|trachea|cricoid|thyroid|larynx/],['chest',/chest|\brib|sternum|stern|breastbone|clavicle|nipple|parasternal|axilla|flail/],['abdomen',/abdom|belly|flank|umbilic|seatbelt|seat belt|epigast/],
+ ['pelvis',/pelvi|groin|perine|genital|scrotum|buttock|inguinal/],['back',/\bback\b|spine|spinal|thoracolumbar|paraspinal|sacr/],['arm',/\barms?\b|forearm|humer|radius|ulna|wrist|\bhands?\b|palm|finger|shoulder|elbow/],['leg',/\blegs?\b|thigh|femur|femoral|knee|tibia|fibula|calf|shin|ankle|\bfoot\b|feet|heel|sole|toe/]];
+const INJ_ANCH={head:'head',face:'head',neck:'neck',chest:'chest',abdomen:'abdomen',pelvis:'pelvis',back:'back',arm:'arm',leg:'thigh'};
+function injuriesFrom(text,source){
+ const out=[];
+ String(text||'').split(/(?<=[.;])\s+/).forEach(sn=>{
+  const low=sn.toLowerCase();
+  if(!INJ_WORD.test(low))return;
+  if(/^(no |nothing|clean|clear|intact|nil|none|not )/.test(low.trim()))return;
+  const reg=INJ_REGION.find(([,re])=>re.test(low));if(!reg)return;
+  const kind=(INJ_KIND.find(([re])=>re.test(low))||[,'injury'])[1];
+  /* a side counts only when it sits next to the part: "left thigh", "thigh on the left" */
+  const rs=reg[1].source;
+  const near=new RegExp('\\b(left|right)\\b(?:\\s+\\w+){0,2}\\s+(?:'+rs+')|(?:'+rs+')\\w*(?:\\s+\\w+){0,3}\\s+\\b(left|right)\\b','i');
+  const nm=low.match(near);const sd=nm?(nm[1]||nm[2]):null;
+  const sides=/bilateral|both/.test(low)?['R','L']:sd==='left'?['L']:sd==='right'?['R']:[''];
+  sides.forEach(sd=>out.push({region:reg[0],side:sd,kind,source,text:sn.trim()}));
+ });
+ return out;
+}
+function bayInjuries(S){
+ const sc=S.scn,done=id=>(S.done||[]).some(d=>d.id===id),fn=k=>{try{return typeof sc[k]==='function'?String(sc[k](S,'right')):'';}catch(e){return'';}};
+ const list=[];
+ injuriesFrom(sc.arrival,'door').forEach(x=>list.push(x));
+ if(S.flags.exposed||done('expose')||done('primary'))injuriesFrom(fn('front'),'exposure').forEach(x=>list.push(x));
+ if(done('blood_sweep')||done('axilla_sweep')||done('groin_sweep')||done('skull_sweep'))['axilla','groin','skull'].forEach(k=>injuriesFrom(fn(k),'sweep').forEach(x=>list.push(x)));
+ if(done('logroll'))injuriesFrom(fn('back'),'roll').forEach(x=>list.push(x));
+ if(S.flags.secondary||done('secondary'))injuriesFrom(fn('secondary'),'secondary').forEach(x=>list.push(x));
+ /* one marker per region and side, the first description wins */
+ const seen={},uniq=[];
+ list.forEach(x=>{const key=x.region+x.side;if(seen[key])return;seen[key]=1;uniq.push(x);});
+ return uniq;
 }
 const BAY_TGT={},BAY_CUR={};let BAY_RAF=null;
 function bayAnimate(){
@@ -7322,7 +7390,20 @@ function renderBay(){
  Object.keys(S.busy||{}).forEach(pid=>{const j=S.busy[pid];if(!j||!j.job||j.job.isPrep)return;
   const key=bayAnchor(j.job);prog[pid]={key,left:Math.max(0,Math.round(j.until-S.t)),label:String(j.job.a.label||'').split(/[(\/—,]/)[0].trim()};
   if(key&&!/^(torso|abdomen)$/.test(key)||/^(fast|echo|primary|secondary|logroll)$/.test(j.job.a.id))at(key,prog[pid].label.slice(0,14)+' '+prog[pid].left+'s',null,true);});
- $('#bayMarks').innerHTML=marks.join('');
+ const inj=bayInjuries(S),injSvg=[];
+ inj.forEach(x=>{const base=INJ_ANCH[x.region]||'torso';
+  const key=x.side&&BAY_ANCH[base+x.side]?base+x.side:(BAY_ANCH[base]?base:(x.side==='L'?'chestL':'chestR'));
+  const a=BAY_ANCH[key]||BAY_ANCH.torso;
+  const y=a[1]-13,label=(x.region==='back'?'Back ':'')+x.kind;
+  injSvg.push('<g><title>'+esc(x.text)+'</title><circle cx="'+a[0]+'" cy="'+y+'" r="7" fill="url(#bayInj)" stroke="#e8735f" stroke-width=".9"/>'+
+   '<text class="bay-l" x="'+a[0]+'" y="'+(y-10)+'" text-anchor="middle" style="fill:#f0997b">'+esc(label)+'</text></g>');});
+ /* what has not been looked at yet */
+ const notYet=[];if(!(S.done||[]).some(d=>d.id==='logroll'))notYet.push('back');
+ if(!(S.done||[]).some(d=>/sweep/.test(d.id)))notYet.push('axillae, groin');
+ if(!(S.flags.exposed||(S.done||[]).some(d=>d.id==='expose'||d.id==='primary')))notYet.push('under clothing');
+ const ny=notYet.length?'<g><rect x="228" y="52" width="62" height="'+(14+notYet.length*12)+'" rx="5" fill="url(#bayUnk)" stroke="#5c6d64" stroke-width=".6"/><text class="bay-l" x="259" y="63" text-anchor="middle">not seen yet</text>'+
+  notYet.map((t,i)=>'<text class="bay-l" x="259" y="'+(75+i*12)+'" text-anchor="middle">'+t+'</text>').join('')+'</g>':'';
+ $('#bayMarks').innerHTML=injSvg.join('')+marks.join('')+ny;
  /* the team */
  Object.keys(BAY_HOME).forEach(pid=>{const g=$('#bd_'+pid);if(!g)return;
   const pp=person(pid),job=prog[pid],c=g.querySelector('circle'),tx=g.querySelectorAll('text');
