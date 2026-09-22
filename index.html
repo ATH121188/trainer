@@ -45,7 +45,7 @@ body.running .simmain{flex:1 1 auto;min-height:0;display:flex;flex-direction:col
 #bayCard .baybody{padding:0 8px 4px}
 #bayCard svg{display:block;width:100%;height:auto}
 @media (min-width:901px){
- body.running #sim{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:10px;align-items:stretch}
+ body.running #sim{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:10px;align-items:stretch}
  .topline{grid-template-columns:minmax(0,1fr)}
  #side{display:flex;flex-direction:column;gap:8px;min-height:0}
  #bayCard{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
@@ -587,8 +587,14 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.49';
+const VERSION='1.50';
 const CHANGELOG=[
+ {v:'1.50',name:'Map spacing, and fixes from the crush case',
+  top:['The bay map is wider, the team stand further out from the bed, and two people working close together get their tags stacked rather than overlapping. The bed is empty until the patient is through the door.',
+       'Furosemide is given when asked. The only objections left are a completely empty tank in rhabdo, or active haemorrhage with a low pressure.',
+       'Dr. Moon takes a statement as a briefing — "I\'m concerned he has compartment syndrome", "his temperature is 35" — and once briefed she just says "noted". Before she arrives, Mitch tells you to hold it for her. She no longer asks for a temperature that is already on the monitor.'],
+  detail:['"12-lead ECG" is a 12-lead, not the leads. "Blood sweep" is a sweep, not a question about blood. "Shift his potassium" gives the standard insulin and dextrose without asking. "Prepare the OR" asks which operation.',
+          'Furosemide mentions that it takes potassium with it, and can be repeated.']},
  {v:'1.49',name:'Injuries on the map, and the intubation drugs sorted out',
   top:['Injuries now show on the bay map as hatched coral marks with a one-word label — wound, fracture, burn, haematoma, amputation, impaled. Only what is obvious from the foot of the bed shows on arrival. The rest appears as the examination that would find it is done: exposure, the sweeps, the log roll, the secondary. A "not seen yet" box lists what has not been looked at.',
        'Intubation drugs: "draw up the intubation meds" now draws the standard pair without asking for a dose; ketamine named with a paralytic is an induction, not analgesia; and once the drugs are drawn, Amy never asks for them again. If Lauren is busy, Major B volunteers. After Amy asks what you want, "standard dose" is enough.',
@@ -1156,7 +1162,7 @@ function doseGate(spec,S,raw,std,askText){
  if(STD_RE.test(raw)&&std){const d=std(S,raw);return{ok:true,d,label:d.display,standard:true};}
  const d=parseDose(normaliseMicro(expand(String(raw||""))),S.p.kg);
  /* induction drugs asked for as a set: the standard pair, no dose question */
- if(!d&&std&&std===(A.rsi_meds&&A.rsi_meds.std)&&!/\b\d/.test(String(raw||''))){const sd=std(S,raw);return{ok:true,d:sd,label:sd.display,standard:true};}
+ if(!d&&std&&(std===(A.rsi_meds&&A.rsi_meds.std)||std===(A.k_treatment&&A.k_treatment.std))&&!/\b\d/.test(String(raw||''))){const sd=std(S,raw);return{ok:true,d:sd,label:sd.display,standard:true};}
  if(!d){
   try{const q=spec(S,raw,null);
    if(q&&q.nodose)return{ok:true,d:{display:q.label||'',base:0,kind:'none'},label:q.label};
@@ -2603,12 +2609,14 @@ act({id:'furosemide',label:'Furosemide',cat:'RX',by:'lauren',dur:12,
  al:['lasix','furosemide','frusemide','a diuretic','loop diuretic','give lasix','some lasix','40 of lasix','diurese him','diurese her'],
  danger:(S,raw)=>{
   const t=((S.scn.title||'')+' '+(S.scn.mist||'')+' '+(S.scn.arrival||'')).toLowerCase();
-  if(S.p.rhabdo||/overhead line|high voltage|crush|cola/.test(t))return'Not yet, sir — in rhabdo a diuretic before he is filled makes the kidneys worse. It is volume and urine output he needs.';
-  if(vitals(S).sbp<95||(S.p.lost||0)>800||(S.p.dehydration||0)>.2)return'He is not overloaded, sir — he is dry or bleeding. Furosemide will drop his pressure.';
+  const litres=(S.infusions||[]).filter(f=>f.kind==='fluid').reduce((a,f)=>a+(f.given||0),0);
+  if((S.p.rhabdo||/overhead line|high voltage|crush|cola/.test(t))&&litres<1)return'Before any fluid, sir? In rhabdo I would fill him first — a diuretic on an empty tank is hard on the kidneys.';
+  if((S.p.bleedRate||0)>40&&vitals(S).sbp<85)return'He is actively bleeding with a pressure of '+vitals(S).sbp+', sir. Furosemide now takes volume he does not have.';
   return null;},
  run:(S,t,raw,g)=>{S.medlog('Furosemide',g);S.flags.furosemide=true;
   if(/crackles|overload/i.test(String(S.scn.breath?S.scn.breath(S):'')))S.p.shunt=Math.max(0,(S.p.shunt||0)-.06);
-  return'Forty of furosemide IV. If he still makes urine you will see it in the next half hour.';}});
+  const mg=(g&&g.d&&g.d.base)||40;
+  return Math.round(mg)+' of furosemide IV. If he still makes urine you will see it in the next half hour'+(S.p.hyperK||(S.p.kSev||0)>.2?' — and it takes potassium with it.':'.');}});
 act({id:'defib',label:'Pads, rhythm check and defibrillation',cat:'C',by:'amy',dur:20,
  danger:(S,raw)=>{
   if(!/shock|defib|charge/i.test(raw||''))return null;
@@ -3139,7 +3147,7 @@ act({id:'surgery_here',label:'Damage control at the bedside',cat:'C',by:'surgeon
 act({id:'book_or',label:'Book a specific operation',cat:'CMD',by:'surgeon',dur:10,
  al:['activate the or for','book the or for','open the or for','table for a','activate theatre for',
   'prepare for a laparotomy','set up for a thoracotomy','set up the table for','get the table ready for',
-  'book a theatre for','open a room for','set up theatre for'],
+  'book a theatre for','open a room for','set up theatre for','prepare the or','prep the or','get the or ready','set up the or','ready the or','prepare theatre','get theatre ready','prepare the operating room'],
  run:(S,t,raw)=>{
   const k=namedSurgery(raw);
   if(!k)return{say:'Which operation, sir? I can give you a damage control laparotomy, a thoracotomy, vascular control and shunting, a completion amputation, external fixation, a fasciotomy, a washout and debridement, or a neck exploration. That is what this detachment can do — anything else is a flight.',nocredit:true};
@@ -3264,7 +3272,7 @@ act({id:'handoff',label:'Hand over to the surgeon or evac team',cat:'CMD',by:'su
   if(!S.flags.txa&&S.scn.kind==='trauma'&&((S.p.bleedRate||0)>30||S.units||S.p.extremityBleed||S.p.pelvisRate))gaps.push('did he get TXA and when');
   if(S.units&&!S.flags.calcium)gaps.push('any calcium with that product');
   if(!S.flags.scribe)gaps.push('who has the times written down');
-  if(S.p.tempC<35.5)gaps.push('what is his temperature');
+  if(S.p.tempC<35.5&&!S.mon.temp)gaps.push('what is his temperature');
   if(S.airwayDevice)gaps.push('tube depth and what is he sedated on');
   if(!gaps.length)gaps.push('what is the one thing you are most worried about in the next twenty minutes');
   if(toFlight){
@@ -6028,6 +6036,8 @@ function matchAll(rawIn){
  if(res.length>1&&res.some(a=>a.id==='reassess'))return res.filter(a=>a.id!=='reassess');
  if(res.some(a=>a.id==='history')&&res.some(a=>a.id==='ask_patient')){const keep=res.filter(a=>a.id!=='ask_patient');res.length=0;keep.forEach(a=>res.push(a));}
  if(res.some(a=>a.id==='potassium')&&A.k_treatment&&/\b(shift|lower|bring (it )?down|treat|fix|drop|reduce|stabili[sz]e|high)\b/i.test(raw))return [A.k_treatment];
+ if(/\b(12|twelve)[ -]?lead\b|\becg\b.*\b12\b/i.test(raw)&&A.ecg12)return [A.ecg12];
+ if(/\bblood sweep\b|\bsweep\b.*\bblood\b/i.test(raw)&&A.blood_sweep)return [A.blood_sweep];
  if(res.some(a=>a.id==='book_or'))return [A.book_or];
  if(A.book_or&&namedSurgery(raw)&&/\b(or|theatre|operating room|table)\b/i.test(raw)&&(!S||!(S.done||[]).some(d=>d.id==='or')))return [A.book_or];
  if(A.book_or&&/\b(pericardial window|subxiphoid window|sternotom)/i.test(raw))return [A.book_or];
@@ -6100,7 +6110,7 @@ function matchAll(rawIn){
 const detectLat=r=>/\bleft\b/i.test(r)?'left':/\bright\b/i.test(r)?'right':null;
 /* an order to do something already done gets said, not done again */
 const REDO=/\b(again|re-?check|re-?ass?ess?|re-?peat|repeat|another|second|third|more|new|fresh|one more|update|recycle|re-?do|once more|do it again)\b/i;
-const REPEAT_OK=new Set(['ipratropium','albuterol','teleconsult','impaled','pack','anticoag','atropine','sedate','seizure_med','hypertonic','dextrose','naloxone','pralidoxime','antiemetic','albuterol','magnesium','amiodarone','im_meds','neonate','defib','book_or','surgeon_update','roles','brief','document','prep_room','checklist','anticipate','ppe','report',
+const REPEAT_OK=new Set(['furosemide','ipratropium','albuterol','teleconsult','impaled','pack','anticoag','atropine','sedate','seizure_med','hypertonic','dextrose','naloxone','pralidoxime','antiemetic','albuterol','magnesium','amiodarone','im_meds','neonate','defib','book_or','surgeon_update','roles','brief','document','prep_room','checklist','anticipate','ppe','report',
  'nibp','blood','crystalloid','iv','io','tq','pack','needle','fingerthor','chesttube',
  'analgesia','epi_im','epi_drip','calcium','reassess','recap','look','ack','hold','quiet','surgeon','handoff',
  'bleedcheck','pulsecheck','k_treatment','rsi_meds','cpr','pericardio','thoracotomy','suction','jawthrust','bvm','o2']);
@@ -6579,11 +6589,12 @@ async function submitOrder(raw){
  }
  /* telling her the story is a handover, whatever clinical words are in it */
  if(S.flags.surgeonHere&&detectPersons(raw).some(pp=>pp.id==='surgeon')
-    &&/\b(he is|she is|he's|she's|year old|we have|he has|she has|this is a|the story|so far|came in|was brought|has had|we gave|we have given|this patient has|the patient has|patient has|it appears|appears that|looks like he|i think he has)\b/i.test(raw)
+    &&/\b(he is|she is|he's|she's|year old|we have|he has|she has|this is a|the story|so far|came in|was brought|has had|we gave|we have given|this patient has|the patient has|patient has|it appears|appears that|looks like he|i think he has|i'?m concerned|concerned that|his \w+ is|her \w+ is|his \w+ was|her \w+ was)\b/i.test(raw)
     &&!/^\s*(dr\.?\s*moon|moon|doc)[,:]?\s*(please\s*)?(do|start|perform|put|place|open|give)\b/i.test(raw)){
-  const out=A.surgeon_update.run(S,null,raw);
+  const briefedAlready=(S.done||[]).some(d=>d.id==='surgeon_update');
+  const out=briefedAlready?rnd(['Noted.','Understood.','Got it — go on.','Noted. Keep going.']):A.surgeon_update.run(S,null,raw);
   say('team',typeof out==='string'?out:out.say,person('surgeon').nm);
-  S.done.push({id:'surgeon_update',t:S.t,label:A.surgeon_update.label,by:'lead',lead:true});
+  if(!briefedAlready)S.done.push({id:'surgeon_update',t:S.t,label:A.surgeon_update.label,by:'lead',lead:true});
   /* "…and he will need the OR for an ex-fix" is a request as well as a briefing */
   if(namedSurgery(raw)&&/\b(or|theatre|operating room|table)\b/i.test(raw)&&!S.flags.or)dispatch(A.book_or,raw,person('surgeon'));
   return;
@@ -6592,8 +6603,8 @@ async function submitOrder(raw){
  if(S.flags.surgeonHere&&detectPersons(raw).some(pp=>pp.id==='surgeon')&&!matchAll(raw).length&&!isQuestion(raw)&&raw.trim().length>10){
   await respondAs(person('surgeon'),raw);return;
  }
- if(S.flags.surgeon&&!S.flags.surgeonHere&&/\b(hand ?off|handover|hand over|brief|update|mist)\b/i.test(raw)&&/\b(moon|surgeon)\b/i.test(raw)){
-  say('team','She is not in the room yet, sir. Give it to her when she walks in.',person('mitch').nm);return;
+ if(S.flags.surgeon&&!S.flags.surgeonHere&&/\b(moon|surgeon)\b/i.test(raw)&&(/\b(hand ?off|handover|hand over|brief|update|mist)\b/i.test(raw)||/\b(he is|she is|he's|she's|year old|we have|he has|she has|this is a|the story|so far|came in|was brought|has had|we gave|we have given|this patient has|the patient has|patient has|it appears|appears that|looks like he|i think he has|i'?m concerned|concerned that|his \w+ is|her \w+ is|his \w+ was|her \w+ was)\b/i.test(raw))){
+  say('team','She is not in the room yet, sir — give it to her when she walks in.',person('mitch').nm);return;
  }
  /* a handover to the surgeon in the room is a briefing, and she listens while she works */
  if(S.flags.surgeonHere&&/\b(hand ?off|handover|hand over|brief|update|mist)\b/i.test(raw)&&/\b(moon|surgeon|doc|her)\b/i.test(raw)){
@@ -6652,6 +6663,7 @@ async function submitOrder(raw){
   const la=localAnswer('how much pain is he in');
   if(la){const asked=detectPersons(raw).find(pp=>!['surgeon','flight'].includes(pp.id));say('team',la.txt,asked?asked.nm:la.who);return;}
  }
+ if(/\bblood sweep\b/i.test(raw)&&A.blood_sweep){for(const pp of (detectPersons(raw).length?detectPersons(raw):[null]))dispatch(A.blood_sweep,raw,pp&&!['surgeon','flight'].includes(pp.id)?pp:null);return;}
  if(/\b(pain scale|pain score|pain level|scale of (1|one) to (10|ten)|scale of (10|ten)|out of (10|ten)|how much pain|rate (his|her|your|the) pain|(is|if) (he|she)'?s? in pain|(is|if) (he|she) (is )?in pain|any pain|does (he|she) have (any )?pain|is (he|she) sore|how is (his|her) pain)\b/i.test(raw)){
   const la=localAnswer('how much pain is he in');
   if(la){const asked=detectPersons(raw).find(pp=>!['surgeon','flight'].includes(pp.id));say('team',la.txt,asked?asked.nm:la.who);return;}
@@ -6952,6 +6964,7 @@ function readback(a,doer,raw,g){
    hysterotomy:'Knife to skin now. Somebody be ready to take the baby.',
    or:'Right — theatre. I will have the table ready; bring him when you are finished and tell me to take him.',
    book_or:'Right — I will get theatre set for that.',
+   handoff:'Go ahead — give me the MIST, then tell me what you want from me.',
    craniectomy:'Shave and mark over the left temporal bone. Neurosurgery, stay on the line and talk me through it. Keep his pressure over one-ten for me.'};
   say('team',lines[a.id]||('Starting — '+String(a.label).toLowerCase()+'.'),doer.nm);
   return;
@@ -7245,7 +7258,7 @@ function drawTraces(dt){
 
 /* ---------------- RENDER ---------------- */
 /* ================= THE BAY: a top-down map of the bed ================= */
-const BAY_W=296,BAY_H=470,BAY_CX=150;
+const BAY_W=350,BAY_H=470,BAY_CX=150,BAY_OX=27;   /* the drawing is offset by BAY_OX inside a wider canvas */
 const BAY_ANCH={head:[150,72],back:[150,150],neck:[150,105],chestR:[130,132],chestL:[170,132],humR:[106,118],humL:[194,118],
  armR:[106,158],armL:[194,158],abdomen:[150,172],torso:[150,150],pelvis:[150,196],groinR:[139,208],groinL:[161,208],
  thighR:[131,236],thighL:[169,236],kneeR:[131,262],kneeL:[169,262],tibiaR:[131,290],tibiaL:[169,290],foot:[150,318]};
@@ -7283,7 +7296,7 @@ function bayDotPos(pid,anchorKey){
  if(!anchorKey)return home;
  const a=BAY_ANCH[anchorKey];if(!a)return home;
  if(pid==='amy'&&(anchorKey==='airway'||anchorKey==='neck'))return home;
- const dx=a[0]<BAY_CX?-44:a[0]>BAY_CX?44:(home[0]<BAY_CX?-44:44);
+ const dx=a[0]<BAY_CX?-60:a[0]>BAY_CX?60:(home[0]<BAY_CX?-60:60);
  return [a[0]+dx,Math.max(60,Math.min(310,a[1]))];
 }
 function bayInit(){
@@ -7291,12 +7304,12 @@ function bayInit(){
  b.dataset.built='1';
  const dots=Object.keys(BAY_HOME).map(pid=>{const h=BAY_HOME[pid];
   return '<g class="bay-dot" id="bd_'+pid+'" transform="translate('+h[0]+','+h[1]+')"><circle r="11" fill="#1f2b25" stroke="#6b7a70" stroke-width=".8"/><text class="bay-n" text-anchor="middle" dominant-baseline="central" y="0.5"></text><text class="bay-l" text-anchor="middle" y="24"></text><text class="bay-l" text-anchor="middle" y="35"></text></g>';}).join('');
- b.innerHTML='<svg viewBox="0 0 '+BAY_W+' '+BAY_H+'" role="img" aria-label="Map of the bay: the patient, what has been done, and where the team is">'+
+ b.innerHTML='<svg viewBox="0 0 '+BAY_W+' '+BAY_H+'" role="img" aria-label="Map of the bay: the patient, what has been done, and where the team is"><g transform="translate('+BAY_OX+',0)">'+
   '<defs><pattern id="bayInj" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 5L5 0" stroke="#e8735f" stroke-width=".9"/></pattern><pattern id="bayUnk" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 5L5 0" stroke="#5c6d64" stroke-width=".6"/></pattern></defs>'+
   '<rect x="80" y="48" width="140" height="272" rx="10" fill="#0f1613" stroke="#3a4a42" stroke-width=".8"/>'+
   '<text class="bay-t" x="88" y="62">R</text><text class="bay-t" x="206" y="62">L</text>'+
   '<g fill="#233129" stroke="#5c6d64" stroke-width=".8"><circle cx="150" cy="80" r="14"/><rect x="130" y="97" width="40" height="88" rx="8"/><rect x="106" y="99" width="17" height="68" rx="7"/><rect x="177" y="99" width="17" height="68" rx="7"/><rect x="131" y="189" width="16" height="118" rx="7"/><rect x="153" y="189" width="16" height="118" rx="7"/></g>'+
-  '<g id="bayMarks"></g><g id="bayChips"></g><text class="bay-l" id="bayNote" x="8" y="14"></text>'+dots+'</svg>';
+  '<g id="bayMarks"></g><g id="bayChips"></g><text class="bay-l" id="bayNote" x="8" y="14"></text>'+dots+'</g></svg>';
  const card=$('#bayCard');
  if(card&&!card.dataset.wired){card.dataset.wired='1';$('#bayHead').onclick=()=>{if(window.matchMedia('(max-width:900px)').matches){card.classList.toggle('open');
    const h=card.querySelector('.bayhint');if(h)h.textContent=card.classList.contains('open')?'tap to close':'tap to open';}};}
@@ -7333,6 +7346,7 @@ function injuriesFrom(text,source){
  return out;
 }
 function bayInjuries(S){
+ if(!S||S.phase!=='run')return [];   /* nothing on the bed until he is through the door */
  const sc=S.scn,done=id=>(S.done||[]).some(d=>d.id===id),fn=k=>{try{return typeof sc[k]==='function'?String(sc[k](S,'right')):'';}catch(e){return'';}};
  const list=[];
  injuriesFrom(sc.arrival,'door').forEach(x=>list.push(x));
@@ -7390,6 +7404,8 @@ function renderBay(){
  Object.keys(S.busy||{}).forEach(pid=>{const j=S.busy[pid];if(!j||!j.job||j.job.isPrep)return;
   const key=bayAnchor(j.job);prog[pid]={key,left:Math.max(0,Math.round(j.until-S.t)),label:String(j.job.a.label||'').split(/[(\/—,]/)[0].trim()};
   if(key&&!/^(torso|abdomen)$/.test(key)||/^(fast|echo|primary|secondary|logroll)$/.test(j.job.a.id))at(key,prog[pid].label.slice(0,14)+' '+prog[pid].left+'s',null,true);});
+ const arrived=S.phase==='run';
+ if(!arrived)marks.length=0;
  const inj=bayInjuries(S),injSvg=[];
  inj.forEach(x=>{const base=INJ_ANCH[x.region]||'torso';
   const key=x.side&&BAY_ANCH[base+x.side]?base+x.side:(BAY_ANCH[base]?base:(x.side==='L'?'chestL':'chestR'));
@@ -7401,7 +7417,7 @@ function renderBay(){
  const notYet=[];if(!(S.done||[]).some(d=>d.id==='logroll'))notYet.push('back');
  if(!(S.done||[]).some(d=>/sweep/.test(d.id)))notYet.push('axillae, groin');
  if(!(S.flags.exposed||(S.done||[]).some(d=>d.id==='expose'||d.id==='primary')))notYet.push('under clothing');
- const ny=notYet.length?'<g><rect x="228" y="52" width="62" height="'+(14+notYet.length*12)+'" rx="5" fill="url(#bayUnk)" stroke="#5c6d64" stroke-width=".6"/><text class="bay-l" x="259" y="63" text-anchor="middle">not seen yet</text>'+
+ const ny=notYet.length&&arrived?'<g><rect x="228" y="52" width="62" height="'+(14+notYet.length*12)+'" rx="5" fill="url(#bayUnk)" stroke="#5c6d64" stroke-width=".6"/><text class="bay-l" x="259" y="63" text-anchor="middle">not seen yet</text>'+
   notYet.map((t,i)=>'<text class="bay-l" x="259" y="'+(75+i*12)+'" text-anchor="middle">'+t+'</text>').join('')+'</g>':'';
  $('#bayMarks').innerHTML=injSvg.join('')+marks.join('')+ny;
  /* the team */
@@ -7412,7 +7428,11 @@ function renderBay(){
    tx[0].textContent='M';tx[1].textContent='Dr. Moon';tx[2].textContent=here?(job?job.label.slice(0,14)+' '+job.left+'s':'in the room'):coming?'on her way':'next door';}
   else{const busy=!!job;c.setAttribute('fill',busy?'#1d3350':'#1f2b25');c.setAttribute('stroke',busy?'#6f9fd8':'#6b7a70');
    tx[0].textContent=pp.nm.charAt(0);tx[1].textContent=pp.nm;tx[2].textContent=busy?job.label.slice(0,16)+' '+job.left+'s':'free';}
-  const pos=bayDotPos(pid,job?job.key:null);BAY_TGT[pid]=pos;
+  const pos=bayDotPos(pid,job?job.key:null).slice();
+  /* two people working close together: stack their tags rather than overlap them */
+  Object.keys(BAY_TGT).forEach(o=>{if(o===pid)return;const q=BAY_TGT[o];if(!q)return;
+   for(let n=0;n<4&&Math.abs(q[0]-pos[0])<52&&Math.abs(q[1]-pos[1])<46;n++)pos[1]+=46;});
+  BAY_TGT[pid]=pos;
   if(!BAY_CUR[pid]){BAY_CUR[pid]=[pos[0],pos[1]];g.setAttribute('transform','translate('+pos[0]+','+pos[1]+')');}});
  bayAnimate();
  /* drugs with no place on the body */
