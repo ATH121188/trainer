@@ -590,8 +590,20 @@ function diag(kind,text,extra){
 }
 /* ---------------- VERSION HISTORY ----------------
    Newest first. `top` is what a medic actually needs to know; `detail` is the rest. */
-const VERSION='1.52';
+const VERSION='1.54';
 const CHANGELOG=[
+ {v:'1.54',name:'From the amputation and aortic runs',
+  top:['"Two IOs" sends two people to opposite humeri, and a second IO with no site named goes to a bone not already used. "Tighten the tourniquets" cranks the ones already on rather than adding a new one.',
+       '"Dorian, do a blood sweep and a primary survey" now does both. "Document that he will need the OR" is noted on the chart and the rest of the sentence stands on its own. "We are ready for the OR" moves him.',
+       'Esmolol in the aortic injury is no longer challenged — it is the treatment, and Lauren titrates it to a rate under eighty. "Dustoff, we have…" keys the radio and passes the message on.'],
+  detail:['"Some IM ketamine" and "an esmolol drip" take the standard dose without asking. Esmolol and labetalol have their own standard doses. "Do we have any active bleeding" is answered from what is still bleeding and where.',
+          'A team member\'s MIST now reads the injuries in the words they were found, and mentions the rhythm when it matters.']},
+ {v:'1.53',name:'Teleconsults written for each case',
+  top:['Every case now carries its own consults — one or two specialties, with advice written for that patient. The runtime scripts that could give one case another case\'s advice are gone. Seventy-three consults across the forty-six cases.',
+       'Call a specialty the case does not list and they say so: "Does not sound like one for them — you probably want cardiothoracic. Shall I get them?" Critical care defers to the owners by name.',
+       'Two new specialties: ENT and maxillofacial for the airway cases, and paediatrics for the children. The blunt aortic injury now gets anti-impulse therapy rather than the tamponade script.'],
+  detail:['A twelve-lead takes about a minute, with a little variability. Amiodarone is charted as amiodarone. "Major biv" and "amiod around" are understood.',
+          'The consults are packaged for external review in the same form as the last batch.']},
  {v:'1.52',name:'Consults that fit the patient, and a logic pass',
   top:['Every specialty script had been written for one case and was read out to everyone — endocrinology gave adrenal crisis, thyroid storm and HHS to the HHS patient. Each script now runs only when the patient has that problem; otherwise the consultant says so and adds the one thing they would not leave. Checked across all 736 consult-and-case combinations.',
        'Bloods on the chart now count: the insulin order no longer insists there is no potassium after Lauren has read it out. "What was the 12-lead" reads it back instead of repeating it.',
@@ -1145,6 +1157,85 @@ function problemRecs(S){
  if(S.scn.kind==='trauma'&&(p.bleedRate||0)>40)R.push({d:['surg','icu','ct','vasc'],u:9,x:'Haemorrhage: whole blood or balanced product; TXA inside three hours — two grams as one bolus forward, or one gram then one over eight hours; calcium with the product. Keep the systolic around eighty to ninety until the bleeding is controlled — but at least one-ten if there is a head injury.'});
  return R.sort((a,b)=>b.u-a.u);
 }
+/* Preloaded teleconsults, one or two per case, written for that patient.
+   s = specialty key, dx = what they are advising on, x = what they say. */
+const CONSULTS={
+ t01:[{s:'ct',dx:'Tension pneumothorax from a penetrating chest wound',x:'Cardiothoracic. A needle buys minutes, not a fix — the tube is the treatment, fifth space anterior axillary line, and put it in before he flies because altitude makes any air bigger. If the tube drains more than a litre and a half straight off or keeps running at two hundred an hour, that is a thoracotomy and they want to know.'},
+      {s:'icu',dx:'Post-decompression care',x:'Critical care. Once the tube is in, watch for it re-tensioning — a blocked or kinked tube looks exactly like the first presentation. Lung-protective settings if he needs the vent, and send the drainage volumes with him.'}],
+ t02:[{s:'ct',dx:'Cardiac tamponade from a precordial stab wound',x:'Cardiothoracic. They agree with the pericardial fluid on the scan and they do not want a needle in it if a scalpel is within reach — a subxiphoid window or a thoracotomy, whichever your surgeon can do fastest. Blood to fill him, avoid positive-pressure ventilation until the chest is open, and they want him on a table in under twenty minutes.'}],
+ t03:[{s:'surg',dx:'Pelvic and retroperitoneal haemorrhage from two gunshot wounds',x:'General surgery. Flank and buttock together is retroperitoneum and pelvis — nothing you can press on. Binder on, whole blood, TXA, calcium, and a laparotomy or preperitoneal packing where he lands. If he keeps dropping despite product and your surgeon can do it, zone-three REBOA to buy the flight.'},
+      {s:'vasc',dx:'Non-compressible pelvic arterial bleeding',x:'Vascular. Pelvic arterial bleeding is angio-embolisation territory and you do not have it, so the answer is a binder, product, and speed. If the pressure will not hold, zone-three balloon occlusion is the bridge — thirty minutes complete, longer partial — and the receiving team must know the balloon time.'}],
+ t04:[{s:'vasc',dx:'Expanding zone-two neck haematoma',x:'Vascular. An expanding haematoma with a bruit is an arterial injury until proven otherwise, and the airway will go before the pressure does — secure it early and awake if you can, with the cric kit open. Do not probe the wound. Neck exploration by your surgeon, proximal and distal control, and a shunt if the carotid is torn.'},
+      {s:'ent',dx:'Threatened airway from neck swelling',x:'ENT. This is a difficult airway that gets harder every minute — intubate now on your terms rather than later on his, ideally with him breathing, video laryngoscope and the surgical airway marked and ready. Once the tube is in, tape it, do not tie it around a neck that is swelling.'}],
+ t05:[{s:'ent',dx:'Airway loss from mid-face and mandibular destruction',x:'ENT and maxillofacial. Nothing above the neck is going to give you a view — sit him forward and let him clear his own blood while he can, and go straight to a surgical airway when he cannot. A cric is the right answer here, not a heroic laryngoscopy. Bleeding from the mid-face responds to packing and pressure; the fractures wait.'},
+      {s:'surg',dx:'Surgical airway and facial haemorrhage',x:'General surgery. A scalpel-bougie cric on the first sign he is losing it, and pack the nose and mouth firmly once the airway is secure. Blood for the volume he has lost into his face and the litter.'}],
+ t06:[{s:'vasc',dx:'Non-compressible axillary arterial bleeding',x:'Vascular. The axilla is junctional — a tourniquet does not reach it. Pack it deep with haemostatic gauze and hold real pressure, a junctional tourniquet if you carry one, and proximal control means the subclavian, which is a surgeon with the chest open. Product, TXA, calcium, and a fast handover to a team that can get proximal.'},
+      {s:'surg',dx:'Proximal control of subclavian-axillary bleeding',x:'General surgery. If packing holds, leave it and fly him. If it does not, your surgeon can get proximal control through a supraclavicular or infraclavicular incision and shunt it — that is damage control, not repair.'}],
+ t07:[{s:'vasc',dx:'Junctional femoral haemorrhage',x:'Vascular. High groin bleeding is above where a tourniquet works — pack the wound deep, direct pressure on the femoral against the pelvis, junctional tourniquet if you carry one. If your surgeon can get proximal control in the groin and shunt the femoral, that is the bridge; definitive repair happens at the other end. Whole blood, TXA, calcium, and keep him warm.'}],
+ t08:[{s:'surg',dx:'Impalement through the flank with the object in place',x:'General surgery. Leave the bar exactly where it is — it is tamponading whatever it went through. Pad it so it cannot move, cut it shorter only if that is the only way to move him, and get him to a table where it comes out under direct vision with the abdomen open. Blood for what he has lost, antibiotics, and a surgeon standing by when it comes out.'}],
+ t09:[{s:'vasc',dx:'Blast amputation with junctional groin bleeding and an unstable pelvis',x:'Vascular. The tourniquet that is loose is the one that matters — a second one above it, tight enough to stop the bleeding, not just the pulse. The groin is junctional: pack it and hold pressure. Binder for the pelvis. Whole blood early and a lot of it, TXA, calcium, and keep him warm.'},
+      {s:'surg',dx:'Damage control for bilateral limb and pelvic bleeding',x:'General surgery. This is damage control: stop what you can see, fill him, and move. The stump does not need a formal amputation here — a tourniquet and a dressing will do. Antibiotics within the hour for the blast wounds, and write the tourniquet times on his forehead.'}],
+ t10:[{s:'surg',dx:'Abdominal evisceration with hollow viscus injury',x:'General surgery. Do not push the bowel back in. Cover it with saline-soaked gauze and something impermeable over that, keep it warm and moist, and do not let it twist. Antibiotics that cover gut flora now — ertapenem is fine — and a laparotomy here if your surgeon will, otherwise fly. Nothing by mouth, an NG tube, and analgesia.'},
+      {s:'icu',dx:'Evisceration with contamination',x:'Critical care. Fluid losses from exposed bowel are large — keep him warm, cover it, and expect sepsis by the time he lands if the antibiotics are late. They want the time of injury and the time of the first dose.'}],
+ t11:[{s:'ortho',dx:'Acute compartment syndrome of the forearm',x:'Orthopaedics. Tense compartments and pain out of proportion on passive stretch is the diagnosis — you do not need pressures. A pulse means nothing here; it is the last thing to go. Fasciotomy now, volar and dorsal, before the flight. Every hour of delay costs muscle.'},
+      {s:'surg',dx:'Forearm fasciotomy in the forward setting',x:'General surgery. Volar incision from the elbow crease to the wrist, carpal tunnel released, then dorsal. Leave it open, dress it, and splint it. It is a bloody operation — have a unit ready.'}],
+ t12:[{s:'ct',dx:'Traumatic cardiac arrest from a penetrating chest wound',x:'Cardiothoracic. Compressions do nothing for an empty heart or a tamponaded one — fix the causes: decompress both sides, open the pericardium, fill him. A thoracotomy is only worth doing if he had signs of life within the last ten to fifteen minutes and your surgeon can do it now. If the heart is empty and still, stop.'}],
+ m02:[{s:'icu',dx:'Exertional heat stroke',x:'Critical care. Cool him as fast as you physically can — cold water immersion is best, ice and fans if not — and aim for a core of thirty-nine within thirty minutes, then stop so you do not overshoot. Cold fluid is fine; antipyretics do nothing. Watch for the things that come with it — rhabdo, coagulopathy, a rising potassium, and a liver that fails at day two.'}],
+ m05:[{s:'neurol',dx:'Status epilepticus',x:'Neurology. Most failures are underdosing — a full dose of benzodiazepine, midazolam ten IM if there is no line, and repeat it once at five minutes. Then levetiracetam sixty per kilo. If he is still seizing after both, an anaesthetic infusion and a tube. A sugar first, and thiamine before glucose if there is any chance he drinks.'}],
+ m07:[{s:'icu',dx:'Exercise-associated hyponatraemia with a seizure',x:'Critical care. A seizure with a sodium that low is an emergency: a hundred millilitres of three percent over ten minutes, repeat up to twice, aiming for a rise of four or five or until the symptoms turn. No isotonic saline — it makes this worse — and nothing else to drink until she passes urine. Recheck the sodium after each bolus and do not go past ten in twenty-four hours.'},
+      {s:'renal',dx:'Correction limits in symptomatic hyponatraemia',x:'Nephrology. Correct fast enough to stop the seizures and no faster — four to six in the first hours, no more than ten in the day. If it overshoots, stop the hypertonic, give free water, and desmopressin if you have it. She is young and this is acute, so the risk of demyelination is lower than in a chronic case, but it is not zero.'}],
+ m08:[{s:'cards',dx:'Inferior STEMI with right ventricular involvement',x:'Cardiology. Aspirin and an anticoagulant now. Nobody can get him to a catheter lab within a hundred and twenty minutes from where you are, so lyse him — tenecteplase, full dose under seventy-five, half dose over — then transfer for angiography within two to twenty-four hours. Right-sided leads to confirm the RV. No nitrates: the right ventricle is preload-dependent and they will drop him. Fluid if he is hypotensive.'}],
+ t13:[{s:'neuro',dx:'Severe traumatic brain injury with a blown pupil and extracranial bleeding',x:'Neurosurgery. A blown pupil is herniation until proven otherwise. Systolic over one-ten, end-tidal thirty-five to forty — never lower — head of the bed up thirty if the pressure allows, and hypertonic saline rather than mannitol because he is bleeding elsewhere. Fix the haemorrhage, because a single episode of hypotension doubles his mortality. They want him on a scanner and then a table; ask them to open the OR before he lands.'}],
+ t14:[{s:'neuro',dx:'Thoracolumbar spinal injury from a fall',x:'Neurosurgery. Midline tenderness with a step and altered sensation is a cord injury until imaged — full spinal precautions, log roll only, and a MAP of eighty-five or above. No steroids. A catheter, because he will retain. Imaging and a spine surgeon at the other end.'},
+      {s:'ortho',dx:'Bilateral calcaneal fractures and spinal injury from a height',x:'Orthopaedics. Heels and a spine together is the classic pattern — assume the spine is fractured until it is imaged. Splint the feet, elevate them, and watch the compartments in the feet over the first hours. Nothing here is urgent tonight except the spine.'}],
+ t15:[{s:'resp',dx:'Primary blast lung injury',x:'Respiratory. Oxygen, and be stingy with fluid — a blast lung drowns easily. If he needs positive pressure or is going to fly, think about chest drains first, because pressure and altitude both make a hidden pneumothorax worse. Low tidal volumes, five to seven per kilo, accept a higher CO2, low PEEP. If you suspect air embolism, left side down on a hundred percent oxygen.'},
+      {s:'icu',dx:'Ventilating a blast-injured lung',x:'Critical care. He will get worse before he gets better — the injury evolves over twelve to twenty-four hours. Lung-protective settings from the first breath, avoid over-distension, and a low threshold for bilateral drains before he flies. Send the pre-flight gas with him.'}],
+ t16:[{s:'burn',dx:'Inhalational injury with cyanide toxicity and cutaneous burns',x:'Burn centre. Smoke in an enclosed space is cyanide and carbon monoxide together until proven otherwise — hydroxocobalamin five grams and a hundred percent oxygen, and do not trust the pulse oximeter. Secure the airway early if there is any soot or stridor; it swells fast. Fluid by the Rule of Tens, titrated to urine output of half to one millilitre per kilo an hour, and look at every circumferential burn for escharotomy before he flies.'},
+      {s:'tox',dx:'Cyanide and carbon monoxide poisoning from a fire',x:'Toxicology. Hydroxocobalamin five grams over fifteen minutes, repeated once if he does not respond. High-flow oxygen for the carbon monoxide — the pulse oximeter reads falsely normal, and only a co-oximeter tells you the truth. A lactate above ten in a fire victim is cyanide.'}],
+ t17:[{s:'renal',dx:'Crush syndrome with hyperkalaemia and rhabdomyolysis',x:'Nephrology. The potassium is the thing that kills him in the next hour: calcium now, insulin and dextrose, salbutamol nebulised at the potassium dose. Isotonic fluid titrated to a urine output of one to three millilitres per kilo an hour, a catheter to measure it, and no diuretics until he is filled. Recheck the potassium after every couple of litres. He needs dialysis at the other end — say so in the handover.'},
+      {s:'ortho',dx:'Crushed limbs after prolonged entrapment',x:'Orthopaedics. Legs that were trapped for hours are crushed and their compartments are tense — fasciotomies, and they are not small. Watch for the second wave of potassium as the muscle reperfuses. Amputation is a real consideration if the limb is dead and the potassium will not settle.'}],
+ t18:[{s:'ob',dx:'Trauma in the third trimester',x:'Obstetrics. Tilt her — manual uterine displacement to the left, or the whole board — because a term uterus on the vena cava will drop her pressure by itself. Treat the mother and the baby follows. Kleihauer and anti-D if she is rhesus negative. Continuous fetal monitoring if you have it; if you do not, the maternal signs are your only guide. Any bleeding, any contraction, any abdominal pain is an abruption until proven otherwise.'}],
+ t19:[{s:'ct',dx:'Flail chest with haemothorax',x:'Cardiothoracic. A chest tube for the haemothorax — a large one, and watch the initial drainage and the rate. Analgesia is the treatment for the flail; he needs to breathe deeply, and pain is what stops him. Intubate for hypoxia or exhaustion, not for the flail itself. If the tube drains more than a litre and a half or keeps going at two hundred an hour, that is a thoracotomy.'}],
+ t20:[{s:'vasc',dx:'Open-book pelvic fracture with arterial haemorrhage',x:'Vascular. Binder on the trochanters, not the crests, and leave it on. Pelvic arterial bleeding is angio-embolisation or preperitoneal packing and you have neither, so it is product, TXA, calcium and speed. If he will not hold, zone-three REBOA is the bridge — record the balloon time, thirty minutes complete.'},
+      {s:'surg',dx:'Preperitoneal packing for pelvic haemorrhage',x:'General surgery. If your surgeon will open him, preperitoneal packing through a small lower midline incision, three packs each side, is the forward answer for pelvic venous and bony bleeding. It is not a laparotomy — stay out of the peritoneum.'}],
+ t21:[{s:'neuro',dx:'Thoracolumbar fracture with cauda equina signs after a hard landing',x:'Neurosurgery. Perineal numbness and reduced anal tone with a step at the thoracolumbar junction is a cord or cauda equina injury until imaged — full spinal precautions, log rolls, MAP eighty-five or above, no steroids, and a catheter. Move him for imaging and decompression as fast as you can get him there.'},
+      {s:'ortho',dx:'Bilateral calcaneal fractures',x:'Orthopaedics. The heels are the distraction and the spine is the injury. Splint the feet, elevate them, and watch the feet for compartment swelling. They can wait; the spine cannot.'}],
+ t22:[{s:'peds',dx:'Paediatric blast injury',x:'Paediatrics. Everything by weight — the Broselow tape is your friend. Blood at ten to twenty millilitres per kilo, TXA fifteen per kilo, calcium with the product. Children compensate until they fall off a cliff, so a normal pressure means nothing; watch the heart rate and the capillary refill. Keep him warm — a child this size loses heat four times faster than a man.'},
+      {s:'surg',dx:'Blast wounds in a child',x:'General surgery. Same principles as the adult, smaller everything — tourniquets work, packing works, and a paediatric abdomen is soft until it is not. Antibiotics within the hour, and a low threshold to fly him to somewhere with a paediatric surgeon.'}],
+ t23:[{s:'icu',dx:'Severe accidental hypothermia',x:'Critical care. Handle him gently — a cold heart fibrillates if you jostle it. Rewarm actively: warm fluids, warm air, a warm room. Below thirty degrees, one to three shocks at most and then stop until he is warmer; a single dose of adrenaline and then hold the rest; between thirty and thirty-five give drugs at double the usual interval. A slow heart at that temperature is physiology, not something to pace. He is not dead until he is warm and dead.'}],
+ t24:[{s:'ct',dx:'Blunt traumatic aortic injury from a high-speed frontal impact',x:'Cardiothoracic. Tearing interscapular pain, a pulse differential and weak femorals after a steering-wheel impact is a torn aorta until proven otherwise, and the treatment before he moves is anti-impulse: heart rate under eighty and systolic around one hundred to one-twenty. Esmolol or labetalol first, a vasodilator only once he is beta-blocked, and never let him get hypertensive — no coughing, no straining, good analgesia. This is endovascular repair at a centre that can do it, and he should fly with the drip running.'},
+      {s:'icu',dx:'Anti-impulse control during transfer',x:'Critical care. The risk is a pressure spike in the aircraft — keep the beta-blocker running, the pain controlled, and an arterial line if you can. If he becomes hypotensive, that is rupture, and there is nothing to do in the air except go faster.'}],
+ m09:[{s:'tox',dx:'Organophosphate nerve agent exposure',x:'Toxicology. Decontaminate first or you will all be patients. Atropine has no ceiling — start at two to six milligrams, double every five minutes until the chest is dry, and ignore the heart rate and the pupils. Pralidoxime as early as you can before the enzyme ages. Benzodiazepines for the seizures. They want to know how many other casualties and whether your team is clean.'}],
+ m11:[{s:'resp',dx:'Life-threatening asthma',x:'Respiratory. Continuous nebulised salbutamol with ipratropium for the first hour, hydrocortisone a hundred, magnesium two grams over twenty minutes. Adrenaline IM if she is tiring or not responding. If she must be intubated, ketamine for induction, a slow rate and a long expiratory time, and watch for breath-stacking — a sudden drop in pressure on the vent is a tension until proven otherwise.'}],
+ m12:[{s:'icu',dx:'Massive pulmonary embolism with shock',x:'Critical care. A dilated right ventricle with a pressure like that is systemic lysis now — tenecteplase is off-label for this and bleeds a little more than alteplase, but it is what you have. Hold the heparin while the lytic goes in and restart it within the hour. Norepinephrine for the pressure, small fluid boluses only — the right ventricle is already full — and avoid intubating him if you possibly can, because the right heart can arrest on induction.'},
+      {s:'cards',dx:'Right heart failure from a massive PE',x:'Cardiology. Lyse him. Norepinephrine over fluid, because a failing right ventricle does not want volume. If he arrests, continue compressions long after you normally would — lysis during CPR is reasonable here.'}],
+ m14:[{s:'icu',dx:'Delirium tremens',x:'Critical care. This is treated with benzodiazepines, titrated to a calm patient who is still breathing, and there is no fixed ceiling — front-load them. Antipsychotics do not treat withdrawal and lower the seizure threshold. Thiamine before any glucose. Check the sugar, the magnesium and the potassium, and look for what else is going on — infection, a head injury, a bleed — because withdrawal is a diagnosis of exclusion in a man who cannot give a history.'}],
+ t25:[{s:'vasc',dx:'Bilateral traumatic amputations with junctional perineal bleeding',x:'Vascular. Two tourniquets that are oozing are two tourniquets that are not tight enough — tighten them or put a second above each. The perineal wound is junctional and needs packing and pressure, not a tourniquet. Whole blood early and a lot of it, TXA, calcium, and keep him warm. Record the tourniquet times.'},
+      {s:'surg',dx:'Damage control for bilateral amputations and a perineal wound',x:'General surgery. Stumps get a tourniquet and a dressing here, not a formal amputation. The perineal wound with the pelvis behind it is the one that will kill him — pack it, and if the pelvis is open, a binder and preperitoneal packing. Antibiotics within the hour, and a diverting colostomy is the other end\'s problem.'}],
+ t26:[{s:'vasc',dx:'Transpelvic gunshot with non-compressible haemorrhage',x:'Vascular. Bleeding into the pelvis from a gunshot is arterial until proven otherwise and there is nothing to press on. Binder, whole blood, TXA, calcium, and speed. If he will not hold, zone-three REBOA to buy the flight — record the balloon time. Angio-embolisation or packing at the other end.'},
+      {s:'surg',dx:'Transpelvic gunshot wound',x:'General surgery. A round through the pelvis has probably hit rectum, bladder or both — antibiotics that cover gut flora now, a catheter only if there is no blood at the meatus, and a laparotomy where he lands. Do not let a stable pelvis on examination reassure you; the bleeding is behind it.'}],
+ t27:[{s:'eye',dx:'Open globe injury',x:'Ophthalmology. Nothing touches the eye — no pressure, no patch, no drops, a rigid shield taped over the orbit. Antiemetics so he does not vomit and push the contents out, analgesia, antibiotics, and tetanus. Nothing by mouth. He needs a theatre within twenty-four hours, so say so in the evacuation request.'}],
+ t28:[{s:'ct',dx:'Blunt cardiac injury with a dysrhythmia',x:'Cardiothoracic. A seatbelt bruise across the chest with a new arrhythmia is a bruised heart — a twelve-lead, a troponin if you have it, and continuous monitoring for at least twenty-four hours. Treat the arrhythmias as you would any other; most settle. An echo to rule out a wall-motion abnormality or a pericardial effusion. If he has heart failure signs, that is a structural injury and needs a surgeon.'},
+      {s:'cards',dx:'Arrhythmia after blunt chest trauma',x:'Cardiology. Monitor him, correct the potassium and magnesium, and treat the rhythm only if it is compromising him. A troponin that keeps rising, or a new murmur, changes the plan.'}],
+ t29:[{s:'peds',dx:'Paediatric penetrating abdominal gunshot wound',x:'Paediatrics. A child compensates until he falls off a cliff — a normal pressure means nothing. Blood at ten to twenty millilitres per kilo, TXA fifteen per kilo, calcium with it, everything else by the tape. Keep him warm. This is a laparotomy, and a paediatric surgeon if you can reach one; if you cannot, your surgeon operates.'},
+      {s:'surg',dx:'Penetrating abdominal trauma in a child',x:'General surgery. Free fluid and a rigid abdomen with a gunshot wound is a laparotomy — no imaging changes that. Antibiotics within the hour. A child\'s abdominal wall is thin, so the damage inside is usually worse than the entry suggests.'}],
+ t30:[{s:'burn',dx:'High-voltage electrical injury',x:'Burn centre. For a high-voltage injury the skin is the least of it — the current went through muscle, and burn formulas underestimate him badly. Fluid to a urine output of one to three millilitres per kilo an hour, a catheter to measure it, and twenty-four hours on a cardiac monitor after a high-voltage contact with loss of consciousness. Compartments: tense and painful on passive stretch is the diagnosis, and it is a fasciotomy now.'},
+      {s:'renal',dx:'Rhabdomyolysis and hyperkalaemia after electrical injury',x:'Nephrology. The potassium is the immediate threat: calcium now, insulin and dextrose, salbutamol at the potassium dose. Isotonic fluid to a urine output of one to three millilitres per kilo an hour, no diuretics until he is filled, no bicarbonate. Recheck the potassium after every couple of litres — he will need dialysis at the other end.'}],
+ t31:[{s:'surg',dx:'Thoracoabdominal stab wound',x:'General surgery. A stab below the nipple line is in the abdomen until proven otherwise, and the diaphragm is probably breached. A chest tube for the haemothorax, then a laparotomy — the scan does not exclude a diaphragm injury or a hollow viscus. Antibiotics within the hour.'},
+      {s:'ct',dx:'Haemothorax from a thoracoabdominal stab',x:'Cardiothoracic. A large chest tube, and watch what comes out — more than a litre and a half straight off, or two hundred an hour, is a thoracotomy. If the abdomen is the source, the chest tube will keep draining after the laparotomy stops the bleeding.'}],
+ t32:[{s:'surg',dx:'Delayed haemorrhage from a liver injury',x:'General surgery. A liver that bleeds on day three is a pseudoaneurysm or a capsule that has given way — this is a laparotomy and packing, or angio-embolisation if he can reach it. Blood, TXA is less useful this late, calcium, and correct the coagulopathy. Do not let a period of stability reassure you.'},
+      {s:'icu',dx:'Late haemorrhagic shock after solid organ injury',x:'Critical care. Resuscitate with product, not crystalloid, and keep him warm. Check the clotting and give what is missing. He needs a surgeon, and the window is now.'}],
+ t33:[{s:'neuro',dx:'Cervical cord injury with neurogenic shock',x:'Neurosurgery. Warm, bradycardic and hypotensive after a neck wound with paralysis is neurogenic shock — the vessels have lost their tone. MAP eighty-five or above for the first week, which means a vasopressor early rather than litres of fluid, and norepinephrine because it treats the bradycardia too; atropine if the rate drops under fifty. Full spinal precautions, keep him warm, a catheter, no steroids. Imaging and a spine surgeon at the other end.'}],
+ t34:[{s:'neuro',dx:'Traumatic brain injury with impending herniation',x:'Neurosurgery. A blown pupil is herniation until proven otherwise. Hypertonic saline now, systolic over one-ten, end-tidal thirty-five to forty — hyperventilate only as a bridge for minutes, not hours — head of the bed up thirty if his pressure allows. If he is herniating and the flight cannot beat the clock, a burr hole over the side of the pupil with neurosurgery on the phone is a last resort. They want him on a scanner and a table, and the OR open before he lands.'}],
+ t35:[{s:'ob',dx:'Maternal cardiac arrest at term',x:'Obstetrics. Four minutes. Resuscitative hysterotomy at four minutes of arrest — it empties the vena cava and is the best thing you can do for her, and it is the only thing you can do for the baby. Manual uterine displacement to the left the whole time until then. Same drugs and same doses as any arrest. Somebody takes the baby.'},
+      {s:'peds',dx:'Newborn resuscitation after a resuscitative hysterotomy',x:'Paediatrics. The baby is a second patient. Dry, warm, stimulate. Positive-pressure ventilation at thirty to sixty a minute if he does not breathe; compressions three to one if the heart rate is under sixty after thirty seconds of effective ventilation; adrenaline ten to thirty micrograms per kilo. Warming is treatment. Apgars at one and five minutes.'}],
+ t36:[{s:'burn',dx:'White phosphorus burns with hypocalcaemia',x:'Burn centre. Keep the burns wet — phosphorus re-ignites in air — and remove every particle you can see, under water, with forceps. Copper sulfate is not used any more. The systemic danger is calcium: it drops fast and the potassium and phosphate rise, so calcium early and repeat it on the ionised level, and monitor the heart. Fluid by the burn size, and he needs a burn centre.'},
+      {s:'tox',dx:'Systemic phosphorus toxicity',x:'Toxicology. Hypocalcaemia, hyperphosphataemia, arrhythmia and a liver that fails at day two — that is the phosphorus, not the burn. Ionised calcium every hour and replace it, an ECG for the QT, and get him somewhere with a lab.'}],
+ m20:[{s:'endo',dx:'Adrenal crisis',x:'Endocrinology. Hydrocortisone a hundred milligrams now — do not wait for a cortisol, and shock that will not respond to pressors should have made you give it already. Then two hundred over twenty-four hours as an infusion or fifty every six hours. Fluid, correct the sugar, and look for what tipped him over — the tablets for a joint condition were almost certainly a steroid he stopped.'}],
+ m23:[{s:'endo',dx:'Hyperosmolar hyperglycaemic state',x:'Endocrinology. Fluid does most of the work — nought point nine percent saline, a litre in the first hour and faster if he is hypotensive. Insulin at nought point nought five units per kilo an hour, and only once the glucose stops falling on fluid alone; potassium known first. Aim for the osmolality to fall three to eight an hour, the glucose no faster than about a hundred an hour, and the sodium no more than ten in a day. A sodium that rises as the sugar falls is expected, not a reason for hypotonic fluid.'}],
+};
+
+const CONSULT_NAMES={neuro:'Neurosurgery',neurol:'Neurology',cards:'Cardiology',ct:'Cardiothoracic surgery',vasc:'Vascular surgery',surg:'General surgery',ortho:'Orthopaedics',id:'Infectious disease',endo:'Endocrinology',renal:'Nephrology',burn:'Burn centre',resp:'Respiratory medicine',tox:'Toxicology',ob:'Obstetrics',eye:'Ophthalmology',haem:'Haematology',icu:'Critical care',ent:'ENT and maxillofacial',peds:'Paediatrics'};
 /* The conscious level is the patient's, not the script's. */
 function glucoseChecked(S){return !!(S&&((S.done||[]).some(d=>d.id==='glucose'||d.id==='labs')||S.flags.labs));}
 function gcsWords(g){
@@ -1183,6 +1274,7 @@ function medlogFor(S){
 }
 function doseGate(spec,S,raw,std,askText){
  if(STD_RE.test(raw)&&std){const d=std(S,raw);return{ok:true,d,label:d.display,standard:true};}
+ if(!/\b\d/.test(String(raw||''))&&/\b(some|a bit of|a little|a dose of|a shot of|drip|infusion)\b/i.test(String(raw||''))&&std){const sd=std(S,raw);return{ok:true,d:sd,label:sd.display,standard:true};}
  let d=parseDose(normaliseMicro(expand(String(raw||""))),S.p.kg);
  if(!d){const R=expand(String(raw||''));const bare=R.match(/(?:^|\s)(\d+(?:\.\d+)?)(?=\s|$)(?!\s*(?:mg|mcg|g\b|grams?|milli|micro|units?|ml|mls|l\b|litres?|liters?|amps?|percent|%|lead|minutes?|seconds?|per|\/|gauge|french|fr\b))/i);
   if(bare){const n=parseFloat(bare[1]);
@@ -2080,7 +2172,13 @@ act({id:'tq',label:'Tourniquet',cat:'C',by:'dorian',dur:25,lat:true,
    return(((S.p.bleedRate||0)>15&&!S.p.extremityBleed&&bleedCavity(S))?'I think he is bleeding into '+bleedCavity(S)+', sir — a tourniquet will not reach that. It needs Dr. Moon; product until then. ':'')+'Nothing on the limbs is bleeding, sir. A tourniquet on a limb that is not bleeding buys an ischaemic limb and nothing else.';
   return null;},
  al:['tourniquet','tq','cat','windlass','high and tight','tighten the tourniquet','second tourniquet','another tourniquet','get a tourniquet on','tourniquet that leg','tourniquet that arm','tighten it down','crank it down','put a cat on','stop that bleeding','stop the bleeding','control the bleeding','control that bleeding','cat tourniquet','sofft','soft-t','combat tourniquet','apply tourniquet','tq it','windlass it'],
- run:S=>{if(!S.p.extremityBleed)return'Nothing on the limbs that takes one.';
+ run:(S,t,raw)=>{if(!S.p.extremityBleed)return'Nothing on the limbs that takes one.';
+  const onArrival=/\b(tourniquets? (already )?on|cats? (applied|on)|windlass tourniquets)\b/i.test((S.scn.mist||'')+' '+(S.scn.arrival||''));
+  if(/\b(tighten|crank|windlass|take up|another turn|snug|re-?tighten)\b/i.test(String(raw||''))&&(S.flags.tq||onArrival)){
+   if(!S.flags.tq)S.flags.tq=/two|both|bilateral/i.test((S.scn.mist||'')+' '+(S.scn.arrival||''))?2:1;
+   const both=/\b(both|them|tourniquets|all)\b/i.test(String(raw||''));
+   const cut2=S.p.extremityBleedRate;S.p.bleedRate=Math.max(0,S.p.bleedRate-cut2);S.p.extremityBleedRate=0;S.flags.tqTight=true;
+   return(both?'Both windlasses cranked down and locked — the oozing has stopped on both sides.':'Windlass cranked down another two turns and locked — that one has stopped.')+' Times marked.';}
   S.flags.tq=(S.flags.tq||0)+1;const cut=S.p.extremityBleedRate*(S.flags.tq>=2?1:.72);
   S.p.bleedRate=Math.max(0,S.p.bleedRate-cut);S.p.extremityBleedRate=Math.max(0,S.p.extremityBleedRate-cut);
   return S.p.extremityBleedRate>20?'Second tourniquet on and cranked. Slowed, still weeping.':'Tourniquet high and tight, windlass locked, bleeding stopped. Time marked.';}});
@@ -2131,7 +2229,7 @@ act({id:'iv',label:'Large-bore IV, one side',cat:'C',by:'lauren',dur:60,onStart:
    if(S.ivFails===1)line='I got a flash and blew it. Veins are flat.';
    else if(S.ivFails===2)line='Lost that one too. He is clamped right down — that is two misses between us now. Do you want an IO?';
    else line=rnd(['Nothing there either, sir.','Still nothing. I am digging blind.','No luck. That is another minute gone.']);
-   if((S.ivFails||0)===1&&!S.flags.io){S.queue.push({a:A.iv,raw:'large-bore iv',doer:person(S.lastIvDoer||'lauren'),isPrep:false});line+=' Going again, other arm.';}
+   if((S.ivFails||0)===1&&!S.flags.io){S.queue.push({a:A.iv,raw:'large-bore iv',doer:person(S.lastIvDoer)||person('lauren'),isPrep:false});line+=' Going again, other arm.';}
    return{say:line,nocredit:true};
   }
   S.access=Math.min(4,(S.access||0)+1);
@@ -2145,10 +2243,12 @@ act({id:'iv',label:'Large-bore IV, one side',cat:'C',by:'lauren',dur:60,onStart:
   if(S.access===2)return'Second large bore in, '+side+' AC. Two lines, both flushing.';
   return'Eighteen in the '+side+' AC, flushing well. Want a second side?';
  }});
-act({id:'io',label:'Intraosseous',cat:'C',by:'lauren',dur:20,al:['io','intraosseous','ez-io','drill','humeral','tibial','sternal io','io kit','proximal tibia','distal femur','put a drill in','get an io in','bone drill','go intraosseous','go to the bone','bone access','drill him','intraosseous access','ezio','ez io','io drill','io access please','bone gun'],
+act({id:'io',label:'Intraosseous',cat:'C',by:'lauren',dur:20,al:['io','intraosseous','ez-io','drill','humeral','tibial','sternal io','io kit','proximal tibia','distal femur','put a drill in','get an io in','bone drill','go intraosseous','go to the bone','bone access','drill him','intraosseous access','ezio','ez io','io drill','io access please','bone gun','ios','an io','io now','ios right now','we need ios','need an io','get an io in','drill him','drill her','go io','go to an io','the drill'],
  precheck:(S,raw)=>/humer|tibia|sternal|sternum|femur|femoral|shoulder|shin|knee/i.test(raw||'')?null:'Which site, sir — humeral head, proximal tibia, or sternal?',
  run:(S,t,raw)=>{
-  let site=/humer|shoulder/i.test(raw)?'humeral head':/sternal|sternum/i.test(raw)?'sternum':/femur|knee/i.test(raw)?'distal femur':'proximal tibia';
+  let site=/humer|shoulder/i.test(raw)?'humeral head':/sternal|sternum/i.test(raw)?'sternum':/femur|knee/i.test(raw)?'distal femur':(S.flags.io&&S.flags.ioSite==='proximal tibia'?'other proximal tibia':'proximal tibia');
+  if(/other/i.test(raw)&&site==='humeral head')site='other humeral head';
+  if(S.flags.io&&S.flags.ioSite===site&&!(S.ioFailed||[]).includes(site))site=site==='humeral head'?'other humeral head':site==='proximal tibia'?'other proximal tibia':site;
   let switched='';
   if((S.ioFailed||[]).includes(site)){
    if(site==='humeral head'&&!(S.ioFailed||[]).includes('other humeral head')){site='other humeral head';switched='That humerus has just extravasated, so I have gone to the other one. ';}
@@ -2409,7 +2509,7 @@ act({id:'amiodarone',label:'Antiarrhythmic',cat:'RX',by:'lauren',dur:20,
   if(S.p.kSev>.3)return'Sir, that rhythm is his potassium, not a primary arrhythmia. Calcium and a shift will fix it — an antiarrhythmic will not.';
   if(S.p.tempC<30)return'He is 28 degrees. A cold heart does not respond to antiarrhythmics and it does not like being shocked. Warm him first.';
   return null;},
- run:(S,t,raw,g)=>{S.medlog('Antiarrhythmic',g);S.flags.antiarrhythmic=true;return g.d.display+' in, running slowly, watching the pressure.';}});
+ run:(S,t,raw,g)=>{S.medlog('Amiodarone',g);S.flags.antiarrhythmic=true;return g.d.display+' in, running slowly, watching the pressure.';}});
 act({id:'k_treatment',label:'Shift the potassium',cat:'RX',by:'lauren',dur:25,
  al:['insulin','shift the potassium','bicarb','sodium bicarbonate','treat the potassium','insulin and dextrose','kayexalate','lokelma','shift it','drive the potassium in','insulin dextrose','the potassium drugs','shift the potassium','potassium treatment','drive the potassium in'],
  std:(S)=>({base:10,kind:'units',display:'10 units insulin with an amp of D50 (standard)'}),
@@ -2872,7 +2972,7 @@ act({id:'reperfusion',label:'Reperfusion — lyse or transfer for PCI',cat:'CMD'
   if(S.p.stemi!==undefined)S.p.stemi=Math.max(0,S.p.stemi-.5);
   return lyse?'Tenecteplase weight-dosed and in. Contraindication checklist is clean — no head injury, no recent surgery, no bleeding. Clock starts now for rescue PCI if he does not reperfuse in ninety minutes.'
    :'Cath lab is four hours away by air, sir. If we are going that route he needs lytics first and PCI after.';}});
-act({id:'ecg12',label:'12-lead ECG',cat:'MON',by:'amy',dur:35,assess:true,
+act({id:'ecg12',durFn:S=>50+Math.round(Math.random()*20),label:'12-lead ECG',cat:'MON',by:'amy',dur:35,assess:true,
  al:['12 lead','twelve lead','12-lead','ekg 12','get a 12 lead','full ecg','posterior leads','right sided leads','get a 12 lead on him','twelve lead please','full ecg please','run a 12','ecg 12','12ecg','12 lead ecg','12lead'],
  run:S=>{S.flags.ecg12=true;
   return{find:S.scn.ecg12?S.scn.ecg12(S):(S.p.kSev>.3?'Peaked T waves, the QRS is widening and the P waves are gone. That is hyperkalaemia on the screen.':'Sinus rhythm, no ischaemic changes, no blocks. Unremarkable 12-lead.')};}});
@@ -2939,13 +3039,19 @@ act({id:'nitro',label:'Nitroglycerin',cat:'RX',by:'lauren',dur:15,
   return g.d.display+' sublingual. Pain is easing.';}});
 act({id:'beta_blocker',label:'Beta blocker',cat:'RX',by:'lauren',dur:15,
  al:['metoprolol','beta blocker','esmolol','labetalol','slow his heart','rate control','lopressor','slow his heart','slow her heart','slow the heart down','the beta blocker','block the heart rate'],
- std:(S)=>({base:5,kind:'mass',display:'5 mg metoprolol (standard)'}),
+ std:(S,raw)=>{const r=String(raw||'');
+  if(/esmolol/i.test(r))return{base:.5,kind:'mass',display:'esmolol 500 mcg/kg over a minute, then 50 mcg/kg/min (standard)'};
+  if(/labetalol/i.test(r))return{base:10,kind:'mass',display:'10 mg labetalol (standard)'};
+  return{base:5,kind:'mass',display:'5 mg metoprolol (standard)'};},
  danger:(S,raw)=>{
   if(S.p.thyroid)return null;   /* the rate is the disease here, not the compensation */
+  if(S.p.aortic)return null;    /* anti-impulse therapy: the beta-blocker is what stops the tear extending */
   if(S.sbp()<95||S.p.bleedRate>40||S.p.septic||S.p.anaphylaxis)return'Sir, that tachycardia is the only thing holding his pressure up. If I block it he loses his cardiac output and I cannot give it back.';
   return null;},
  dose:(S,raw,d)=>({label:d.display+' beta blocker'}),
  run:(S,t,raw,g)=>{S.medlog('Beta blocker',g);
+  if(S.p.aortic){S.flags.antiImpulse=true;S.p.hrBase=Math.max(60,(S.p.hrBase||100)-25);S.p.sbpBase=Math.min(S.p.sbpBase||120,115);
+   return String((g&&g.d&&g.d.display)||'Esmolol').replace(/ \(standard.*\)/,'').replace(/^(\d)/,'$1')+' — anti-impulse. Titrating to a rate under eighty and a systolic around one hundred to one-twenty, and I will not let him get hypertensive.';}
   if(S.p.thyroid){
    S.p.thyroid=Math.max(0,S.p.thyroid-.4);
    S.p.hrBase=Math.max(90,(S.p.hrBase||120)-38);
@@ -3215,7 +3321,7 @@ act({id:'or',label:'Move to the OR',cat:'CMD',by:'surgeon',dur:15,al:['take him 
  run:S=>{
   S.flags.or=true;S.flags.orT=S.t;S.radio={id:'surgeon',t:S.t,asked:S.t};S.awaiting=null;
   return(S.flags.surgeon?'':'Dr. Moon here — short notice, but fine. ')+
-   'Table is ready and we are scrubbed. Bring the product with you and bring whoever has the times written down. '+
+   (S.flags.orReady=true,'')+'Table is ready and we are scrubbed. Bring the product with you and bring whoever has the times written down. '+
    'Anything else you want done before he leaves this room? When you are finished, say "take him" and he is mine.';}});
 act({id:'end_case',instant:true,label:'Hand over and finish the case',cat:'CMD',by:'dorian',dur:0,
  al:['take him','take her','he is yours','she is yours','that is everything','we are done','we are finished',
@@ -3241,94 +3347,21 @@ act({id:'teleconsult',label:'Teleconsult a specialty',cat:'CMD',by:'mitch',dur:7
    /renal|nephro|dialysis|kidney/.test(r)?'renal':/endocrin|thyroid|adrenal/.test(r)?'endo':
    /haemat|hemat|sickle|transfusion medicine/.test(r)?'haem':
    /ophthal|eye|optha/.test(r)?'eye':/respir|pulmon|chest physician/.test(r)?'resp':
+   /\bent\b|ear nose|maxillofac|max ?fax|oral surg|facial surg|otolaryng/.test(r)?'ent':/paed|pediat|peds|children/.test(r)?'peds':
+   /general surg|trauma surg|\bsurgery\b|\bsurgeon\b|acute care surg/.test(r)?'surg':
    /neuro/.test(r)?'neuro':'icu';
   S.flags.teleconsult=(S.flags.teleconsult||[]).concat(pick);
   const p=S.p, ctx=((S.scn.mist||'')+' '+(S.scn.arrival||'')+' '+(S.scn.title||'')).toLowerCase();
-  const fit={
-   neuro:p.tbi||p.herniation||p.cordInjury||p.neurogenic||/spine|spinal|cord|head injury|pupil|back hurts|legs feel|feel his legs|cannot move|thoracolumbar|hard landing|priapism/.test(ctx),
-   neurol:p.seizing||p.stroke||p.tetanus||/seizure|stroke|tetanus|weakness/.test(ctx),
-   burn:p.tbsa||/burn|phosph|fire/.test(ctx),
-   ortho:p.femur||p.pelvis||p.pelvisRate||p.compartment||/pelvi|femur|fracture|fall|spine|compartment|rollover|hard landing|crush|limb|arm|leg|minor injur/.test(ctx),
-   ob:p.pregnant,
-   tox:p.nerve||p.cyanide||p.opioid||p.toxAlcohol||p.coMask||/overdose|poison|carbon monoxide|methanol|nerve agent/.test(ctx),
-   ct:p.tamponade||p.tension||p.flail||/chest|thoracic|sternum|cardiac injury|haemothorax|hemothorax|jaw|face|airway/.test(ctx),
-   cards:p.stemi!==undefined||p.dysrhythmia||/chest pain|infarct|stemi|ecg/.test(ctx),
-   vasc:p.junctionalBleed||p.extremityBleed||p.pelvisRate||/vascular|axilla|groin|junctional|pelvi|buttock|impal|amputat|thigh/.test(ctx),
-   id:p.septic||p.malaria||/sepsis|infect|fever|malaria|necrot|meningo/.test(ctx),
-   renal:p.hyperK||p.rhabdo||/potassium|dialysis|crush|rhabdo|electric/.test(ctx),
-   endo:p.adrenal||p.thyroid||p.dka!==undefined||p.hhs||/diabet|thyroid|adrenal|ketoacid|osmolar/.test(ctx),
-   haem:p.sickle||/sickle|transfusion/.test(ctx),
-   eye:p.openGlobe||/eye|globe|vision/.test(ctx),
-   resp:p.bronchospasm||p.shunt>.25||/asthma|wheeze|breath|pulmonary|blast lung/.test(ctx),
-   icu:true}[pick];
-  const REC={
-   neuro:((S.p.neurogenic||S.p.cordInjury||/\bback\b|\bspine\b|\bspinal\b|thoracolumbar|\bcord\b|legs feel|feel (his|her|my) legs|cannot move|can't move|could not move|paralys|\bnumb|saddle|anal tone|power in the legs|priapism|neurogenic/i.test(((S.scn.mist||'')+' '+(S.scn.arrival||'')+' '+(S.scn.title||'')))))&&!S.p.tbi&&!S.p.herniation?(S.p.neurogenic?'Neurosurgery on the line. A cervical cord injury with neurogenic shock — warm, bradycardic and hypotensive. They want the mean arterial pressure at eighty-five or above for the first week, which means a vasopressor early rather than litres of fluid, and norepinephrine because it also treats the bradycardia; atropine if the rate drops under fifty. Full spinal precautions, keep him warm, a catheter, no steroids. Imaging and a spine surgeon at the other end — move him.'
-    :'Neurosurgery on the line. A thoracolumbar fracture with a step, altered sensation and reduced anal tone is a cord or cauda equina injury until imaged. Full spinal precautions and log rolls, keep the mean arterial pressure up — they want it at eighty-five or above — no steroids, and a catheter because he will retain. They want him moving for imaging and decompression as fast as you can get him there.'):'Neurosurgery on the line. With a blown pupil and that GCS they want systolic over 110, normocapnia — end-tidal 35 to 40, no lower — head of bed up thirty if his pressure tolerates it, hypertonic rather than mannitol if he is at all dry, and they want him moving to a scanner now. They will take him. Ask them to open the OR before he lands.',
-   burn:'Burn centre. Rule of Tens to start — percentage burn times ten is your millilitres an hour for an adult between forty and eighty kilos — add a hundred an hour for every ten kilos over eighty, then titrate to a urine output of half to one millilitre per kilo an hour, adjusting the rate by twenty to twenty-five percent an hour. Not a fixed formula. They are asking about circumferential burns and whether you have done escharotomies, and they want carboxyhaemoglobin and a lactate before he flies. They will accept — flight surgeon wants him tubed for the flight regardless.',
-   ortho:'Orthopaedics. They want the pelvis bound at the trochanters not the crests, traction on the femur, and photographs of the open wounds before anything gets dressed. Antibiotics within an hour and they want to know the exact time of the tourniquet.',
-   ob:'Obstetrics. Left uterine displacement continuously, resuscitate the mother and the baby follows, and they want fibrinogen — in pregnancy under two is already critical. They are asking whether you have fetal heart tones and warning you that if the mother arrests, the uterus comes out within four minutes, in the bay, not in an OR.',
-   tox:(S.p.nerve?'Toxicology. No ceiling on atropine — double every five minutes until the chest is dry, ignore the heart rate. Pralidoxime as early as you can before the enzyme ages. They want to know how many other casualties and whether your team is decontaminated, and they are notifying the medical threat cell.':/fire|smoke|soot|burn|enclosed.*fire/i.test((S.scn.mist||'')+(S.scn.arrival||''))?'Toxicology. Smoke in an enclosed space — treat as cyanide and carbon monoxide together until proven otherwise: hydroxocobalamin five grams, one hundred percent oxygen, and a co-oximeter if you have one. The pulse oximeter will lie to you.':/methanol|blind|home-brewed|distilled/i.test((S.scn.mist||'')+(S.scn.arrival||'')+(S.scn.title||''))?'Toxicology. Block the enzyme now — fomepizole if you have it, an ethanol infusion if you do not — and correct the acidosis with bicarbonate while you arrange dialysis.':'Toxicology. Nothing in what you have told us points to a toxin — no exposure, no toxidrome. Treat what is in front of you. We are happy to stay on the line if something changes.'),
-   ct:'Cardiothoracic. They agree with the pericardial fluid and they do not want a needle in it if a scalpel is within reach. Blood to fill him, avoid positive pressure until the chest is open, and they want him on a table in under twenty minutes.',
-   vasc:'Vascular. Direct pressure and packing, no blind clamping in that wound, and consider a temporary shunt rather than a definitive repair given the transport time. They want distal pulses documented before and after anything you do.',
-   id:'Infectious disease. Broad gram-positive and gram-negative plus anaerobic cover, and they stress this is a surgical disease — antibiotics do not penetrate dead tissue. They want blood cultures before the first dose if it does not delay it, and serial lactates.',
-   cards:'Cardiology. Inferior infarct with right ventricular involvement is the one to get right — they want right-sided leads if you have not done them, and no nitrates and no opiate-heavy loading, because that ventricle is preload dependent and you will drop him. Fluid rather than vasodilators. Aspirin and an anticoagulant, and if nobody can get him to a catheter lab within a hundred and twenty minutes of the diagnosis — and from here nobody can — lyse him now with tenecteplase, full dose under seventy-five and half dose over, then transfer for angiography within two to twenty-four hours. They want the time of onset and the contraindication checklist read back to them.',
-   neurol:'Neurology. For status, benzodiazepine adequately dosed first — most failures are underdosing rather than the wrong drug — then a second agent, levetiracetam or valproate, and they want to know the glucose and the sodium before anything else. If it does not stop, that is refractory and it needs anaesthesia and a ventilator.',
-   renal:'Nephrology. Calcium to protect the myocardium, then insulin with dextrose and salbutamol to shift it, and they are blunt that none of it removes a single milligram — only dialysis does. They want the potassium, the QRS width and how long since his last session, and they are arranging a bed.',
-   endo:'Endocrinology. For an adrenal crisis, hydrocortisone now and do not wait for a cortisol. For thyroid storm, beta blockade and an antithyroid drug first — propylthiouracil is preferred because it also blocks conversion — iodine at least an hour after that and never before, and hydrocortisone. For a hyperosmolar state: nought point nine percent saline as the main fluid, a litre in the first hour and faster if he is hypotensive; insulin at nought point nought five units per kilo per hour and only once the osmolality stops falling on fluid alone; potassium known first; and the sodium will rise as the glucose falls, which is expected rather than a reason for hypotonic fluid. Osmolality down three to eight an hour, sodium no more than ten in twenty-four.',
-   haem:'Haematology. Judge the haemoglobin against his own baseline rather than a normal range. Oxygen, warmth, hydration and proper analgesia all reduce further sickling, and they are asking whether exchange transfusion is available where he is going, because in acute chest syndrome that is the intervention that changes it.',
-   eye:'Ophthalmology. Rigid shield, never a pad and never pressure. Nothing by mouth, antiemetics so he does not strain, and systemic antibiotics. They want the visual acuity you recorded at arrival, not the one taken after four people have handled him, and they want him moving now — vision is time.',
-   resp:'Respiratory. Continuous nebulised bronchodilator rather than intermittent, magnesium, and steroids early. They warn that a quiet chest is deterioration rather than improvement, and that intubating a severe asthmatic is dangerous — if you must, expect to ventilate slowly with long expiratory times and watch for breath stacking.',
-   icu:'Critical care. '+(S.p.adrenal&&!S.flags.steroid?'First thing — if nobody has given him a stress dose of hydrocortisone, do it now; they would not wait for a cortisol. ':S.p.septic&&!S.flags.abx?'First thing — antibiotics now, not after the transfer. ':S.p.massivePE&&!S.flags.reperfusion?'First thing — a massive PE with a pressure like that is an indication for systemic lysis now. Avoid intubating him if you possibly can; the right heart can arrest on induction. ':'')+' They want lung-protective settings if he goes on a ventilator, a lactate trend rather than a single value, and a clear list of everything that has gone in with times. They will take him and they are asking for your best estimate of how long he has.'};
+  const list=CONSULTS[S.scn.id]||[];
+  const mine=list.find(c=>c.s===pick);
+  const fit=!!mine;
   S.consults=(S.consults||[]).concat(pick);S.lastConsult=pick;
-  const recs=problemRecs(S), mine=recs.filter(x=>x.d.includes(pick)||pick==='icu').slice(0,pick==='icu'?3:2);
-  const tt=((S.scn.title||'')+' '+(S.scn.mist||'')).toLowerCase();
-  let base=REC[pick], tail='';
-  const T=((S.scn.title||'')+' '+(S.scn.mist||'')+' '+(S.scn.arrival||'')).toLowerCase(), P=S.p;
-  const FIT={
-   neuro:!!(P.tbi||P.herniation||P.blownPupil||P.cordInjury||P.neurogenic||/\bspine\b|\bspinal\b|\bcord\b|head injury|pupil|feel his legs|cannot move|thoracolumbar|hard landing|priapism|ejected|unresponsive/.test(T)),
-   neurol:!!(P.seizing||P.withdrawal||/seizure|seizing|fitting|stroke|epilep|withdrawal/.test(T)),
-   cards:P.stemi!==undefined||/chest pain|infarct|stemi|arrhythm/.test(T),
-   endo:!!(P.adrenal||P.thyroid||P.hhs||P.dka!==undefined),
-   burn:!!(P.tbsa||/burn|high voltage|overhead line|electrocut|flame|fire/.test(T)),
-   resp:!!((P.bronchospasm||0)>.2||P.blastLung||P.massivePE||/asthma|wheez|cannot speak in sentences|blast/.test(T)),
-   ob:!!(P.pregnant||/pregnan|weeks/.test(T)),haem:!!(P.sickle||/sickle/.test(T)),eye:/globe|\beye\b|eyeball/.test(T),
-   ct:!!(P.tamponade||P.hemothorax||/chest|stern|thorac|tamponade/.test(T)),vasc:!!(P.junctionalBleed||P.extremityBleed||/artery|arterial|vascular|junctional|groin|thigh|amputat/.test(T)),
-   ortho:/pelvi|femur|fracture|amputat|forearm|leg|fall|rollover|crush|calcane|scaffold/.test(T),id:!!((P.septic||0)>.2||/infect|wound.*days|fever|rash|necrot|abscess|cellulit/.test(T)),
-   renal:!!(P.hyperK||(P.kSev||0)>.2||P.rhabdo||/dialysis|crush|collapsed building|high voltage|cola|rhabdo/.test(T)),tox:true,icu:true,surg:true,
-  };
-  const GENERIC={neuro:'Neurosurgery. No head injury and no cord signs in what you have told us — nothing here is ours. Call back if the neurology changes.',
-   neurol:'Neurology. No seizure activity and no focal deficit in what you describe — nothing here is ours. Call back if that changes.',
-   cards:'Cardiology. Nothing ischaemic in that story. If the rhythm changes or you get a twelve-lead that worries you, send it through.',
-   endo:'Endocrinology. Nothing endocrine in what you have told us — no sugar, sodium or steroid problem. Call back if the labs say otherwise.',
-   burn:'Burn centre. No burn in that story — nothing here for us.',resp:'Respiratory medicine. Nothing primarily pulmonary in what you describe — treat the cause and call back if the oxygenation changes.',
-   ob:'Obstetrics. No pregnancy in that story — nothing here is ours.',haem:'Haematology. Nothing haematological beyond the resuscitation itself — give blood as blood and call back if he will not clot.',
-   eye:'Ophthalmology. No eye injury in that story — nothing for us.',ct:'Cardiothoracic. No chest injury in what you describe. If a haemothorax or tamponade appears, call back.',
-   vasc:'Vascular. No vascular injury in that story. Document distal pulses and call back if one goes.',ortho:'Orthopaedics. No fractures in what you have told us. Call back with the secondary survey.',
-   id:'Infectious disease. No infection in that story — for a dirty wound, cefazolin within the hour and tetanus, and call back if he spikes.',
-   renal:'Nephrology. No renal problem in what you have told us — keep him filled and watch the urine output.'};
-  if(FIT[pick]===false&&GENERIC[pick])base=GENERIC[pick];
-  if(pick==='resp'&&!((P.bronchospasm||0)>.2||/asthma|wheez|cannot speak in sentences/.test(T)))base=GENERIC.resp;   /* the asthma script is for asthma */
-  if(pick==='cards'&&P.stemi===undefined)base=GENERIC.cards;   /* the infarct script is for an infarct */
-  /* endocrinology speaks to the one condition the patient has */
-  if(pick==='endo'&&FIT.endo){const parts=String(REC.endo).split(/(?=For an adrenal|For thyroid|For a hyperosmolar|For ketoacidosis|For DKA)/);
-   const want=P.adrenal?/adrenal/:P.thyroid?/thyroid/:P.hhs?/hyperosmolar/:/ketoacidosis|DKA/;
-   const keep=parts.filter(x=>want.test(x)||!/^For /.test(x.trim()));base=keep.join(' ').replace(/\s+/g,' ').trim();}
-  /* neurosurgery: the head script only for a head; the cord script only for a cord */
-  if(pick==='neuro'&&FIT.neuro&&!(P.tbi||P.herniation||P.blownPupil)&&!(P.cordInjury||P.neurogenic||/\bspine\b|\bspinal\b|\bcord\b|feel his legs|cannot move|thoracolumbar|priapism/.test(T)))base=GENERIC.neuro;
-  /* neurology: the seizure has a cause here, and the cause is the treatment */
-  if(pick==='neurol'&&(P.hypoNa||0)>.2)base='Neurology. That seizure is the sodium — treat the sodium. A benzodiazepine if she fits again, and no second agent unless she keeps fitting once it is corrected.';
-  if(pick==='neurol'&&P.withdrawal)base='Neurology. Withdrawal seizures are treated with benzodiazepines, escalating to effect — not with levetiracetam or phenytoin, which do nothing for them. Thiamine before any glucose, and watch for the next one.';
-  if(pick==='burn'&&/overhead line|high voltage|electrocut|power line/.test(tt))base='Burn centre. For a high-voltage injury the skin is the least of it.';
-  /* when there are specific problems, the consultant leads with them rather than a stock speech */
-  if(pick==='icu'&&mine.length){base='Critical care.';tail=' They will take him, and they want a list of everything that has gone in with times.';}
-  if(pick==='renal'&&!/dialysis|missed .*session|sessions/.test(tt+' '+(S.scn.arrival||'').toLowerCase()))base='Nephrology.';
-  /* do not repeat what the consultant's own script already said */
-  const said=String(base).toLowerCase();
-  const covered=[[/^potassium/i,/potassium|myocardium/],[/^massive pe/i,/pulmonary embol|lysis/],[/^hyperosmolar/i,/hyperosmolar/],[/^dka/i,/ketoacidosis|dka/],[/^adrenal/i,/adrenal/],[/^asthma/i,/bronchodilator|asthma/],[/^status/i,/status|benzodiazepine/],[/^rhabdo/i,/rhabdo|urine output/],[/^haemorrhage/i,/blood to fill|product|packing/],[/^sepsis/i,/antibiotic|cultures/],[/^blast lung/i,/blast/],[/^heat stroke/i,/cool/],[/^hypothermia/i,/rewarm/],[/^symptomatic hyponatraemia/i,/hypertonic|three percent/]];
-  const fresh=mine.filter(x=>!covered.some(([a,b])=>a.test(x.x)&&b.test(said)));
-  let out=base+(fresh.length?' '+fresh.map(x=>x.x).join(' '):'')+tail;
-  if(!mine.length&&recs.length)out+=' They also flag the thing they would not leave: '+recs[0].x;
-  return out+(fit||mine.length?'':' They also say, politely, that this may not be the consult this patient needed.');}});
+  if(mine)return mine.x;
+  /* not this patient's problem: say so, and say whose it is */
+  const owners=list.map(c=>CONSULT_NAMES[c.s]).filter((v,k,a)=>a.indexOf(v)===k);
+  const me=CONSULT_NAMES[pick]||'The specialist';
+  if(pick==='icu')return'Critical care. They will take him, and they want a list of everything that has gone in with times. For the specific management they defer to '+(owners.length?owners.join(' and '):'the receiving team')+' — get them on the line.';
+  return me+'. Does not sound like one for them'+(owners.length?' — you probably want '+owners.join(' or ').toLowerCase()+'. Shall I get them?':'.');}});
 act({id:'medevac',onStart:S=>{say('team','Nine-line going out, sir.',person('mitch').nm);},label:'Request MEDEVAC',cat:'CMD',by:'flight',dur:35,al:['medevac','9 line','nine line','evac','request evac','air evac','casevac','dustoff','get the bird','launch evac','request a flight','get him on a helicopter','get him out of here','get her out of here','call for a bird','launch the bird','arrange evacuation','transport','move him out','9line','nine-line','med evac','casevac request','request medevac','evacuation','work on evacuation','plan the evacuation','arrange evacuation','sort the evacuation','get evac moving'],
  run:S=>{
   S.flags.medevac=true;S.radio={id:'flight',t:S.t,asked:S.t};S.awaiting=null;
@@ -5888,6 +5921,10 @@ function lev(a,b,max){
 const KEEP=new Set(('percussion rales rhonchi mentation crepitus priapism peritonism posturing obtunded lucid the and for with from that this they them then than there their have has had not but you your his her him she are was were will would could should about into over under back front left right side both all any each every some more most less least much many other another same such just only also very still even well good bad worse better best deep shallow clean dirty clear cloudy open closed close cold warm hot cool wet dry hard soft tight loose fast slow high low big small large long short thick thin full empty new old young last next first second third leg legs arm arms hand hands foot feet head neck face chest belly abdomen back skin bone vein veins wound wounds blood bleeding pain injury injuries patient guy man woman kid child boy girl people team room bay floor door bed litter time minute minutes hour hours second seconds now soon later before after while during until since again once twice please thanks thank okay yeah yes no nope sure fine need needs needed want wants get gets got give gives gave take takes took put puts make makes made keep keeps kept find finds found look looks looked see sees saw tell tells told say says said ask asks asked think thinks thought know knows knew come comes came going go goes went done doing did been being can cannot cant do does don dont what when where which who whom whose why how many much bag bags box boxes kit kits tray trays glove gloves mask masks tube tubes line lines').split(' '));
 /* people type contractions; the alias list does not contain any */
 const MEDSWAP={
+ 'pattern it':'pads ready','pads gets ready':'pads ready',
+
+ 'major biv':'major b iv','amiod around':'amiodarone','amio drone':'amiodarone','amy a drone':'amiodarone',
+
  'much do':'mitch do','evased':'efast','do any fast':'do an efast','any fast':'efast','assign rolls':'assign roles',
 
  'crystal wood':'crystalloid','crystal lloyd':'crystalloid','crystal loyd':'crystalloid','crystal oid':'crystalloid','leader of crystal':'litre of crystal',
@@ -6149,7 +6186,7 @@ function matchAll(rawIn){
   if(S.p.impaled)return [A.impaled];
   if(A.pack)return [A.pack];
  }
- if(S&&(S.done||[]).some(d=>d.id==='or')&&A.end_case&&
+ if(S&&((S.done||[]).some(d=>d.id==='or')||S.flags.orReady)&&A.end_case&&
     (res.some(a=>a.id==='or')||/\b(let'?s (move|go|roll)|move (him|her)|take (him|her)|to the or|to theatre|go to (the )?or|roll to|he'?s yours|she'?s yours)\b/i.test(raw)))
   return [A.end_case];
  if(res.some(a=>a.id==='neonate')&&!/\b(baby|newborn|infant|neonat|deliver|apgar|nrp|mr ?sopa|dry and stimulate|stimulate|cord)/i.test(raw)){const keep=res.filter(a=>a.id!=='neonate');res.length=0;keep.forEach(a=>res.push(a));}
@@ -6375,6 +6412,13 @@ function localAnswer(raw){
   const id=map[q.match(/(blanket|warmer|warming|binder|collar|tourniquet|tube|foley|catheter|drain|pads|line|access|io)/)[1]];
   const d=(S.done||[]).find(x=>x.id===id||(id==='iv'&&S.access));
   return say2('lauren',d?'Yes — done at '+mmss(d.t)+'.':(id==='iv'&&S.access?'Yes — '+S.access+' line'+(S.access>1?'s':'')+'.':'Not yet, sir. Do you want it?'));
+ }
+ if(/\b(any active bleeding|still bleeding|bleeding controlled|is the bleeding|active haemorrhage|active hemorrhage|any bleeding)\b/.test(q)){
+  const v=vitals(S),ext=S.p.extremityBleedRate||0,jx=S.p.junctionalRate||0,rate=S.p.bleedRate||0;
+  if(rate<15&&ext<10&&jx<10)return say2('dorian','Nothing active that I can see, sir. Tourniquets and dressings are dry.');
+  const where=[];if(ext>10)where.push(S.flags.tq?'still oozing past the tourniquet':'the limb');if(jx>10)where.push(S.flags.packed?'the packing is holding, mostly':'the groin');
+  const inside=(typeof bleedCavity==='function')?bleedCavity(S):null;if(rate-ext-jx>20&&inside)where.push('and I think he is losing it into '+inside);
+  return say2('dorian',(where.length?'Yes — '+where.join(', ')+'.':'Yes, sir — he is still losing volume.')+(v.sbp<90?' Pressure '+v.sbp+'.':''));
  }
  /* is he breathing, and is he protecting it */
  if(/\b(still breathing|is he breathing|is she breathing|breathing on (his|her) own|any respiratory effort)\b/.test(q)){
@@ -6765,7 +6809,7 @@ async function submitOrder(raw){
  const evacAsk=matchAll(raw).some(a=>a.id==='medevac')&&!S.flags.medevac;
  const handAsk=matchAll(raw).some(a=>a.id==='handoff');
  /* "tell Dustoff …" keys the radio and passes the message on */
- const tellM=raw.match(/^\s*(?:tell|say to|radio|call|let)\s+dust\s*off\s*[,:]?\s*(?:that\s+)?(.+)$/i);
+ const tellM=raw.match(/^\s*(?:(?:tell|say to|radio|call|let)\s+)?dust\s*off\s*(?:2-1|two one)?\s*[,:]?\s*(?:that\s+)?(?:this is\s+)?(.{8,})$/i);
  if(tellM&&S.flags.medevac&&S.evacAnswered&&S.radioMode!=='flight'){
   setRadioMode(true);await respondAs(person('flight'),tellM[1]);return;
  }
@@ -6824,7 +6868,9 @@ async function submitOrder(raw){
    const rest=raw.replace(/\b(and|then|plus|also)?\s*(a |the )?(pain scale|pain score|pain level|how much pain( is he in| is she in)?)\b/i,'').trim();
    if(rest.length>6&&matchAll(rest).length)raw=rest;else return;}
  }
- if(/\bblood sweep\b/i.test(raw)&&A.blood_sweep){for(const pp of (detectPersons(raw).length?detectPersons(raw):[null]))dispatch(A.blood_sweep,raw,pp&&!['surgeon','flight'].includes(pp.id)?pp:null);return;}
+ if(/\bblood sweeps?\b/i.test(raw)&&A.blood_sweep){const who=detectPersons(raw).find(pp=>!['surgeon','flight'].includes(pp.id))||null;dispatch(A.blood_sweep,raw,who);
+  const rest=raw.replace(/\b(do|perform|get|a|the|full|quick)\s+(a\s+)?blood sweeps?\b/i,'').replace(/\bblood sweeps?\b/i,'').replace(/\b(and|then|plus|also)\b\s*$/i,'').trim();
+  if(rest.length>6&&matchAll(rest).some(a=>a.id!=='blood_sweep'))raw=rest;else return;}
  if(/\b(pain scale|pain score|pain level|scale of (1|one) to (10|ten)|scale of (10|ten)|out of (10|ten)|how much pain|rate (his|her|your|the) pain|(is|if) (he|she)'?s? in pain|(is|if) (he|she) (is )?in pain|any pain|does (he|she) have (any )?pain|is (he|she) sore|how is (his|her) pain)\b/i.test(raw)){
   const la=localAnswer('how much pain is he in');
   if(la){const asked=detectPersons(raw).find(pp=>!['surgeon','flight'].includes(pp.id));say('team',la.txt,asked?asked.nm:la.who);
@@ -6863,7 +6909,7 @@ async function submitOrder(raw){
     say('team',parts.join('. ')+'.',(asked||person('amy')).nm);return;
    } }
  { const pm=raw.match(/^\s*(?:(?:what is|whats|what'?s|run|start|give me|do|lets do|let'?s do|follow|use)\s+)?(?:the\s+)?(hhs|dka|sepsis|status|hyperkal\w*|rhabdo\w*|hypothermia|heat ?stroke|anaphylaxis|stemi|pe|asthma|burn|massive transfusion|mtp|tbi|head injury)\s+(protocol|pathway|bundle|plan|algorithm)\b/i);
-   if(pm){const recs=(typeof problemRecs==='function'?problemRecs(S):[]);
+   if(pm){const recs=(CONSULTS[S.scn.id]||[]).map(c=>({x:c.dx+': '+c.x.replace(/^[^.]+\.\s*/,'')}));
     const k=pm[1].toLowerCase();const hit=recs.find(r=>new RegExp(k.replace(/\s+/,'\\s*'),'i').test(r.x)||(k==='hhs'&&/hyperosmolar/i.test(r.x))||(k==='pe'&&/pulmonary embol|massive pe/i.test(r.x))||(k==='status'&&/^status/i.test(r.x))||(/hyperkal/.test(k)&&/^potassium/i.test(r.x))||(/rhabdo/.test(k)&&/^rhabdo/i.test(r.x))||(/heat/.test(k)&&/^heat/i.test(r.x)));
     say('team',hit?'The '+pm[1]+' plan as we run it: '+hit.x.replace(/^[^:]+:\s*/,'')+' Tell me which of that you want started.':'I do not have a written '+pm[1]+' '+pm[2]+', sir — tell me what you want given and I will do it.',person('majorb').nm);return;} }
  if(/\b(we (do )?have (a|the) potassium|potassium is back|labs are back|the labs are back|we have (the )?labs|bloods are back)\b/i.test(raw)){
@@ -6890,6 +6936,14 @@ async function submitOrder(raw){
   else say('team','Copy.',person('dorian').nm);
   return;
  }
+ if(S.phase==='run'&&/\b(two|2|both|bilateral)\b.{0,10}\b(ios?|drills?|intraosseous)\b|\bios\b.{0,10}\b(both|bilateral|two|each)\b/i.test(raw)&&A.io){
+  const named=detectPersons(raw).filter(pp=>!['surgeon','flight'].includes(pp.id));
+  const first=named[0]||person('lauren');
+  const second=named[1]||['dorian','majorb','mitch'].map(id=>person(id)).find(pp=>pp&&pp.id!==first.id&&!S.busy[pp.id]);
+  dispatch(A.io,'io humeral head',first);
+  if(second){say('team','I have the other humerus.',second.nm);dispatch(A.io,'io other humeral head',second);}
+  return;
+ }
  /* "two large bore", "get two lines", "both sides": two people go for access at once, one on each arm */
  if(S.phase==='run'&&/\b(two|2|both|bilateral|a couple of)\b.{0,14}\b(large bore|lines?|ivs?|iv access|points? of access|cannulas?)\b|\b(ivs?|lines?)\b.{0,10}\b(both (sides|arms)|bilateral)\b/i.test(raw)&&!/\bsecond\b/i.test(raw)&&(S.access||0)<2){
   const named=detectPersons(raw).filter(pp=>!['surgeon','flight'].includes(pp.id));
@@ -6902,6 +6956,13 @@ async function submitOrder(raw){
  if(/\b(an amp|one amp|1 amp|an ampoule|an ampule|amp of)\b/i.test(raw)&&!/\b(iv|io|im|intravenous|intramuscular|intraosseous)\b/i.test(raw))raw=raw+' IV';
  if(S.phase==='run'&&!S.airwayDevice&&S.busy.amy&&S.busy.amy.job&&['rsi','timeout'].includes(S.busy.amy.job.a.id)&&A.postintubation&&matchAll(raw).some(a=>a.id==='postintubation')){
   S.queue.push({a:A.postintubation,raw,doer:person('amy'),isPrep:false});say('team','Copy — vent and sedation the moment the tube is in.',person('amy').nm);return;
+ }
+ /* "document that he will need the OR": a note for the chart, then the rest of the sentence stands on its own */
+ { const dm=raw.match(/^\s*(?:document|note|write down|chart)\s+(?:that\s+)?(.{12,})$/i);
+   if(dm&&S.phase==='run'){say('team','Noted on the flow sheet.',person(Object.entries(S.roleMap||{}).find(([,r])=>r==='DOC')?.[0]||'mitch').nm);
+    if(matchAll(dm[1]).length||/\b(moon|surgeon|dustoff)\b/i.test(dm[1]))raw=dm[1];else return;} }
+ if(S&&S.phase==='run'&&!S.flags.orReady&&!(S.done||[]).some(d=>d.id==='or')&&A.or&&/\b(ready for (the )?(or|theatre)|we are ready|he is ready|she is ready|move (him|her|the patient) to (the )?(or|theatre)|take (him|her) to (the )?(or|theatre)|let'?s move|get (him|her) to (the )?(or|theatre))\b/i.test(raw)&&(S.flags.or||S.flags.surgeonHere||S.flags.surgeon)){
+  dispatch(A.or,raw,person('surgeon'));return;
  }
  /* speech and the keyboard both firing sends the same order twice a second apart */
  if(S&&S.phase==='run'){
@@ -7116,7 +7177,7 @@ function dispatch(a,raw,who){
   S.queue.push({a,raw,doer,isPrep});renderRoster();return;
  }
  if(!a.dose)S._lastG=null;
- let dur=isPrep?PREPS[a.id][0]:(a.dur||20);
+ let dur=isPrep?PREPS[a.id][0]:(a.durFn?a.durFn(S):(a.dur||20));
  if(a.id==='secondary'&&!isPrep){
   const f=secondaryFindings(S);
   dur=Math.min(60,28+f.length*6);
@@ -7299,7 +7360,7 @@ function finishInner(j,a,raw,doer,isPrep){
  nextInQueue(doer);
 }
 function nextInQueue(doer){
- const i=S.queue.findIndex(q=>q.doer.id===doer.id);
+ const i=S.queue.findIndex(q=>q&&q.doer&&doer&&q.doer.id===doer.id);
  if(i>=0){const q=S.queue.splice(i,1)[0];
   if(S.busy[doer.id])return;
   let dur=q.isPrep?PREPS[q.a.id][0]:(q.a.dur||20);
@@ -7802,7 +7863,10 @@ const QUICK=['switch_pt','delegate','bed_report','surgeon_update','book_or','sur
 /* a MIST from the chart, as a team member would read it */
 function buildMist(S){
  const v=vitals(S),done=(S.done||[]).map(d=>d.id),t=[];
- const inj=(typeof bayInjuries==='function'?bayInjuries(S):[]).map(x=>x.kind+(x.region?' '+x.region:'')+(x.side?' '+(x.side==='L'?'left':'right'):''));
+ const seen=(typeof bayInjuries==='function'?bayInjuries(S):[]);
+ const inj=[];seen.forEach(x=>{const t=String(x.text||'').replace(/\.$/,'').trim();const short=t.length>70?t.slice(0,67).replace(/,?\s+\S*$/,'')+'…':t;if(short&&!inj.some(y=>y.toLowerCase()===short.toLowerCase()))inj.push(short.charAt(0).toLowerCase()+short.slice(1));});
+ const rhythm=S.mon.ecg?((S.p.kSev||0)>.3?'wide-complex rhythm on the monitor':(S.p.arrhythmia||S.flags.antiarrhythmic)?'ectopics and runs of VT on the monitor':v.hr>130?'tachycardic at '+v.hr:v.hr<50?'bradycardic at '+v.hr:null):null;
+ if(rhythm)inj.push(rhythm);
  const tx=[];
  if(S.flags.tq)tx.push('tourniquet'+(S.flags.tq>1?'s':''));if(S.flags.packed)tx.push('packed');if(S.flags.binder)tx.push('binder');
  if(S.flags.chestTube)tx.push('chest tube');else if(S.flags.decompressed)tx.push('needle decompression');
